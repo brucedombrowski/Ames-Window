@@ -11,9 +11,12 @@
     connections, no inline script, no eval. `connect-src 'self'` is what lets
     the loader fetch the app's own .wasm; `wasm-unsafe-eval` lets it compile;
     `worker-src blob:` is the timer worker winit starts, which inherits this
-    policy. A policy cannot stop a link the viewer chooses to follow.
+    policy. `webrtc 'block'` asks the browser to refuse peer connections, which
+    `connect-src` does not cover; not every browser honours it. A policy cannot
+    stop a link the viewer chooses to follow, or any other navigation.
+    scripts/no-network.sh fails the build if this line is changed without it.
   -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; connect-src 'self'; worker-src blob:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; connect-src 'self'; worker-src blob:; base-uri 'none'; form-action 'none'; webrtc 'block'">
   <!-- scripts/web.sh replaces the content with the commit the page was built from. -->
   <meta name="build" content="dev">
   <style>

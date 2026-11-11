@@ -21,9 +21,11 @@
 # are not network APIs by name, for example by creating an <img> and setting
 # its `src`, by assigning `location`, or by calling a function it looked up
 # at run time. Those are refused by the browser instead, under the
-# Content-Security-Policy in web/index.html, which allows connections to the
-# page's own site only. Navigation the viewer chooses, the Report feedback
-# link, is outside both.
+# Content-Security-Policy in web/index.html, which allows loading from and
+# connecting to the page's own site only. Two things are outside both checks:
+# navigation, whether the viewer's (the Report feedback link) or scripted,
+# and, in a browser that ignores the policy's `webrtc 'block'`, a WebRTC peer
+# connection built by looking its constructor up at run time.
 #
 # Requires: python3.
 set -euo pipefail
@@ -31,8 +33,8 @@ set -euo pipefail
 target="${1:?usage: scripts/no-network.sh <bundle directory | app.wasm>}"
 if [[ -d "$target" ]]; then
   bundle="$target"
-  wasm="$(find "$bundle" -name '*.wasm' | head -1)"
-  [[ -n "$wasm" ]] || { echo "no .wasm file in $bundle" >&2; exit 1; }
+  wasm="$(find "$bundle" -name '*.wasm')"
+  [[ -n "$wasm" && "$(wc -l <<<"$wasm")" -eq 1 ]] || { echo "expected exactly one .wasm file in $bundle" >&2; exit 1; }
 else
   bundle=""
   wasm="$target"
@@ -106,9 +108,13 @@ if [[ -n "$bundle" ]]; then
     echo "Expected exactly one fetch in the bundle, the module loader; found $fetches." >&2
     exit 1
   fi
-  if ! grep -qE "http-equiv=\"Content-Security-Policy\"[^>]*default-src 'none'[^>]*connect-src 'self'" "$bundle/index.html"; then
-    echo "$bundle/index.html carries no Content-Security-Policy limiting connections to this site." >&2
+  # The whole line, exactly. A policy that has been loosened, or commented
+  # out, is not the policy; changing it means changing it here too, in review.
+  policy="  <meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; connect-src 'self'; worker-src blob:; base-uri 'none'; form-action 'none'; webrtc 'block'\">"
+  if ! grep -qxF "$policy" "$bundle/index.html" || grep -B3 -F "$policy" "$bundle/index.html" | grep -q '^ *<!--$'; then
+    echo "$bundle/index.html does not carry the expected Content-Security-Policy, exactly and uncommented:" >&2
+    echo "$policy" >&2
     exit 1
   fi
-  echo "${#pages[@]} JavaScript and HTML files: one fetch, the module loader; the page's policy allows connections to its own site only."
+  echo "${#pages[@]} JavaScript and HTML files: one fetch, the module loader; the page carries the expected Content-Security-Policy."
 fi

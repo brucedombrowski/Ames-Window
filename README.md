@@ -32,7 +32,7 @@ order that introduces one idea at a time.
 | `crates/ames-app/examples/snapshot.rs` | Renders frames to PNG without opening a window. |
 | `web/index.html`, `web/app.js`, `scripts/web.sh` | The browser shell with its Content-Security-Policy, the page's script, and the build script that produces `web/dist`. |
 | `ios/Info.plist`, `scripts/ios.sh` | The iOS bundle metadata and the build‑sign‑install script. |
-| `.github/workflows/ci.yml` | CI: formatting, clippy and tests on every pull request; checks that the wasm and Windows targets compile. |
+| `.github/workflows/ci.yml` | CI: formatting, clippy and tests on every pull request; builds the browser bundle and runs `scripts/no-network.sh` on it; checks that the Windows target compiles. |
 | `.github/workflows/pages.yml` | CI: tests, builds the wasm, deploys to GitHub Pages. |
 | `.github/workflows/release.yml` | CI: on a `v*` tag, builds and seals the release. See [Releasing](#releasing). |
 | `.github/workflows/security.yml` | CI: SBOM and verification‑matrix drift checks, `cargo deny`, and a grep for socket code. Runs on pushes to `main`, pull requests, weekly, and by hand. |
@@ -255,16 +255,26 @@ What these do not show.
   see a request made through functions that are not network APIs by name:
   an `<img>` given a `src`, an assignment to `location`, a function looked up
   at run time.
-- Those are stopped where they would happen. `web/index.html` carries a
-  Content-Security-Policy that allows the page to load from and connect to
-  its own site and nowhere else: no outside scripts, images, frames or
-  connections, no inline script, no `eval`. Checked in headless Chrome: a
-  `fetch`, a WebSocket and an image aimed at another site were each refused,
-  and the app ran at full speed under the policy.
-- A policy cannot stop navigation. The page's one outbound link, Report
-  feedback, is the viewer's choice and is described above; a module that
-  assigned `location` would take the viewer away from the page, which is
-  visible, but it is not prevented.
+- Most of those are stopped where they would happen. `web/index.html`
+  carries a Content-Security-Policy that allows the page to load from and
+  connect to its own site only: no outside scripts, images, styles, frames or
+  connections, no inline script, no `eval`. Checked in headless Chrome by an
+  independent reviewer: some thirty routes, from `fetch` and WebSocket to an
+  image `src`, a style `url()` and a worker, were each refused, and the app
+  ran at full speed under the policy. The build fails if the policy line is
+  altered or commented out.
+- "Its own site" is the whole host the page is served from, not only this
+  project's path on it.
+- Two things a policy does not stop. **Navigation:** the Report feedback
+  link is the viewer's choice and is described above, but script that
+  assigned `location` or opened a window would also get out, visibly.
+  **WebRTC:** `connect-src` does not cover peer connections. The policy
+  includes `webrtc 'block'` for browsers that honour it; where one does not,
+  a peer connection built by looking its constructor up at run time would
+  pass both the build check and the policy. The build check does catch the
+  name `RTCPeerConnection` in the module's imports and in the glue.
+- Only Chrome has been tested. Firefox, Safari and Edge are expected to
+  accept the policy but have not been tried.
 - A program with its own approved scanners runs them on delivery. The SBOM
   exists so that it can.
 
