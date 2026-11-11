@@ -9,7 +9,8 @@ the evidence is in [`VER-2026-001.md`](VER-2026-001.md).
 ## Scope and charter
 
 Ames Window is an IT security compliance demonstration for an application.
-The application is kept deliberately trivial so that the process is the
+The application is kept deliberately trivial, yet sufficiently complex to be
+a fair test, so that the process is the
 subject. One charter item is permanent and outside every change class: **the
 application never has network capability** (DM-2026-001, issue #8).
 

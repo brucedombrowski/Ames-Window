@@ -206,7 +206,9 @@ framework and cites only openly published standards.
 ## Supply chain
 
 This repository is an IT security compliance demonstration for an
-application. The application is deliberately trivial so that the process
+application. The application is deliberately trivial, yet sufficiently complex to be a
+fair test (several platforms, a real dependency tree, a browser build, one
+boundary of unsafe code), so that the process
 around it is the subject. One rule follows from that and is permanent: **the
 application never has network capability.** No telemetry, analytics, crash
 reporting or update checks, inbound or outbound. Checked on 2026‑11‑11: no
@@ -282,6 +284,21 @@ An SVD is written for whoever receives the software. If a site is on 1.0 and
 is being given 1.4, its "changes installed" section must cover 1.0 to 1.4,
 including the 1.1 through 1.3 releases that site never installed. `--from`
 takes the tag or commit the recipient has; the skipped releases are listed.
+
+## Where is...
+
+| Looking for | It is here |
+|---|---|
+| The release SBOM | [`sbom-web.cdx.json`](sbom-web.cdx.json): the browser build, which is what a release ships. Attached to every GitHub Release. |
+| The SBOM for every platform | [`sbom.cdx.json`](sbom.cdx.json). An audit view; no single build contains all of it. |
+| Vulnerability scan results | The `Supply chain` workflow on the [Actions tab](https://github.com/brucedombrowski/Ames-Window/actions/workflows/security.yml), job `cargo deny`. Policy in [`deny.toml`](deny.toml). GitHub's own alerts are under Security, Dependabot. |
+| Licence check results | The same `cargo deny` job; the allowlist is in [`deny.toml`](deny.toml). |
+| The Software Version Description | Generated on every `Supply chain` run and downloadable from that run as the `sbom-and-svd` artifact; attached to every GitHub Release. |
+| Releases | The [Releases page](https://github.com/brucedombrowski/Ames-Window/releases). A release carries the web bundle, both SBOMs, the SVD, `SHA256SUMS` and a signed provenance attestation that ties them to a commit and a build. |
+| Requirements and their evidence | [`docs/REQ-2026-001.json`](docs/REQ-2026-001.json) and [`docs/VER-2026-001.md`](docs/VER-2026-001.md). |
+| Decisions and why | `docs/DM-2026-*.md`. |
+| Why the SBOM timestamp says 1970 | Deliberate: a fixed timestamp makes the file reproducible byte for byte, so CI can prove it matches `Cargo.lock`. When it was really generated is the commit date, and for a release the attestation ([`docs/DM-2026-003.md`](docs/DM-2026-003.md)). |
+| How to report a problem with the web page | The **Report feedback** link in the page's bottom right corner. |
 
 ## Releasing
 

@@ -61,6 +61,11 @@ No version has been released yet; everything is under Unreleased.
   take longer than 11 ms.
 
 ### Changed
+- `ames-app`'s package description names the browser as well as iOS and the
+  desktop; it appears as the root component of both SBOMs (#21).
+- README: a "Where is..." table for the things a reviewer looks for (#26),
+  and the application is described as deliberately trivial yet sufficiently
+  complex to be a fair test (#29).
 - The browser build is compiled with WebAssembly SIMD (`.cargo/config.toml`)
   and keeps the painted backdrop between frames. In headless Chrome on an
   M2 Max at 1920x1080 the page went from 30 to 60 frames a second.
