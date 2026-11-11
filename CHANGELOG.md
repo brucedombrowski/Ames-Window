@@ -103,6 +103,13 @@ No version has been released yet; everything is under Unreleased.
   claims a test fails when the column count changes, because none does.
 
 ### Fixed
+- `scripts/release.sh` committed a release whose SBOMs and verification
+  matrix were stale, because both change with the version and the changelog,
+  and the release workflow would then have failed its own drift checks at the
+  tag. The script now regenerates and commits them. It also takes only
+  `v*` tags as previous releases and counts untracked files as an unclean
+  tree. The workflow's last step, opening a pull request for the SVD, warns
+  instead of failing when the repository does not let Actions open one.
 - `ames_core::perceived_angle` modelled the wrong reversal. It was honest
   within a quarter turn of face-on and otherwise mirrored the window left to
   right, which neither keeps the picture the same nor keeps the tall edge in
