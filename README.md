@@ -25,6 +25,14 @@ There is no Swift, no Objective‑C, no Xcode project and no GPU code. The
 Objective‑C runtime is reached through the `objc2` bindings that `winit` and
 `softbuffer` already use.
 
+## Splash screen
+
+The app opens the way every Rust program opens: `Hello, world!`, lettered in a
+five‑by‑seven dot font defined in `font.rs`, cursor blinking. After a moment it
+dissolves into the window.
+
+<img src="docs/splash.png" width="195" alt="Hello, world! splash screen">
+
 ## Controls
 
 | Gesture | Effect |

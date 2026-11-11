@@ -2,7 +2,7 @@
 
 use std::num::NonZeroU32;
 use std::rc::Rc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use ames_core::{Angle, Camera, Rod, Scene, Window};
 use softbuffer::{Context, Surface};
@@ -15,7 +15,14 @@ use winit::keyboard::{Key, NamedKey};
 use winit::window::WindowId;
 
 use crate::gesture::{Gesture, Pointer};
-use crate::paint::{Viewport, paint};
+use crate::paint::{Viewport, paint, splash};
+
+/// How long the greeting stays fully opaque.
+const SPLASH_HOLD: Duration = Duration::from_millis(1800);
+/// How long it takes to dissolve into the window.
+const SPLASH_FADE: Duration = Duration::from_millis(700);
+/// Cursor blink period.
+const BLINK: Duration = Duration::from_millis(530);
 
 /// Everything that only exists while we have a window to draw into.
 ///
@@ -33,6 +40,7 @@ pub struct App {
     pointer: Pointer,
     cursor: PhysicalPosition<f64>,
     last_tick: Instant,
+    launched: Instant,
 }
 
 impl Default for App {
@@ -45,6 +53,7 @@ impl Default for App {
             pointer: Pointer::default(),
             cursor: PhysicalPosition::default(),
             last_tick: Instant::now(),
+            launched: Instant::now(),
         }
     }
 }
@@ -77,6 +86,9 @@ impl App {
             return;
         };
         paint(&mut pixmap, &self.scene);
+        let since_launch = self.launched.elapsed();
+        let cursor_on = (since_launch.as_millis() / BLINK.as_millis()).is_multiple_of(2);
+        splash(&mut pixmap, Self::splash_opacity(since_launch), cursor_on);
 
         if graphics.surface.resize(width, height).is_err() {
             return;
@@ -93,6 +105,12 @@ impl App {
         }
         let _ = buffer.present();
         graphics.window.request_redraw();
+    }
+
+    /// Fully opaque for a moment, then a linear fade, then gone.
+    fn splash_opacity(since_launch: Duration) -> f32 {
+        let fading = since_launch.saturating_sub(SPLASH_HOLD);
+        1.0 - fading.as_secs_f32() / SPLASH_FADE.as_secs_f32()
     }
 
     fn handle(&mut self, gesture: Gesture) {

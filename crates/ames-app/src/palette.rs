@@ -6,6 +6,16 @@ use tiny_skia::Color;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Swatch(u8, u8, u8, u8);
 
+impl Swatch {
+    /// The same colour with its alpha scaled by `opacity` (`0.0..=1.0`).
+    #[must_use]
+    pub fn with_opacity(self, opacity: f32) -> Self {
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let alpha = (f32::from(self.3) * opacity.clamp(0.0, 1.0)).round() as u8;
+        Self(self.0, self.1, self.2, alpha)
+    }
+}
+
 impl From<Swatch> for Color {
     fn from(Swatch(r, g, b, a): Swatch) -> Self {
         Self::from_rgba8(r, g, b, a)
@@ -16,6 +26,10 @@ impl From<Swatch> for Color {
 pub const SKY_TOP: Swatch = rgb(0x16, 0x1b, 0x24);
 /// Warmer slate at the bottom of the backdrop.
 pub const SKY_BOTTOM: Swatch = rgb(0x2a, 0x2f, 0x3a);
+/// Splash screen backdrop, a terminal black.
+pub const SPLASH: Swatch = rgb(0x0c, 0x0e, 0x12);
+/// Splash screen lettering, phosphor green.
+pub const SPLASH_TEXT: Swatch = rgb(0x8c, 0xf0, 0x9a);
 /// Painted wood for the frame.
 pub const FRAME: Swatch = rgb(0xe8, 0xd9, 0xb5);
 /// The frame's edge line, a touch darker so bars read as separate pieces.

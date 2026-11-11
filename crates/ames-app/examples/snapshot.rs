@@ -4,6 +4,9 @@
 //! cargo run -p ames-app --example snapshot -- out_dir
 //! ```
 
+#[path = "../src/font.rs"]
+#[allow(dead_code)]
+mod font;
 #[path = "../src/paint.rs"]
 #[allow(dead_code)]
 mod paint;
@@ -20,6 +23,12 @@ fn main() -> std::io::Result<()> {
 
     let mut scene = Scene::new(Window::classic(), Camera::default());
     scene.rod = Some(Rod::default());
+
+    let mut pixmap = Pixmap::new(390, 844).expect("non-zero size");
+    paint::paint(&mut pixmap, &scene);
+    paint::splash(&mut pixmap, 1.0, true);
+    let png = pixmap.encode_png().map_err(std::io::Error::other)?;
+    std::fs::write(out.join("ames-splash.png"), png)?;
 
     for degrees in [0.0, 30.0, 60.0, 120.0, 150.0] {
         scene.set_angle(Angle::degrees(degrees));

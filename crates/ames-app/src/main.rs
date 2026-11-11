@@ -7,6 +7,7 @@
 #![forbid(unsafe_code)]
 
 mod app;
+mod font;
 mod gesture;
 mod paint;
 mod palette;

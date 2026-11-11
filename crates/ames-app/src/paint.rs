@@ -9,6 +9,7 @@ use tiny_skia::{
     SpreadMode, Stroke, Transform,
 };
 
+use crate::font;
 use crate::palette::{self, Swatch};
 
 /// Maps view units onto a region of the pixmap.
@@ -57,6 +58,52 @@ pub fn paint(pixmap: &mut Pixmap, scene: &Scene) {
         draw_shape(pixmap, &viewport, &shape);
     }
     dial(pixmap, &viewport, scene.angle());
+}
+
+/// What Rust says first.
+pub const GREETING: &str = "Hello, world!";
+
+/// Lays the splash screen over whatever is already drawn.
+///
+/// `opacity` runs from `1.0` (only the splash) to `0.0` (nothing), so the
+/// greeting can dissolve into the window behind it. The cursor is drawn when
+/// `cursor_on`, which the caller toggles to make it blink.
+pub fn splash(pixmap: &mut Pixmap, opacity: f32, cursor_on: bool) {
+    if opacity <= 0.0 {
+        return;
+    }
+    #[allow(clippy::cast_precision_loss)]
+    let (w, h) = (pixmap.width() as f32, pixmap.height() as f32);
+    let alpha = opacity.clamp(0.0, 1.0);
+
+    let mut backdrop = Paint::default();
+    backdrop.set_color(palette::SPLASH.with_opacity(alpha).into());
+    if let Some(rect) = tiny_skia::Rect::from_xywh(0.0, 0.0, w, h) {
+        pixmap.fill_rect(rect, &backdrop, Transform::identity(), None);
+    }
+
+    // Size the lettering to the width, leaving room for the cursor cell.
+    #[allow(clippy::cast_precision_loss)]
+    let cells = (font::width_in_cells(GREETING) + font::COLUMNS + 2) as f32;
+    let cell = (w * 0.86 / cells).min(h / 40.0);
+    let text_width = cells * cell;
+    let x = (w - text_width) / 2.0;
+    #[allow(clippy::cast_precision_loss)]
+    let y = (h - font::ROWS as f32 * cell) / 2.0;
+
+    let ink = palette::SPLASH_TEXT.with_opacity(alpha);
+    font::draw(pixmap, GREETING, x, y, cell, ink);
+    if cursor_on {
+        #[allow(clippy::cast_precision_loss)]
+        let cursor_x = x + (font::width_in_cells(GREETING) + 2) as f32 * cell;
+        let mut paint = Paint::default();
+        paint.set_color(ink.into());
+        #[allow(clippy::cast_precision_loss)]
+        let size = (font::COLUMNS as f32 * cell, font::ROWS as f32 * cell);
+        if let Some(rect) = tiny_skia::Rect::from_xywh(cursor_x, y, size.0, size.1) {
+            pixmap.fill_rect(rect, &paint, Transform::identity(), None);
+        }
+    }
 }
 
 fn backdrop(pixmap: &mut Pixmap) {
@@ -190,6 +237,21 @@ mod tests {
         paint(&mut pixmap, &scene);
         assert!(count(&pixmap, palette::FRAME) > 1_000);
         assert!(count(&pixmap, palette::ROD) > 100);
+    }
+
+    #[test]
+    fn the_splash_greets_in_green_and_fades_to_nothing() {
+        let scene = Scene::new(Window::classic(), Camera::default());
+        let mut pixmap = Pixmap::new(390, 844).unwrap();
+        paint(&mut pixmap, &scene);
+        splash(&mut pixmap, 1.0, true);
+        assert!(count(&pixmap, palette::SPLASH_TEXT) > 500);
+        assert_eq!(count(&pixmap, palette::FRAME), 0);
+
+        let mut plain = Pixmap::new(390, 844).unwrap();
+        paint(&mut plain, &scene);
+        splash(&mut plain, 0.0, true);
+        assert_eq!(count(&plain, palette::SPLASH_TEXT), 0);
     }
 
     #[test]
