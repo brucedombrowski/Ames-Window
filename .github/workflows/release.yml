@@ -149,4 +149,5 @@ jobs:
           git push -u origin "$branch"
           gh pr create --base main --head "$branch" \
             --title "Record the SVD for $TAG" \
-            --body "Files the Software Version Description that the Release workflow generated and attached to the $TAG release. Standard change: documentation only. See issue #10."
+            --body "Files the Software Version Description that the Release workflow generated and attached to the $TAG release. Standard change: documentation only. See issue #10." \
+            || echo "::warning::The release is published, but the pull request filing its SVD could not be opened. Allow GitHub Actions to create pull requests (Settings, Actions, General), or open one from branch $branch by hand."
