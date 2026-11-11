@@ -39,7 +39,7 @@ dependencies = [
 
 [[package]]
 name = "ames-app"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "ames-core",
  "console_error_panic_hook",
@@ -56,7 +56,7 @@ dependencies = [
 
 [[package]]
 name = "ames-core"
-version = "0.1.0"
+version = "0.0.1"
 
 [[package]]
 name = "android-activity"

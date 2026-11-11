@@ -4,9 +4,10 @@ All notable changes to this project are recorded here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-No version has been released yet; everything is under Unreleased.
 
 ## [Unreleased]
+
+## [0.0.1] - 2026-11-11
 
 ### Added
 - README: a link to the YouTube short that inspired the project (#30).
@@ -152,4 +153,5 @@ No version has been released yet; everything is under Unreleased.
 - RUSTSEC-2026-0192 (`ttf-parser` unmaintained, transitive via winit)
   accepted with a recorded reason; tracked in #6.
 
-[Unreleased]: https://github.com/brucedombrowski/Ames-Window/commits/main
+[Unreleased]: https://github.com/brucedombrowski/Ames-Window/compare/v0.0.1...HEAD
+[0.0.1]: https://github.com/brucedombrowski/Ames-Window/releases/tag/v0.0.1
