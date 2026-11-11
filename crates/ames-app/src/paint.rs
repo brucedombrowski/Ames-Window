@@ -3,7 +3,7 @@
 //! This module knows about pixels and colours but nothing about windows or
 //! input, which keeps it easy to test: give it a pixmap, get back a picture.
 
-use ames_core::{Angle, Scene, Shape, Style, Vec2, perceived_angle};
+use ames_core::{Angle, Rod, Scene, Shape, Style, Vec2, Vec3, perceived_angle};
 use tiny_skia::{
     FillRule, GradientStop, LineCap, LinearGradient, Paint, Path, PathBuilder, Pixmap, Point,
     SpreadMode, Stroke, Transform,
@@ -68,7 +68,7 @@ pub fn paint_scene(pixmap: &mut Pixmap, scene: &Scene, reveal: bool) {
         draw_shape(pixmap, &viewport, &shape);
     }
     if reveal {
-        dial(pixmap, &viewport, scene.angle());
+        dial(pixmap, &viewport, scene);
     }
 }
 
@@ -158,13 +158,21 @@ fn draw_shape(pixmap: &mut Pixmap, viewport: &Viewport, shape: &Shape) {
     }
 }
 
-/// A bird's‑eye view in the corner: the window as a bar seen from above,
-/// both as it truly turns and as the viewer believes it swings.
-fn dial(pixmap: &mut Pixmap, viewport: &Viewport, actual: Angle) {
+/// A bird's‑eye view under the window, showing what is really happening.
+///
+/// Three things are drawn, all to one scale. The window, seen from above, is
+/// a thin bar with a dot on its tall end. The pen is drawn through it at the
+/// angle it is really fixed at, so the two can be seen turning together as
+/// one rigid piece. Behind them, thick and in a colour of its own, is the
+/// bar the viewer *believes* in: the window swinging back and forth. It is
+/// the only thing here that is not real, and it is deliberately not blue, or
+/// it reads as a pen that has come loose.
+fn dial(pixmap: &mut Pixmap, viewport: &Viewport, scene: &Scene) {
     #[allow(clippy::cast_precision_loss)]
     let (w, h) = (pixmap.width() as f32, pixmap.height() as f32);
-    let radius = viewport.scale * 0.14;
-    let centre = Point::from_xy(w / 2.0, h - radius * 1.8);
+    let radius = viewport.scale * 0.16;
+    let centre = Point::from_xy(w / 2.0, h - radius * 1.7);
+    let actual = scene.angle();
 
     if let Some(ring) = PathBuilder::from_circle(centre.x, centre.y, radius) {
         stroke(pixmap, &ring, palette::DIAL, 2.0);
@@ -174,29 +182,42 @@ fn dial(pixmap: &mut Pixmap, viewport: &Viewport, actual: Angle) {
         fill(pixmap, &eye, palette::DIAL);
     }
 
-    let bar = |angle: Angle| {
-        let (sin, cos) = angle.sin_cos();
-        // Plan view: picture `x` stays `x`, depth toward the viewer goes down.
-        let dir = Point::from_xy(cos * radius * 0.85, sin * radius * 0.85);
+    // Pixels per world unit: the window's half width reaches most of the way
+    // to the ring.
+    let unit = radius * 0.85 / (scene.window.shape.width / 2.0);
+    // Plan view of a point given in the window's own coordinates and turned
+    // by `angle`: picture `x` stays `x`, depth toward the viewer goes down.
+    let plan = |local: Vec3, angle: Angle| {
+        let turned = local.rotate_y(angle);
+        Point::from_xy(centre.x + turned.x * unit, centre.y + turned.z * unit)
+    };
+    let segment = |from: Point, to: Point| {
         let mut pb = PathBuilder::new();
-        pb.move_to(centre.x - dir.x, centre.y - dir.y);
-        pb.line_to(centre.x + dir.x, centre.y + dir.y);
+        pb.move_to(from.x, from.y);
+        pb.line_to(to.x, to.y);
         pb.finish()
     };
-    if let Some(path) = bar(perceived_angle(actual)) {
-        stroke(pixmap, &path, palette::PERCEIVED, 6.0);
+    let [left, right, ..] = scene.window.shape.corners();
+    let (tall_edge, short_edge) = (Vec3::new(left.x, 0.0, 0.0), Vec3::new(right.x, 0.0, 0.0));
+
+    // What the eye believes, underneath everything real.
+    let believed = perceived_angle(actual);
+    if let Some(path) = segment(plan(tall_edge, believed), plan(short_edge, believed)) {
+        stroke(pixmap, &path, palette::PERCEIVED, 7.0);
     }
-    if let Some(path) = bar(actual) {
-        stroke(pixmap, &path, palette::ACTUAL, 2.0);
+    // The window as it truly is, with a dot on its tall end.
+    if let Some(path) = segment(plan(tall_edge, actual), plan(short_edge, actual)) {
+        stroke(pixmap, &path, palette::ACTUAL, 3.0);
     }
-    // A dot on the tall end so the true rotation is unmistakable.
-    let (sin, cos) = actual.sin_cos();
-    let tall_end = Point::from_xy(
-        centre.x - cos * radius * 0.85,
-        centre.y - sin * radius * 0.85,
-    );
-    if let Some(dot) = PathBuilder::from_circle(tall_end.x, tall_end.y, 4.0) {
+    let tall = plan(tall_edge, actual);
+    if let Some(dot) = PathBuilder::from_circle(tall.x, tall.y, 4.5) {
         fill(pixmap, &dot, palette::ACTUAL);
+    }
+    // The pen, fixed through the window and turning with it.
+    for [from, to] in scene.rod.iter().flat_map(Rod::halves) {
+        if let Some(path) = segment(plan(from, actual), plan(to, actual)) {
+            stroke(pixmap, &path, palette::ROD, 3.0);
+        }
     }
 }
 
@@ -235,7 +256,7 @@ fn stroke(pixmap: &mut Pixmap, path: &Path, color: Swatch, width: f32) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ames_core::{Camera, Rod, Window};
+    use ames_core::{Camera, Window};
 
     fn count(pixmap: &Pixmap, color: Swatch) -> usize {
         let target = tiny_skia::Color::from(color).premultiply().to_color_u8();
@@ -256,6 +277,33 @@ mod tests {
 
         paint(&mut pixmap, &scene, true);
         assert!(count(&pixmap, palette::PERCEIVED) > 50);
+    }
+
+    /// Counts pixels of `color` in the band at the bottom where the dial is.
+    fn count_in_dial(pixmap: &Pixmap, color: Swatch) -> usize {
+        let target = tiny_skia::Color::from(color).premultiply().to_color_u8();
+        let width = pixmap.width() as usize;
+        let from = pixmap.height() as usize * 3 / 4 * width;
+        pixmap.pixels()[from..]
+            .iter()
+            .filter(|&&p| p == target)
+            .count()
+    }
+
+    #[test]
+    fn the_dial_shows_the_pen_only_when_there_is_one() {
+        let mut scene = Scene::new(Window::classic(), Camera::default());
+        scene.set_angle(Angle::degrees(30.0));
+        let mut pixmap = Pixmap::new(390, 844).unwrap();
+        paint(&mut pixmap, &scene, true);
+        assert_eq!(count_in_dial(&pixmap, palette::ROD), 0);
+
+        scene.rod = Some(Rod::default());
+        paint(&mut pixmap, &scene, true);
+        assert!(count_in_dial(&pixmap, palette::ROD) > 20);
+        // Hidden with the rest of the dial.
+        paint(&mut pixmap, &scene, false);
+        assert_eq!(count_in_dial(&pixmap, palette::ROD), 0);
     }
 
     #[test]

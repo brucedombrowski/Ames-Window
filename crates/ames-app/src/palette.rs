@@ -44,8 +44,9 @@ pub const ROD: Swatch = rgb(0x3d, 0x7c, 0xe6);
 pub const DIAL: Swatch = rgba(0xff, 0xff, 0xff, 0x30);
 /// The window's true orientation on the dial.
 pub const ACTUAL: Swatch = rgb(0xf1, 0xea, 0xdc);
-/// The orientation the viewer is tricked into seeing.
-pub const PERCEIVED: Swatch = rgb(0x5e, 0xc8, 0xff);
+/// The orientation the viewer is tricked into seeing. Amber, and nothing
+/// like the pen's blue: on the dial the two must not be mistaken.
+pub const PERCEIVED: Swatch = rgb(0xf2, 0xa6, 0x3a);
 
 const fn rgb(r: u8, g: u8, b: u8) -> Swatch {
     rgba(r, g, b, 0xff)
