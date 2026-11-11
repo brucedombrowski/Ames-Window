@@ -77,6 +77,11 @@ No version has been released yet; everything is under Unreleased.
   claims a test fails when the column count changes, because none does.
 
 ### Fixed
+- The top-down dial did not draw the pen, and drew the bar for what the eye
+  believes in the pen's blue, so the pen appeared to swing free of the
+  window. The dial now draws the pen through the true window at the angle
+  it is fixed at, and the believed bar is amber. `docs/preview.png` is
+  regenerated.
 - The window spun slowly in the browser on large or high-density displays
   (reported from Edge on a Windows laptop): a frame slower than the 100 ms
   step clamp advanced the scene by less time than had passed. The clamp is

@@ -13,8 +13,10 @@ the browser. See [Status](#status) for what has actually been run where.
 ![Four frames of the window turning](docs/preview.png)
 
 Tap the screen (or click it) to reveal a small dial: a bird's‑eye view. The
-thin pale bar with a dot on its tall end is what the window is *really* doing.
-The thick blue bar is what your eye insists it is doing. Tap again to hide it
+thin pale bar with a dot on its tall end is what the window is *really* doing,
+and the blue line through it is the pen, fixed to the window and turning with
+it. The thick amber bar behind them is what your eye insists the window is
+doing. Tap again to hide it
 and let the illusion back in.
 
 New to Rust? Start with [docs/tour.md](docs/tour.md), a file‑by‑file reading
@@ -85,7 +87,7 @@ The keys need a keyboard, so in practice they are desktop and browser only.
 ## Build
 
 ```sh
-cargo test --workspace                 # 23 core tests, 22 app tests, 1 doctest
+cargo test --workspace                 # 23 core tests, 23 app tests, 1 doctest
 cargo run -p ames-app                  # desktop window; needs a display
 cargo run -p ames-app --example snapshot -- out
 ```
