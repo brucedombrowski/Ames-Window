@@ -56,7 +56,7 @@ in Rust instead of `for` loops that push into an array.
 
 ## 5. `crates/ames-core/src/illusion.rs` — the whole illusion in one `if`
 
-Six lines. `if` is an expression here: each branch *is* the return value, so
+A handful of lines. `if` is an expression here: each branch *is* the return value, so
 there is no `return` keyword.
 
 ## 6. `crates/ames-core/src/scene.rs` — `Option` and ownership

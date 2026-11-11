@@ -16,8 +16,9 @@ Tap the screen (or click it) to reveal a small dial: a bird's‑eye view. The
 thin pale bar with a dot on its tall end is what the window is *really* doing,
 and the blue line through it is the pen, fixed to the window and turning with
 it. The thick amber bar behind them is what your eye insists the window is
-doing. Tap again to hide it
-and let the illusion back in.
+doing; its dot, the believed tall end, stays on the viewer's side while the
+pale dot goes all the way round. Tap again to hide the dial and let the
+illusion back in.
 
 New to Rust? Start with [docs/tour.md](docs/tour.md), a file‑by‑file reading
 order that introduces one idea at a time.
@@ -87,7 +88,7 @@ The keys need a keyboard, so in practice they are desktop and browser only.
 ## Build
 
 ```sh
-cargo test --workspace                 # 23 core tests, 23 app tests, 1 doctest
+cargo test --workspace                 # 24 core tests, 23 app tests, 1 doctest
 cargo run -p ames-app                  # desktop window; needs a display
 cargo run -p ames-app --example snapshot -- out
 ```
@@ -287,10 +288,12 @@ script has.
 
 The brain assumes the taller edge of the trapezoid is nearer, because that is
 what a real rectangle would look like in perspective. While the tall edge is in
-fact nearer, perception and reality agree. Once the short edge swings nearer,
-the assumption is wrong, so the brain mirrors the motion rather than abandon
-it, and the window appears to reverse. `ames_core::perceived_angle` is that
-rule as a single `if`. The red strips on the frame are the painted thickness
+fact nearer, perception and reality agree. For the other half of each turn the
+tall edge is behind, and a flat picture cannot say so: the same outline fits a
+window turned the opposite way with its tall edge in front, and that is the
+one the brain picks. So the believed window never completes a turn. Its tall
+edge sweeps across in front and back again while the real one goes all the way
+round. `ames_core::perceived_angle` is that rule as a single `if`. The red strips on the frame are the painted thickness
 of a real window, not shadows; they are what sells the depth.
 
 ## License
