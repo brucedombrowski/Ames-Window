@@ -107,7 +107,7 @@ early exit when something we need is missing.
 
 ## Try changing something
 
-1. In `window.rs`, change `columns: 2` to `columns: 4` in `Window::classic`.
+1. In `window.rs`, change `columns: 3` to `columns: 5` in `Window::classic`.
 2. Run `cargo test`. A test fails, because it knows how many mullions to expect.
    Read the failure, then read the test. That loop is how Rust is learned.
 3. Run `cargo run -p ames-app --example snapshot -- out` and open the PNGs.

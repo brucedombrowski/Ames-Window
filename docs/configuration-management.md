@@ -31,8 +31,8 @@ recipient's document system, generated from the same templates.
 | Requirements | `docs/REQ-2026-001.json` | Reviewed like code; a change is a Normal change |
 | Decisions | `docs/DM-*.md` and GitHub issues | Append-only in practice; a reversal is a new memorandum |
 | Verification | `docs/VER-2026-001.md` | Generated from REQ anchors; CI fails on drift |
-| Release | Git tag `vX.Y.Z` and its GitHub Release | Built by automation (issue #10) |
-| Installed instances | `deployments.toml` (planned, issue #10) | Updated after each installation as a Standard change |
+| Release | Git tag `vX.Y.Z` and its GitHub Release | Built by the `Release` workflow from the tag; nothing uploaded by hand |
+| Installed instances | `deployments.toml` | Updated after each delivery and installation as a Standard change |
 
 ## Change classes
 
@@ -53,6 +53,7 @@ Misclassifying a change is itself a finding, recorded as an issue.
 |---|---|
 | Technical lead (Normal changes) | [name] |
 | Control board (Major changes) | Generic Software Control Board (GSCB), or its delegate [name] for urgent items |
+| Release authority | The control board: cutting a release is a Major change. Approval is recorded on the release issue before the tag is pushed. |
 | Reviewer pool (Standard changes) | Any committer other than the author, named in `CODEOWNERS` (issue #9) |
 
 ## The change process
@@ -65,7 +66,7 @@ Misclassifying a change is itself a finding, recorded as an issue.
    approves. The author cannot approve their own work (AC-5).
 4. **Merge.** The change joins `main`. History is permanent.
 5. **Release.** A Major change: the release authority tags a version, and
-   automation builds and seals the release package (issue #10).
+   the `Release` workflow builds and seals the release package.
 
 ## What the tools enforce and what people own
 
@@ -78,6 +79,8 @@ Misclassifying a change is itself a finding, recorded as an issue.
 | Second-person review; no force-push | Branch ruleset and `CODEOWNERS`, **not yet enabled** | REQ-3.2, REQ-3.4, issue #9 |
 | Who may approve each class | This plan and the board's minutes | Procedural |
 | When to cut a release | Release authority | Procedural |
+| Tag, `Cargo.toml` and `CHANGELOG.md` name the same version | `Release` workflow, first step | REQ-4.5 |
+| Released SVDs reproduce from their tags | `scripts/svd.sh --check` in CI | REQ-4.3 |
 | Whether to accept a known weakness | Board, recorded in `deny.toml` with reason and issue | REQ-1.8 |
 | Incident response when an advisory is published | Procedural: search the SBOM, open an issue, classify the fix | REQ-1.7 |
 | Record retention | GitHub history and issues; releases hold the delivered SBOM and SVD | Procedural |
@@ -89,18 +92,30 @@ Misclassifying a change is itself a finding, recorded as an issue.
 | Every change | Git history on `main`, with the pull request and review |
 | Every decision | `docs/DM-*.md`, linked to a GitHub issue |
 | Every accepted risk | `deny.toml` `ignore` entry with reason and issue |
-| Every delivery | GitHub Release: executable, SBOM, SVD, `SHA256SUMS`, attestation |
+| Every release | GitHub Release: web bundle, SBOM, SVD, `SHA256SUMS`, attestation; the SVD also at `docs/releases/SVD-vX.Y.Z.md` |
+| Every delivery and installation | `deployments.toml`: delivered and installed version per site |
 | Changelog | `CHANGELOG.md`, Keep a Changelog format |
 
-## Release procedure (planned, issue #10)
+## Release procedure
 
-1. Release authority approves the version as a Major change.
-2. Move `CHANGELOG.md` Unreleased items under the new version.
-3. Tag `vX.Y.Z` on `main`.
-4. The release workflow builds the web bundle, regenerates the SBOM, runs
-   `scripts/svd.sh --from <recipient baseline>`, writes `SHA256SUMS`, signs a
-   provenance attestation and attaches everything to the GitHub Release.
-5. After installation at a recipient, update `deployments.toml` (Standard).
+A release is not a delivery. A release is a tagged, sealed version. A delivery
+is a release handed to a recipient, with an SVD cut from that recipient's
+baseline. An installation is the recipient running it.
+
+1. The release authority approves the version as a Major change, on the
+   release issue.
+2. In one Normal change: set the version in `Cargo.toml`, move the
+   `CHANGELOG.md` Unreleased items under `## [X.Y.Z] - date`, merge to `main`.
+3. Push the tag `vX.Y.Z` on that `main` commit. The `Release` workflow refuses
+   a tag whose version is not in both files.
+4. The workflow runs every check, builds `ames-window-web.zip`, writes
+   `SVD-vX.Y.Z.md`, `SHA256SUMS` and a signed provenance attestation, publishes
+   the GitHub Release with that version's changelog section as notes, and
+   commits the SVD to `docs/releases/` on `main`.
+5. To deliver, run `scripts/svd.sh --site <name>` for the spanning SVD, hand
+   over the release assets with it, and record `delivered` in
+   `deployments.toml` (Standard).
+6. After the recipient installs, record `installed` (Standard).
 
 ## Standards
 
