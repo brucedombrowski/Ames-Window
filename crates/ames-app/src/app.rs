@@ -43,6 +43,8 @@ pub struct App {
     graphics: Option<Graphics>,
     scene: Scene,
     pointer: Pointer,
+    /// Whether the dial that gives the game away is showing.
+    reveal: bool,
     cursor: PhysicalPosition<f64>,
     last_tick: Instant,
     launched: Instant,
@@ -56,6 +58,7 @@ impl Default for App {
             graphics: None,
             scene,
             pointer: Pointer::default(),
+            reveal: false,
             cursor: PhysicalPosition::default(),
             last_tick: Instant::now(),
             launched: Instant::now(),
@@ -90,7 +93,7 @@ impl App {
         let Some(mut pixmap) = Pixmap::new(width.get(), height.get()) else {
             return;
         };
-        paint(&mut pixmap, &self.scene);
+        paint(&mut pixmap, &self.scene, self.reveal);
         let since_launch = self.launched.elapsed();
         let cursor_on = (since_launch.as_millis() / BLINK.as_millis()).is_multiple_of(2);
         splash(&mut pixmap, Self::splash_opacity(since_launch), cursor_on);
@@ -120,7 +123,7 @@ impl App {
 
     fn handle(&mut self, gesture: Gesture) {
         match gesture {
-            Gesture::Tap => self.toggle_rod(),
+            Gesture::Tap => self.reveal = !self.reveal,
             Gesture::Drag(dx) => self.scrub(dx),
         }
     }
@@ -148,7 +151,8 @@ impl App {
             return;
         }
         match &event.logical_key {
-            Key::Named(NamedKey::Space) => self.toggle_rod(),
+            Key::Named(NamedKey::Space) => self.reveal = !self.reveal,
+            Key::Character(c) if c.eq_ignore_ascii_case("x") => self.toggle_rod(),
             Key::Character(c) if c.eq_ignore_ascii_case("r") => self.scene.spin = -self.scene.spin,
             _ => {}
         }

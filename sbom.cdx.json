@@ -13,7 +13,7 @@
     ],
     "component": {
       "type": "application",
-      "bom-ref": "path+file:///home/user/Ames-Window/crates/ames-app#0.1.0",
+      "bom-ref": "path+file:///src/crates/ames-app#0.1.0",
       "name": "ames-app",
       "version": "0.1.0",
       "description": "The Ames window illusion as a pure-Rust iOS (and desktop) application.",
@@ -33,7 +33,7 @@
       "components": [
         {
           "type": "application",
-          "bom-ref": "path+file:///home/user/Ames-Window/crates/ames-app#0.1.0 bin-target-0",
+          "bom-ref": "path+file:///src/crates/ames-app#0.1.0 bin-target-0",
           "name": "ames-window",
           "version": "0.1.0",
           "licenses": [
@@ -55,7 +55,7 @@
   "components": [
     {
       "type": "library",
-      "bom-ref": "path+file:///home/user/Ames-Window/crates/ames-core#0.1.0",
+      "bom-ref": "path+file:///src/crates/ames-core#0.1.0",
       "name": "ames-core",
       "version": "0.1.0",
       "description": "Geometry of the Ames window illusion: a trapezoid that spins but seems to swing.",
@@ -7243,9 +7243,9 @@
   ],
   "dependencies": [
     {
-      "ref": "path+file:///home/user/Ames-Window/crates/ames-app#0.1.0",
+      "ref": "path+file:///src/crates/ames-app#0.1.0",
       "dependsOn": [
-        "path+file:///home/user/Ames-Window/crates/ames-core#0.1.0",
+        "path+file:///src/crates/ames-core#0.1.0",
         "registry+https://github.com/rust-lang/crates.io-index#console_error_panic_hook@0.1.7",
         "registry+https://github.com/rust-lang/crates.io-index#softbuffer@0.4.8",
         "registry+https://github.com/rust-lang/crates.io-index#tiny-skia@0.12.0",
@@ -7256,7 +7256,7 @@
       ]
     },
     {
-      "ref": "path+file:///home/user/Ames-Window/crates/ames-core#0.1.0"
+      "ref": "path+file:///src/crates/ames-core#0.1.0"
     },
     {
       "ref": "registry+https://github.com/rust-lang/crates.io-index#adler2@2.0.1"

@@ -17,11 +17,14 @@ pub struct Camera {
 }
 
 impl Default for Camera {
-    /// A viewer standing comfortably back from a window about one unit tall.
+    /// A viewer standing well back from a window about one unit tall.
+    ///
+    /// Distance matters: the illusion relies on perspective being too weak
+    /// to betray which edge is really nearer.
     fn default() -> Self {
         Self {
-            distance: 6.0,
-            focal: 1.1,
+            distance: 12.0,
+            focal: 0.72,
         }
     }
 }

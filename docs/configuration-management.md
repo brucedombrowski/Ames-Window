@@ -38,13 +38,14 @@ recipient's document system, generated from the same templates.
 
 The control board approves this table once. Each change is classified by its
 content in the proposal, and the reviewer confirms the class. Only Major
-changes return to the board.
+changes return to the board. Class names follow ITIL: Standard means
+pre-approved, not ordinary.
 
-| Class | What falls in it | Who decides |
-|---|---|---|
-| **Standard** | Colours, wording, documentation, test additions, updating the deployments record. No change to behaviour, components or platforms. | Preapproved. One reviewer who is not the author, then merge. |
-| **Normal** | A feature within the current scope. Updating a component to a newer version. A change to the requirements, the dependency policy or this plan that does not change a class definition. | Technical lead approves after review and all automated checks pass. |
-| **Major** | A new platform. A new component licence type. Accepting a known weakness (an `ignore` entry in `deny.toml`). Any change to this table or to the charter. Cutting a release. | The control board, before work starts, presented with the risk and the rollback plan. |
+| Class | Meaning | Examples | Who decides |
+|---|---|---|---|
+| **Standard** | Pre-approved and routine. Follows a known procedure. No change to behaviour, components or platforms. | Colours, wording, documentation, test additions, updating the deployments record. | One reviewer who is not the author, then merge. |
+| **Normal** | Not pre-approved. Needs assessment and an approver. | A feature within the current scope. Updating a component to a newer version. A change to the requirements, the dependency policy or this plan that does not change a class definition. | Technical lead approves after review and all automated checks pass. |
+| **Major** | High risk or high impact. | A new platform. A new component licence type. Accepting a known weakness (an `ignore` entry in `deny.toml`). Any change to this table or to the charter. Cutting a release. | The control board, before work starts, presented with the risk and the rollback plan. |
 
 Misclassifying a change is itself a finding, recorded as an issue.
 

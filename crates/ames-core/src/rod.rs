@@ -2,7 +2,8 @@
 
 use crate::{Angle, Vec3};
 
-/// A straight rod fixed through one pane of the window.
+/// A straight rod, a pen in the classic demonstration, fixed through the
+/// window's centre.
 ///
 /// Because the rod turns with the window it should, and does, stay rigid.
 /// But the eye sees the window swinging the other way, and to reconcile the
@@ -22,10 +23,10 @@ pub struct Rod {
 impl Default for Rod {
     fn default() -> Self {
         Self {
-            length: 1.5,
-            tilt: Angle::degrees(50.0),
-            rise: Angle::degrees(22.0),
-            anchor: Vec3::new(0.35, -0.12, 0.0),
+            length: 2.0,
+            tilt: Angle::degrees(55.0),
+            rise: Angle::ZERO,
+            anchor: Vec3::ZERO,
         }
     }
 }

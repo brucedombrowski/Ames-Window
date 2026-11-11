@@ -58,6 +58,15 @@ pub struct Face {
     pub points: Vec<Vec3>,
 }
 
+impl Face {
+    /// A quadrilateral from four corners.
+    fn quad(a: Vec3, b: Vec3, c: Vec3, d: Vec3) -> Self {
+        Self {
+            points: vec![a, b, c, d],
+        }
+    }
+}
+
 /// A complete Ames window: outline, frame and mullions.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Window {
@@ -67,6 +76,8 @@ pub struct Window {
     pub frame: f32,
     /// Thickness of the mullions at the tall edge, as a fraction of `tall`.
     pub mullion: f32,
+    /// Width of the painted reveal strips, as a fraction of `tall`.
+    pub reveal: f32,
     /// Number of panes across.
     pub columns: u8,
     /// Number of panes down.
@@ -74,19 +85,21 @@ pub struct Window {
 }
 
 impl Window {
-    /// The proportions Ames used: six panes, strongly foreshortened.
+    /// The proportions of the classic demonstration: a wide six‑pane window,
+    /// three across and two down, with bars as thick as the frame.
     #[must_use]
     pub fn classic() -> Self {
         Self {
             shape: Trapezoid {
-                width: 1.6,
+                width: 2.4,
                 tall: 1.2,
-                short: 0.6,
+                short: 0.68,
             },
-            frame: 0.06,
-            mullion: 0.03,
-            columns: 2,
-            rows: 3,
+            frame: 0.075,
+            mullion: 0.11,
+            reveal: 0.03,
+            columns: 3,
+            rows: 2,
         }
     }
 
@@ -112,44 +125,143 @@ impl Window {
     /// The mullions dividing the panes, as thin quadrilaterals.
     #[must_use]
     pub fn mullion_faces(&self) -> Vec<Face> {
-        let mut faces = Vec::new();
-        let shape = &self.shape;
-        let scale = |t: f32| shape.height_at(t) / shape.tall;
+        let half = |t: f32| self.mullion * self.shape.tall * self.scale(t) / 2.0;
+        self.vertical_bars(|x, half_width| (x - half_width, x + half_width), half)
+            .chain(self.horizontal_bars(|y, half_height| (y - half_height, y + half_height), half))
+            .collect()
+    }
 
-        // Vertical mullions: full height at their own `t`, width shrinking
-        // with the local scale.
-        for c in 1..self.columns {
-            let t = f32::from(c) / f32::from(self.columns);
-            let half = self.mullion * shape.tall * scale(t) / 2.0;
-            let x = shape.x_at(t);
-            let h = shape.height_at(t) / 2.0;
-            faces.push(Face {
-                points: vec![
-                    Vec3::new(x - half, -h, 0.0),
-                    Vec3::new(x + half, -h, 0.0),
-                    Vec3::new(x + half, h, 0.0),
-                    Vec3::new(x - half, h, 0.0),
-                ],
-            });
+    /// The painted reveals: the coloured strips that stand in for the
+    /// thickness of a real frame.
+    ///
+    /// They sit where a viewer level with, and a little to the right of, a
+    /// receding rectangular window would see the inner faces of its
+    /// openings: the left side of every pane, the top of the upper row, the
+    /// bottom of the lower row, and the frame's outer left, top and bottom
+    /// faces. The physical model carries the same paint on both sides of the
+    /// board, so these are fixed in window coordinates and never mirrored.
+    #[must_use]
+    pub fn reveal_faces(&self) -> Vec<Face> {
+        let shape = &self.shape;
+        let t_of = |x: f32| (x - shape.x_at(0.0)) / shape.width;
+        let inset = |t: f32| self.frame * shape.height_at(t);
+        let bar = |t: f32| self.mullion * shape.tall * self.scale(t) / 2.0;
+        let reveal = |t: f32| self.reveal * shape.tall * self.scale(t);
+        let (cols, rows) = (f32::from(self.columns), f32::from(self.rows));
+
+        let mut faces = Vec::new();
+
+        // Outer faces of the frame.
+        let (x0, x1) = (shape.x_at(0.0), shape.x_at(1.0));
+        let h0 = shape.height_at(0.0) / 2.0;
+        faces.push(Face::quad(
+            Vec3::new(x0 - reveal(0.0), -h0, 0.0),
+            Vec3::new(x0, -h0, 0.0),
+            Vec3::new(x0, h0, 0.0),
+            Vec3::new(x0 - reveal(0.0), h0, 0.0),
+        ));
+        for (s, out) in [(1.0, 1.0), (0.0, -1.0)] {
+            let (l, r) = (shape.point(0.0, s), shape.point(1.0, s));
+            faces.push(Face::quad(
+                Vec3::new(x0, l.y, 0.0),
+                Vec3::new(x1, r.y, 0.0),
+                Vec3::new(x1, r.y + out * reveal(1.0), 0.0),
+                Vec3::new(x0, l.y + out * reveal(0.0), 0.0),
+            ));
         }
 
-        // Horizontal mullions: a fixed fraction of the local height on each
-        // edge, so they converge like the frame does.
-        for r in 1..self.rows {
-            let s = f32::from(r) / f32::from(self.rows);
-            let half_at = |t: f32| self.mullion * shape.tall * scale(t) / 2.0;
-            let (l, r) = (shape.point(0.0, s), shape.point(1.0, s));
-            faces.push(Face {
-                points: vec![
-                    Vec3::new(l.x, l.y - half_at(0.0), 0.0),
-                    Vec3::new(r.x, r.y - half_at(1.0), 0.0),
-                    Vec3::new(r.x, r.y + half_at(1.0), 0.0),
-                    Vec3::new(l.x, l.y + half_at(0.0), 0.0),
-                ],
-            });
+        // Inner faces of each pane.
+        for c in 0..self.columns {
+            let (t0, t1) = (f32::from(c) / cols, f32::from(c + 1) / cols);
+            let left = shape.x_at(t0) + if c == 0 { inset(t0) } else { bar(t0) };
+            let right = shape.x_at(t1)
+                - if c + 1 == self.columns {
+                    inset(t1)
+                } else {
+                    bar(t1)
+                };
+            let (tl, tr) = (t_of(left), t_of(right));
+            let inner = left + reveal(tl);
+            let ti = t_of(inner);
+
+            for r in 0..self.rows {
+                let (s0, s1) = (f32::from(r) / rows, f32::from(r + 1) / rows);
+                let bottom = |t: f32| shape.point(t, s0).y + if r == 0 { inset(t) } else { bar(t) };
+                let top = |t: f32| {
+                    shape.point(t, s1).y - if r + 1 == self.rows { inset(t) } else { bar(t) }
+                };
+
+                faces.push(Face::quad(
+                    Vec3::new(left, bottom(tl), 0.0),
+                    Vec3::new(inner, bottom(ti), 0.0),
+                    Vec3::new(inner, top(ti), 0.0),
+                    Vec3::new(left, top(tl), 0.0),
+                ));
+                if r + 1 == self.rows {
+                    faces.push(Face::quad(
+                        Vec3::new(left, top(tl) - reveal(tl), 0.0),
+                        Vec3::new(right, top(tr) - reveal(tr), 0.0),
+                        Vec3::new(right, top(tr), 0.0),
+                        Vec3::new(left, top(tl), 0.0),
+                    ));
+                }
+                if r == 0 {
+                    faces.push(Face::quad(
+                        Vec3::new(left, bottom(tl), 0.0),
+                        Vec3::new(right, bottom(tr), 0.0),
+                        Vec3::new(right, bottom(tr) + reveal(tr), 0.0),
+                        Vec3::new(left, bottom(tl) + reveal(tl), 0.0),
+                    ));
+                }
+            }
         }
 
         faces
+    }
+
+    /// How much everything shrinks at horizontal fraction `t`.
+    fn scale(&self, t: f32) -> f32 {
+        self.shape.height_at(t) / self.shape.tall
+    }
+
+    /// Full‑height quadrilaterals at each interior column boundary.
+    fn vertical_bars<'a>(
+        &'a self,
+        span: impl Fn(f32, f32) -> (f32, f32) + 'a,
+        half: impl Fn(f32) -> f32 + 'a,
+    ) -> impl Iterator<Item = Face> + 'a {
+        (1..self.columns).map(move |c| {
+            let t = f32::from(c) / f32::from(self.columns);
+            let (lo, hi) = span(self.shape.x_at(t), half(t));
+            let h = self.shape.height_at(t) / 2.0;
+            Face::quad(
+                Vec3::new(lo, -h, 0.0),
+                Vec3::new(hi, -h, 0.0),
+                Vec3::new(hi, h, 0.0),
+                Vec3::new(lo, h, 0.0),
+            )
+        })
+    }
+
+    /// Edge‑to‑edge quadrilaterals at each interior row boundary, whose
+    /// thickness follows the local height so they converge like the frame.
+    fn horizontal_bars<'a>(
+        &'a self,
+        span: impl Fn(f32, f32) -> (f32, f32) + 'a,
+        half: impl Fn(f32) -> f32 + 'a,
+    ) -> impl Iterator<Item = Face> + 'a {
+        (1..self.rows).map(move |r| {
+            let s = f32::from(r) / f32::from(self.rows);
+            let (l, rgt) = (self.shape.point(0.0, s), self.shape.point(1.0, s));
+            let (l_lo, l_hi) = span(l.y, half(0.0));
+            let (r_lo, r_hi) = span(rgt.y, half(1.0));
+            Face::quad(
+                Vec3::new(l.x, l_lo, 0.0),
+                Vec3::new(rgt.x, r_lo, 0.0),
+                Vec3::new(rgt.x, r_hi, 0.0),
+                Vec3::new(l.x, l_hi, 0.0),
+            )
+        })
     }
 
     /// Corners of the opening inside the frame.
@@ -200,6 +312,29 @@ mod tests {
         let expected = usize::from(window.columns - 1) + usize::from(window.rows - 1);
         assert_eq!(window.mullion_faces().len(), expected);
         assert_eq!(window.frame_faces().len(), 4);
+    }
+
+    #[test]
+    fn reveals_cover_every_pane_and_the_outer_faces() {
+        let window = Window::classic();
+        let panes = usize::from(window.columns) * usize::from(window.rows);
+        let lit_tops = usize::from(window.columns);
+        let lit_bottoms = usize::from(window.columns);
+        let outer = 3;
+        assert_eq!(
+            window.reveal_faces().len(),
+            panes + lit_tops + lit_bottoms + outer
+        );
+    }
+
+    #[test]
+    fn pane_reveals_start_at_the_pane_edge() {
+        let window = Window::classic();
+        let faces = window.reveal_faces();
+        let inner_left = window.shape.x_at(0.0) + window.frame * window.shape.tall;
+        // Face 3 is the first pane's left reveal (after the three outer faces).
+        let min_x = faces[3].points.iter().map(|p| p.x).fold(f32::MAX, f32::min);
+        assert!((min_x - inner_left).abs() < 1e-6, "{min_x} vs {inner_left}");
     }
 
     #[test]

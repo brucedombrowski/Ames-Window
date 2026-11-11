@@ -9,13 +9,15 @@ pub enum Style {
     Frame,
     /// One of the thin bars between panes.
     Mullion,
+    /// A painted reveal, the fake thickness of the frame.
+    Reveal,
     /// The rod through the window.
     Rod,
 }
 
 /// A flat shape ready to draw.
 ///
-/// `Frame` and `Mullion` shapes are closed polygons to fill. `Rod` shapes are
+/// `Frame`, `Mullion` and `Reveal` shapes are closed polygons to fill. `Rod` shapes are
 /// two‑point polylines to stroke. Shapes come out of [`Scene::render`] sorted
 /// from farthest to nearest.
 #[derive(Clone, Debug, PartialEq)]
@@ -90,6 +92,11 @@ impl Scene {
             }
         }
 
+        let reveals = self
+            .window
+            .reveal_faces()
+            .into_iter()
+            .map(|face| self.shape(Style::Reveal, &face.points));
         let frame = self
             .window
             .frame_faces()
@@ -105,6 +112,7 @@ impl Scene {
             .into_iter()
             .chain(frame)
             .chain(mullions)
+            .chain(reveals)
             .chain(in_front)
             .collect()
     }
@@ -155,7 +163,7 @@ mod tests {
         // skipped.
         for step in 0..36 {
             #[allow(clippy::cast_precision_loss)]
-            scene.set_angle(Angle::degrees(step as f32 * 10.0 + 5.0));
+            scene.set_angle(Angle::degrees(step as f32 * 10.0 + 3.7));
             let shapes = scene.render();
             let rods = shapes.iter().filter(|s| s.style == Style::Rod).count();
             let first = shapes.iter().position(|s| s.style == Style::Rod).unwrap();
