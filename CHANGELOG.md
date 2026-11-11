@@ -68,12 +68,21 @@ No version has been released yet; everything is under Unreleased.
   embed, and `.gitignore` refuses signing material.
 - `.github/workflows/ci.yml`: formatting, clippy and the tests on every pull
   request, plus a check that the wasm and Windows targets compile.
+- The web page shows its measured frame rate and a **Report feedback** link
+  that opens a GitHub issue form pre-filled with the frame rate, sizes,
+  browser and build commit. `scripts/web.sh` stamps the commit into the page.
+- `crates/ames-app/src/budget.rs`: the browser build times its frames and
+  lowers its resolution, down to 480 pixels on the longest edge, when they
+  take longer than 11 ms.
 
 ### Changed
 - `winit` declared with `default-features = false` and
   `wayland-csd-adwaita-notitle` in place of `wayland-csd-adwaita`. Same
   window frame on Wayland, no title text, three components fewer (#6,
   DM-2026-006).
+- The browser build is compiled with WebAssembly SIMD (`.cargo/config.toml`)
+  and keeps the painted backdrop between frames. In headless Chrome on an
+  M2 Max at 1920x1080 the page went from 30 to 60 frames a second.
 - Review may be done by an AI agent holding a named role, not only by a
   person, so no Standard or Normal change waits on the owner
   (`docs/DM-2026-007.md`, the CM plan, REQ-3.2).
