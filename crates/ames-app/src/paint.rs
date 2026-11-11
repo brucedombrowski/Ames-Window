@@ -51,9 +51,19 @@ impl Viewport {
 
 /// Draws the whole frame: backdrop, window and, when `reveal` is set, the
 /// little dial that shows what is really happening.
+///
+/// The application does the two halves separately, because the backdrop never
+/// changes and is worth keeping; see `Canvas` in `app.rs`.
+// The tests and the snapshot example draw whole frames; the app does not.
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn paint(pixmap: &mut Pixmap, scene: &Scene, reveal: bool) {
-    let viewport = Viewport::fit(pixmap.width(), pixmap.height());
     backdrop(pixmap);
+    paint_scene(pixmap, scene, reveal);
+}
+
+/// Draws everything that moves, over a backdrop that is already there.
+pub fn paint_scene(pixmap: &mut Pixmap, scene: &Scene, reveal: bool) {
+    let viewport = Viewport::fit(pixmap.width(), pixmap.height());
     for shape in scene.render() {
         draw_shape(pixmap, &viewport, &shape);
     }
@@ -108,7 +118,8 @@ pub fn splash(pixmap: &mut Pixmap, opacity: f32, cursor_on: bool) {
     }
 }
 
-fn backdrop(pixmap: &mut Pixmap) {
+/// Fills the whole picture with the curtain behind the window.
+pub fn backdrop(pixmap: &mut Pixmap) {
     #[allow(clippy::cast_precision_loss)]
     let (w, h) = (pixmap.width() as f32, pixmap.height() as f32);
     let Some(shader) = LinearGradient::new(

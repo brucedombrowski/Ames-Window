@@ -19,8 +19,9 @@ use winit::event_loop::ActiveEventLoop;
 use winit::keyboard::{Key, NamedKey};
 use winit::window::WindowId;
 
+use crate::budget::Budget;
 use crate::gesture::{Gesture, Pointer};
-use crate::paint::{Viewport, paint, splash};
+use crate::paint::{Viewport, backdrop, paint_scene, splash};
 
 /// How long the greeting stays fully opaque.
 const SPLASH_HOLD: Duration = Duration::from_millis(1800);
@@ -40,9 +41,42 @@ struct Graphics {
     surface: Surface<Rc<winit::window::Window>, Rc<winit::window::Window>>,
 }
 
+/// The picture being drawn, kept between frames so that nothing is allocated
+/// or repainted that does not change.
+struct Canvas {
+    /// The frame, drawn afresh each time.
+    frame: Pixmap,
+    /// The backdrop alone. It is a gradient over every pixel, the most
+    /// expensive thing in the picture and the only part that never moves, so
+    /// it is painted once per size and copied in thereafter.
+    backdrop: Pixmap,
+}
+
+impl Canvas {
+    fn new(width: u32, height: u32) -> Option<Self> {
+        let mut painted = Pixmap::new(width, height)?;
+        backdrop(&mut painted);
+        Some(Self {
+            frame: painted.clone(),
+            backdrop: painted,
+        })
+    }
+
+    fn is(&self, width: u32, height: u32) -> bool {
+        self.frame.width() == width && self.frame.height() == height
+    }
+
+    /// Wipes the frame back to the bare backdrop.
+    fn clear(&mut self) {
+        self.frame.data_mut().copy_from_slice(self.backdrop.data());
+    }
+}
+
 /// The application.
 pub struct App {
     graphics: Option<Graphics>,
+    canvas: Option<Canvas>,
+    budget: Budget,
     scene: Scene,
     pointer: Pointer,
     /// Whether the dial that gives the game away is showing.
@@ -58,6 +92,8 @@ impl Default for App {
         scene.rod = Some(Rod::default());
         Self {
             graphics: None,
+            canvas: None,
+            budget: Budget::default(),
             scene,
             pointer: Pointer::default(),
             reveal: false,
@@ -90,19 +126,30 @@ impl App {
         let Some(graphics) = self.graphics.as_mut() else {
             return;
         };
-        let size = render_size(graphics.window.inner_size());
+        let started = Instant::now();
+        let size = render_size(graphics.window.inner_size(), &self.budget);
         let (Some(width), Some(height)) =
             (NonZeroU32::new(size.width), NonZeroU32::new(size.height))
         else {
             return;
         };
-        let Some(mut pixmap) = Pixmap::new(width.get(), height.get()) else {
+        if !self
+            .canvas
+            .as_ref()
+            .is_some_and(|c| c.is(width.get(), height.get()))
+        {
+            self.canvas = Canvas::new(width.get(), height.get());
+        }
+        let Some(canvas) = self.canvas.as_mut() else {
             return;
         };
-        paint(&mut pixmap, &self.scene, self.reveal);
+        canvas.clear();
+        let pixmap = &mut canvas.frame;
+        paint_scene(pixmap, &self.scene, self.reveal);
         let since_launch = self.launched.elapsed();
         let cursor_on = (since_launch.as_millis() / BLINK.as_millis()).is_multiple_of(2);
-        splash(&mut pixmap, Self::splash_opacity(since_launch), cursor_on);
+        let splash_opacity = Self::splash_opacity(since_launch);
+        splash(pixmap, splash_opacity, cursor_on);
 
         if graphics.surface.resize(width, height).is_err() {
             return;
@@ -118,6 +165,11 @@ impl App {
                 | u32::from(src.blue());
         }
         let _ = buffer.present();
+        // The splash is a different, heavier picture; time only the window.
+        if splash_opacity <= 0.0 {
+            self.budget
+                .record(started.elapsed().as_secs_f32(), width.max(height).get());
+        }
         graphics.window.request_redraw();
     }
 
@@ -165,29 +217,26 @@ impl App {
     }
 }
 
-/// The longest edge rasterised in the browser. `None` elsewhere: native
-/// rasterisation keeps up with any window a person can open.
-#[cfg(target_arch = "wasm32")]
-const MAX_EDGE: Option<u32> = Some(1440);
-#[cfg(not(target_arch = "wasm32"))]
-const MAX_EDGE: Option<u32> = None;
-
 /// How many pixels to rasterise for a surface of `size`.
 ///
 /// Frames are drawn on the CPU, so the cost of one is linear in its area. A
 /// laptop canvas at a high device-pixel ratio is several megapixels, which is
 /// more than WebAssembly rasterises in a frame — and once a frame takes longer
-/// than `MAX_STEP` the window appears to spin slowly as well as stutter.
-/// Drawing fewer pixels and letting the browser scale the canvas up costs
-/// little here, because the picture is flat colour on flat colour.
-fn render_size(size: PhysicalSize<u32>) -> PhysicalSize<u32> {
-    capped(size, MAX_EDGE)
+/// than `MAX_STEP` the window appears to spin slowly as well as stutter. So
+/// the browser build draws no more than the [`Budget`] allows and lets the
+/// browser scale the canvas up. Native rasterisation keeps up with any window
+/// a person can open, and is left alone.
+fn render_size(size: PhysicalSize<u32>, budget: &Budget) -> PhysicalSize<u32> {
+    capped(size, CAPPED.then(|| budget.edge()))
 }
+
+/// Whether this build limits how many pixels it draws: only in the browser.
+const CAPPED: bool = cfg!(target_arch = "wasm32");
 
 /// `size` with its longest edge brought down to `max_edge`, aspect preserved.
 ///
-/// Idempotent, which matters: the surface is resized to whatever this returns,
-/// and the next frame measures the surface again.
+/// Idempotent: capping a size that is already within the limit returns it
+/// unchanged.
 fn capped(size: PhysicalSize<u32>, max_edge: Option<u32>) -> PhysicalSize<u32> {
     let Some(max_edge) = max_edge else {
         return size;
@@ -249,6 +298,7 @@ impl ApplicationHandler for App {
 
     fn suspended(&mut self, _event_loop: &ActiveEventLoop) {
         self.graphics = None;
+        self.canvas = None;
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {

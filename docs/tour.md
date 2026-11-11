@@ -93,7 +93,7 @@ or input, the test at the bottom can render a frame and count coloured pixels.
 for every touch, key and redraw. `let Some(x) = ... else { return; }` is an
 early exit when something we need is missing.
 
-## 10. `crates/ames-app/src/ios_scene.rs` — the one `unsafe` block
+## 10. `crates/ames-app/src/ios_scene.rs` — the one file with `unsafe`
 
 Every other file is safe Rust, and `main.rs` says `#![deny(unsafe_code)]` to
 keep it that way. This file is the single exception, and it is worth reading
