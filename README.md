@@ -261,18 +261,21 @@ What these do not show.
   connections, no inline script, no `eval`. Checked in headless Chrome by an
   independent reviewer: some thirty routes, from `fetch` and WebSocket to an
   image `src`, a style `url()` and a worker, were each refused, and the app
-  ran at full speed under the policy. The build fails if the policy line is
-  altered or commented out.
+  ran at full speed under the policy. The build parses the page and fails
+  unless this exact policy is the only one, directly in `<head>`, ahead of
+  everything but `<meta>` and `<title>`; a copy of the line in a comment or
+  in `<body>` does not count.
 - "Its own site" is the whole host the page is served from, not only this
   project's path on it.
 - Two things a policy does not stop. **Navigation:** the Report feedback
   link is the viewer's choice and is described above, but script that
   assigned `location` or opened a window would also get out, visibly.
-  **WebRTC:** `connect-src` does not cover peer connections. The policy
-  includes `webrtc 'block'` for browsers that honour it; where one does not,
-  a peer connection built by looking its constructor up at run time would
-  pass both the build check and the policy. The build check does catch the
-  name `RTCPeerConnection` in the module's imports and in the glue.
+  **WebRTC:** not covered. `connect-src` does not apply to peer
+  connections, and Chrome ignores the `webrtc` directive meant for them: the
+  reviewer got a STUN request out under the policy with and without it. A
+  peer connection built by looking its constructor up at run time would
+  therefore pass both the build check and the policy. The build check does
+  catch the name `RTCPeerConnection` in the module's imports and in the glue.
 - Only Chrome has been tested. Firefox, Safari and Edge are expected to
   accept the policy but have not been tried.
 - A program with its own approved scanners runs them on delivery. The SBOM

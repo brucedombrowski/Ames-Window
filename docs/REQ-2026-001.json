@@ -152,7 +152,7 @@
             {"file": "scripts/no-network.sh", "pattern": "Network API imported by the module"},
             {"file": ".github/workflows/ci.yml", "pattern": "scripts/no-network.sh web/dist"},
             {"file": ".github/workflows/pages.yml", "pattern": "scripts/no-network.sh web/dist"},
-            {"file": "web/index.html", "pattern": "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; connect-src 'self'; worker-src blob:; base-uri 'none'; form-action 'none'; webrtc 'block'\">"},
+            {"file": "web/index.html", "pattern": "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; connect-src 'self'; worker-src blob:; base-uri 'none'; form-action 'none'\">"},
             {"file": ".github/workflows/release.yml", "pattern": "scripts/no-network.sh web/dist"}
           ]
         },
