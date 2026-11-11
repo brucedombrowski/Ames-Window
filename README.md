@@ -36,7 +36,7 @@ order that introduces one idea at a time.
 | `.github/workflows/pages.yml` | CI: tests, builds the wasm, deploys to GitHub Pages. |
 | `.github/workflows/release.yml` | CI: on a `v*` tag, builds and seals the release. See [Releasing](#releasing). |
 | `.github/workflows/security.yml` | CI: SBOM and verification‑matrix drift checks, `cargo deny`, and a grep for socket code. Runs on pushes to `main`, pull requests, weekly, and by hand. |
-| `deny.toml`, `sbom.cdx.json` | Dependency policy and the committed CycloneDX bill of materials. See [Supply chain](#supply-chain). |
+| `deny.toml`, `sbom-web.cdx.json`, `sbom.cdx.json` | Dependency policy, and the committed CycloneDX bills of materials for the browser build and for every target. See [Supply chain](#supply-chain). |
 | `scripts/sbom.sh`, `scripts/svd.sh`, `scripts/ver.sh` | Regenerate the SBOM, write a Software Version Description, regenerate the verification matrix. |
 | `scripts/release.sh` | Bump the version, close the changelog, commit and tag. |
 | `CHANGELOG.md` | Keep a Changelog format. |
@@ -223,11 +223,20 @@ and the `Supply chain` workflow greps `web/` as well as `crates/` to keep it
 so. The owner asked for the link; it is not telemetry, because nothing is
 sent without the viewer acting.
 
-`sbom.cdx.json` is a [CycloneDX](https://cyclonedx.org) 1.6 Software Bill of
-Materials listing every crate the binary depends on, for every target, with
-versions, licences and the dependency graph. It is generated from `Cargo.lock`
-by `scripts/sbom.sh` and is byte-for-byte reproducible, so it lives in git and
-the `Supply chain` workflow fails if it ever drifts from the lockfile. The
+There are two [CycloneDX](https://cyclonedx.org) 1.6 Software Bills of
+Materials, each listing components with versions, licences, checksums and the
+dependency graph:
+
+| File | Covers | Components |
+|---|---|---|
+| [`sbom-web.cdx.json`](sbom-web.cdx.json) | The browser build, which is what a release ships. **This is the release SBOM.** | 54 |
+| [`sbom.cdx.json`](sbom.cdx.json) | Every target the source builds for at once: browser, iOS, macOS, Windows, Linux, Android. An audit view; no single build contains all of it. | 215 |
+
+The second is four times the first because `winit`, the window and input
+library, carries a separate backend for each operating system. Both are
+generated from `Cargo.lock` by `scripts/sbom.sh` and are byte-for-byte
+reproducible, so they live in git and the `Supply chain` workflow fails if
+either drifts from the lockfile. The
 script rewrites the absolute path `cargo-cyclonedx` records for the
 workspace's own crates to a fixed `path+file:///src/` prefix; without that
 the file differed between machines, which is why the workflow's first run on

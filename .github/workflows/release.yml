@@ -72,13 +72,14 @@ jobs:
         run: scripts/svd.sh "SVD-$TAG.md"
 
       - name: Checksums
-        run: sha256sum ames-window-web.zip sbom.cdx.json "SVD-$TAG.md" > SHA256SUMS
+        run: sha256sum ames-window-web.zip sbom-web.cdx.json sbom.cdx.json "SVD-$TAG.md" > SHA256SUMS
 
       - name: Provenance attestation
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
             ames-window-web.zip
+            sbom-web.cdx.json
             sbom.cdx.json
             SVD-${{ github.ref_name }}.md
             SHA256SUMS
@@ -98,7 +99,7 @@ jobs:
             --title "Ames Window $TAG" \
             --notes-file notes.md \
             --verify-tag \
-            ames-window-web.zip sbom.cdx.json "SVD-$TAG.md" SHA256SUMS
+            ames-window-web.zip sbom-web.cdx.json sbom.cdx.json "SVD-$TAG.md" SHA256SUMS
 
       - name: File the SVD in docs/releases (pull request)
         env:

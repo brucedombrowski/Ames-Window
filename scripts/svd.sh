@@ -70,6 +70,7 @@ else
 fi
 
 components="$(jq '.components | length' "$sbom")"
+web_components="$(jq '.components | length' sbom-web.cdx.json)"
 licences="$(jq -r '[.components[].licenses[]? | (.expression // .license.id)] | unique | length' "$sbom")"
 
 {
@@ -136,7 +137,8 @@ SBOM exist; the others are produced at release time.
 |---|---|
 | Source archive | The repository at commit \`$short\`, as a git tag or archive |
 | \`ames-window-web.zip\` | The WebAssembly build and its host page, ready to serve from any static web server |
-| \`sbom.cdx.json\` | CycloneDX 1.6 Software Bill of Materials, $components third-party components |
+| \`sbom-web.cdx.json\` | CycloneDX 1.6 Software Bill of Materials for \`ames-window-web.zip\`: the $web_components components in the browser build |
+| \`sbom.cdx.json\` | The same for every target the source builds for (browser, iOS, macOS, Windows, Linux, Android): $components components. No single build contains all of them |
 | \`SHA256SUMS\` | SHA-256 checksum of every released file |
 | \`$(basename "$out")\` | This document |
 
@@ -145,7 +147,7 @@ Checksums of the materials that exist at the build commit:
 | File | SHA-256 |
 |---|---|
 EOF
-for f in Cargo.lock sbom.cdx.json deny.toml; do
+for f in Cargo.lock sbom.cdx.json sbom-web.cdx.json deny.toml; do
   printf '| `%s` | `%s` |\n' "$f" "$(sha256sum "$f" | cut -d' ' -f1)"
 done
 
@@ -246,7 +248,7 @@ compiles with Cargo, assembles the \`.app\` bundle and installs it.
 \`ames-window\` executable for the platform.
 
 **Verification.** Compare each file's SHA-256 against \`SHA256SUMS\` before
-installation. The SBOM for the installed version is \`sbom.cdx.json\`.
+installation. The SBOM for the installed web bundle is \`sbom-web.cdx.json\`.
 
 **Removal.** Delete the installed files or the app bundle. The software writes
 nothing outside its own installation directory.
