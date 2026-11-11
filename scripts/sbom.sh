@@ -43,8 +43,10 @@ trap cleanup EXIT
 #                      what a release ships. A little more than is
 #                      delivered (it includes build-time tools), and not the
 #                      toolchain or the generated JavaScript glue.
+#   sbom-windows.cdx.json  the same for the Windows program, which a release
+#                      also ships.
 stale=0
-for pair in "all:sbom.cdx.json" "wasm32-unknown-unknown:sbom-web.cdx.json"; do
+for pair in "all:sbom.cdx.json" "wasm32-unknown-unknown:sbom-web.cdx.json" "x86_64-pc-windows-msvc:sbom-windows.cdx.json"; do
   target="${pair%%:*}"; out="${pair#*:}"
 
   # A fixed timestamp keeps the output byte-for-byte reproducible. Freshness

@@ -5,3 +5,12 @@
 # Note that a RUSTFLAGS environment variable replaces these flags entirely.
 [target.wasm32-unknown-unknown]
 rustflags = ["-C", "target-feature=+simd128"]
+
+# The Windows program is one file that needs nothing installed. Linking the C
+# runtime in, rather than depending on the Visual C++ redistributable, is
+# what makes that true on a machine that has never had a compiler on it.
+# Symbols are stripped to keep the download small. (Not done for the browser
+# build: wasm-bindgen reads a section that stripping removes, and whole-
+# program optimisation, tried for size, was measured to slow the drawing.)
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static", "-C", "strip=symbols"]

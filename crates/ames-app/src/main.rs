@@ -10,6 +10,9 @@
 // `deny` rather than `forbid`: every module but `ios_scene` is unsafe-free,
 // and that one needs `objc2`'s UIKit setters to put the window on screen.
 #![deny(unsafe_code)]
+// A released Windows build is a windowed program: without this, Windows opens
+// a console window behind it. Debug builds keep the console for messages.
+#![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
 
 mod app;
 mod budget;
