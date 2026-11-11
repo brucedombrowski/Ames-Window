@@ -10,6 +10,7 @@
 # A device build needs a development provisioning profile for the bundle id
 # below. Xcode mints one the first time it runs *any* project with that bundle
 # id and your team on your phone; after that this script finds it on its own.
+# PROVISIONING_PROFILE may be set to the path of a specific profile instead.
 # CODESIGN_IDENTITY may be set to pick a certificate; otherwise the first
 # "Apple Development" identity in the keychain is used.
 set -euo pipefail
@@ -48,8 +49,14 @@ if [[ "$kind" == "sim" ]]; then
   exit 0
 fi
 
-# Device: find a provisioning profile that covers the bundle id.
-profile="$(python3 - "$bundle_id" <<'PY'
+# Device: use the profile PROVISIONING_PROFILE names, or else find one that
+# covers the bundle id.
+profile="${PROVISIONING_PROFILE:-}"
+if [[ -n "$profile" && ! -f "$profile" ]]; then
+  echo "PROVISIONING_PROFILE is not a file: $profile" >&2
+  exit 1
+fi
+[[ -n "$profile" ]] || profile="$(python3 - "$bundle_id" <<'PY'
 import glob, os, plistlib, re, subprocess, sys
 from datetime import datetime, timezone
 bundle = sys.argv[1]

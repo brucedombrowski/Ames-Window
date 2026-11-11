@@ -53,7 +53,9 @@ fi
 
 # Version in the workspace manifest and the iOS bundle.
 bump() {
-  sed -i "0,/^version = \"$current\"$/s//version = \"$version\"/" Cargo.toml
+  # First match only: the workspace version. (perl, not GNU-only `sed -i 0,/re/`.)
+  CURRENT="$current" VERSION="$version" perl -0pi -e \
+    's/^version = "\Q$ENV{CURRENT}\E"$/version = "$ENV{VERSION}"/m' Cargo.toml
   python3 - "$version" <<'PY'
 import re, sys
 v = sys.argv[1]
