@@ -57,6 +57,10 @@ No version has been released yet; everything is under Unreleased.
   take longer than 11 ms.
 
 ### Changed
+- Human is a named role, held by the repository owner and the one role an
+  agent cannot hold. A Major decision is made on an issue: the question, a
+  response from the AI Technical Lead, the Human's decision, then the record
+  updated (`docs/DM-2026-008.md`, the CM plan).
 - The browser build is compiled with WebAssembly SIMD (`.cargo/config.toml`)
   and keeps the painted backdrop between frames. In headless Chrome on an
   M2 Max at 1920x1080 the page went from 30 to 60 frames a second.

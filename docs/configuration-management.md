@@ -51,17 +51,35 @@ Misclassifying a change is itself a finding, recorded as an issue.
 
 | Role | Holder |
 |---|---|
-| Technical lead (Normal changes) | [name], or an agent assigned the title Technical Lead |
-| Control board (Major changes) | Generic Software Control Board (GSCB), or its delegate [name] for urgent items. In this repository, the owner. |
+| Human (Major decisions; observes and directs) | The repository owner. The one role an AI agent cannot hold (DM-2026-008). |
+| Technical lead (Normal changes; advises the Human on Major decisions) | [name], or an agent assigned the title Technical Lead |
+| Control board (Major changes) | Generic Software Control Board (GSCB), or its delegate [name] for urgent items. In this repository, the Human. |
 | Reviewer pool (Standard changes) | Any committer other than the author, named in `CODEOWNERS` (issue #9), or an agent assigned the title Reviewer |
 
-A role may be held by a person or by an AI agent assigned that job title
-(DM-2026-007). An agent's review counts when it is a separate session from
-the author's, it starts from the diff, and it records its title, the class it
-confirms, what it checked and its verdict as a comment on the pull request.
-The owner observes and directs; no Standard or Normal change waits on them.
-A Major change needs the owner's direction, and a recorded direction is
-sufficient.
+Every role but Human may be held by a person or by an AI agent assigned that
+job title (DM-2026-007). An agent's review counts when it is a separate
+session from the author's, it starts from the diff, and it records its title,
+the class it confirms, what it checked and its verdict as a comment on the
+pull request. The Human observes and directs; no Standard or Normal change
+waits on them.
+
+### Major decisions
+
+A Major decision is the Human's, and is made on an issue (DM-2026-008):
+
+1. **Question.** The issue states what is asked and what is needed to decide
+   it. For a risk: the statement, the ratings before and after controls, the
+   controls relied on, why it is carried, and the review trigger.
+2. **Technical Lead response.** An agent holding the title Technical Lead
+   replies with its own assessment and a recommendation, having checked the
+   question's claims against the repository. It is advice.
+3. **Decision.** The Human replies in their own words.
+4. **Record.** An agent brings the affected document into line, citing the
+   issue, and the issue is closed.
+
+Steps 2 and 3 may come in either order; the Human never waits on an agent. A
+direction the Human gives in a working session is also sufficient, and is
+recorded in the change that carries it out.
 
 ## The change process
 
