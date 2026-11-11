@@ -30,6 +30,8 @@ jobs:
       - name: Test
         run: cargo test --workspace
       - name: The browser build compiles
-        run: cargo check -p ames-app --target wasm32-unknown-unknown
+        run: cargo build --release -p ames-app --target wasm32-unknown-unknown
+      - name: The browser build cannot reach the network
+        run: scripts/no-network.sh target/wasm32-unknown-unknown/release/ames-window.wasm
       - name: The Windows build compiles
         run: cargo check -p ames-app --target x86_64-pc-windows-msvc

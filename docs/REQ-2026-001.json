@@ -118,6 +118,19 @@
             {"file": "deny.toml", "pattern": "[licenses]"},
             {"file": "deny.toml", "pattern": "confidence-threshold = 0.8"}
           ]
+        },
+        {
+          "id": "REQ-1.10",
+          "standard": "NIST SP 800-53 Rev. 5",
+          "section": "SI-3 Malicious Code Protection",
+          "text": "The source, every third-party component's source, and the built bundle SHALL be scanned for known malicious code with current signatures: on every change, weekly, and before each publication. A detection, or a scan that cannot run, SHALL fail the check.",
+          "priority": "mandatory",
+          "verification": "test",
+          "evidence": [
+            {"file": "scripts/malware.sh", "pattern": "clamscan --recursive --infected"},
+            {"file": ".github/workflows/security.yml", "pattern": "scripts/malware.sh . ~/.cargo/registry/src"},
+            {"file": ".github/workflows/pages.yml", "pattern": "scripts/malware.sh web/dist"}
+          ]
         }
       ]
     },
@@ -134,7 +147,10 @@
           "verification": "analysis",
           "evidence": [
             {"file": "deny.toml", "pattern": "Charter: this application never has network capability"},
-            {"file": ".github/workflows/security.yml", "pattern": "std::net|TcpStream|TcpListener|UdpSocket"}
+            {"file": ".github/workflows/security.yml", "pattern": "std::net|TcpStream|TcpListener|UdpSocket"},
+            {"file": "scripts/no-network.sh", "pattern": "Network API imported by the module"},
+            {"file": ".github/workflows/ci.yml", "pattern": "scripts/no-network.sh target/wasm32-unknown-unknown"},
+            {"file": ".github/workflows/pages.yml", "pattern": "scripts/no-network.sh web/dist/ames-window_bg.wasm"}
           ]
         },
         {
@@ -229,7 +245,7 @@
         {
           "id": "REQ-3.6",
           "standard": "MIL-STD-498",
-          "section": "§5.1 Project planning and oversight: documenting decisions; systems-engineering Phase 3",
+          "section": "§5.1 Project planning and oversight: documenting decisions",
           "text": "A design or policy choice with more than one defensible option SHALL be recorded as a decision memorandum naming the options considered, the decision and the rationale with standard references.",
           "priority": "mandatory",
           "verification": "inspection",
@@ -241,7 +257,7 @@
         {
           "id": "REQ-3.7",
           "standard": "NIST SP 800-53 Rev. 5",
-          "section": "AU-3 Content of Audit Records; systems-engineering Phase 5",
+          "section": "AU-3 Content of Audit Records",
           "text": "Decisions, accepted risks and review findings SHALL be recorded as issues in the repository's issue tracker and referenced from the artifact they affect.",
           "priority": "mandatory",
           "verification": "inspection",

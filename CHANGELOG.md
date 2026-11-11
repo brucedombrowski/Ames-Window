@@ -9,6 +9,14 @@ No version has been released yet; everything is under Unreleased.
 ## [Unreleased]
 
 ### Added
+- `scripts/malware.sh` and REQ-1.10 (NIST SP 800-53 SI-3): ClamAV scans our
+  source and every component's source on each push, pull request and weekly,
+  and the built bundle before each deploy (#23).
+- `scripts/no-network.sh`: reads the compiled module's import list and fails
+  on any network API, in CI on pull requests and on the bundle before each
+  deploy. New evidence for REQ-2.1 (#23).
+- GitHub Dependabot alerts enabled on the repository, a second advisory
+  source beside RustSec (#23).
 - `.github/workflows/release.yml`: on a `v*` tag, tests, checks the SBOM and
   verification matrix, builds `ames-window-web.zip`, generates the SVD at the
   tagged commit, writes `SHA256SUMS`, signs a build-provenance attestation,
@@ -20,8 +28,8 @@ No version has been released yet; everything is under Unreleased.
 - `rust-version = "1.87"` declared in the workspace; 1.86 fails to compile.
 - `docs/standards.md`: register of governing standards, all openly
   published, with what each is used for and which do not apply and why.
-- `docs/REQ-2026-001.json`: requirements in the `systems-engineering`
-  Phase 1 schema, BCP 14 keywords, each with evidence anchors.
+- `docs/REQ-2026-001.json`: requirements in the process
+  framework's Phase 1 schema, BCP 14 keywords, each with evidence anchors.
 - `docs/VER-2026-001.md`: verification matrix generated from those anchors
   by `scripts/ver.sh`; CI fails when it drifts from the code.
 - `docs/DM-2026-001` to `004`: decision memoranda for the no-network charter,
@@ -57,6 +65,10 @@ No version has been released yet; everything is under Unreleased.
   take longer than 11 ms.
 
 ### Changed
+- The source grep for network code also catches `XMLHttpRequest`,
+  `sendBeacon` and `EventSource`.
+- References to a separately kept process framework no longer name or link
+  it.
 - The browser build is compiled with WebAssembly SIMD (`.cargo/config.toml`)
   and keeps the painted backdrop between frames. In headless Chrome on an
   M2 Max at 1920x1080 the page went from 30 to 60 frames a second.

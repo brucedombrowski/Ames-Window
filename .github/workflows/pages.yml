@@ -29,6 +29,16 @@ jobs:
         run: cargo test --workspace
       - name: Build for the web
         run: scripts/web.sh
+      # What is about to be published is checked as built, not as written.
+      - name: The bundle cannot reach the network
+        run: scripts/no-network.sh web/dist/ames-window_bg.wasm web/dist/ames-window.js
+      - name: Install ClamAV and today's signatures
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq clamav
+          sudo systemctl stop clamav-freshclam || true
+          sudo freshclam --quiet
+      - name: The bundle holds no known malware
+        run: scripts/malware.sh web/dist
       - uses: actions/configure-pages@v5
         with:
           enablement: true
