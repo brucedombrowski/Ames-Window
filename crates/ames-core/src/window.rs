@@ -58,6 +58,27 @@ pub struct Face {
     pub points: Vec<Vec3>,
 }
 
+impl Face {
+    /// A quadrilateral from four corners.
+    fn quad(a: Vec3, b: Vec3, c: Vec3, d: Vec3) -> Self {
+        Self {
+            points: vec![a, b, c, d],
+        }
+    }
+}
+
+/// Which side of the window faces the viewer.
+///
+/// The physical model is painted on both sides so that its shadows always
+/// fall the same way on screen. A flat model has to mirror them instead.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Side {
+    /// The side seen while the tall edge is on the left.
+    Front,
+    /// The side seen once the window has turned past edge‑on.
+    Back,
+}
+
 /// A complete Ames window: outline, frame and mullions.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Window {
@@ -67,6 +88,8 @@ pub struct Window {
     pub frame: f32,
     /// Thickness of the mullions at the tall edge, as a fraction of `tall`.
     pub mullion: f32,
+    /// Width of the painted shadow beside each bar, as a fraction of `tall`.
+    pub shadow: f32,
     /// Number of panes across.
     pub columns: u8,
     /// Number of panes down.
@@ -85,6 +108,7 @@ impl Window {
             },
             frame: 0.06,
             mullion: 0.03,
+            shadow: 0.035,
             columns: 2,
             rows: 3,
         }
@@ -112,44 +136,114 @@ impl Window {
     /// The mullions dividing the panes, as thin quadrilaterals.
     #[must_use]
     pub fn mullion_faces(&self) -> Vec<Face> {
-        let mut faces = Vec::new();
+        let half = |t: f32| self.mullion * self.shape.tall * self.scale(t) / 2.0;
+        self.vertical_bars(|x, half_width| (x - half_width, x + half_width), half)
+            .chain(self.horizontal_bars(|y, half_height| (y - half_height, y + half_height), half))
+            .collect()
+    }
+
+    /// The painted shadows: dark strips beside each upright and below each
+    /// horizontal, as if lit from the upper left of the screen.
+    ///
+    /// Seen from the `Front`, the left frame bar and the right side of each
+    /// mullion cast into the panes. Seen from the `Back` the picture is
+    /// mirrored, so it is the right frame bar and the left side of each
+    /// mullion. The top bar and the undersides stay where they are.
+    #[must_use]
+    pub fn shadow_faces(&self, side: Side) -> Vec<Face> {
         let shape = &self.shape;
-        let scale = |t: f32| shape.height_at(t) / shape.tall;
+        let inset = |t: f32| self.frame * shape.height_at(t);
+        let bar = |t: f32| self.mullion * shape.tall * self.scale(t) / 2.0;
+        let strip = |t: f32| self.shadow * shape.tall * self.scale(t);
+        let (frame_t, toward) = match side {
+            Side::Front => (0.0, 1.0),
+            Side::Back => (1.0, -1.0),
+        };
 
-        // Vertical mullions: full height at their own `t`, width shrinking
-        // with the local scale.
-        for c in 1..self.columns {
+        // Uprights, as (column fraction, x of the edge the shadow starts at).
+        let frame_edge = (frame_t, shape.x_at(frame_t) + toward * inset(frame_t));
+        let mullion_edges = (1..self.columns).map(|c| {
             let t = f32::from(c) / f32::from(self.columns);
-            let half = self.mullion * shape.tall * scale(t) / 2.0;
-            let x = shape.x_at(t);
-            let h = shape.height_at(t) / 2.0;
-            faces.push(Face {
-                points: vec![
-                    Vec3::new(x - half, -h, 0.0),
-                    Vec3::new(x + half, -h, 0.0),
-                    Vec3::new(x + half, h, 0.0),
-                    Vec3::new(x - half, h, 0.0),
-                ],
+            (t, shape.x_at(t) + toward * bar(t))
+        });
+        let uprights = std::iter::once(frame_edge)
+            .chain(mullion_edges)
+            .map(|(t, edge)| {
+                let far = edge + toward * strip(t);
+                let h = shape.height_at(t) / 2.0;
+                Face::quad(
+                    Vec3::new(edge.min(far), -h, 0.0),
+                    Vec3::new(edge.max(far), -h, 0.0),
+                    Vec3::new(edge.max(far), h, 0.0),
+                    Vec3::new(edge.min(far), h, 0.0),
+                )
             });
-        }
 
-        // Horizontal mullions: a fixed fraction of the local height on each
-        // edge, so they converge like the frame does.
-        for r in 1..self.rows {
+        // Rails, as functions giving the underside's y at column fraction t.
+        let top_bar = move |t: f32| shape.point(t, 1.0).y - inset(t);
+        let rails: Vec<Box<dyn Fn(f32) -> f32>> =
+            std::iter::once(Box::new(top_bar) as Box<dyn Fn(f32) -> f32>)
+                .chain((1..self.rows).map(|r| {
+                    let s = f32::from(r) / f32::from(self.rows);
+                    Box::new(move |t: f32| shape.point(t, s).y - bar(t)) as Box<dyn Fn(f32) -> f32>
+                }))
+                .collect();
+        let rails = rails.into_iter().map(|underside| {
+            let (l, r) = (underside(0.0), underside(1.0));
+            Face::quad(
+                Vec3::new(shape.x_at(0.0), l - strip(0.0), 0.0),
+                Vec3::new(shape.x_at(1.0), r - strip(1.0), 0.0),
+                Vec3::new(shape.x_at(1.0), r, 0.0),
+                Vec3::new(shape.x_at(0.0), l, 0.0),
+            )
+        });
+
+        uprights.chain(rails).collect()
+    }
+
+    /// How much everything shrinks at horizontal fraction `t`.
+    fn scale(&self, t: f32) -> f32 {
+        self.shape.height_at(t) / self.shape.tall
+    }
+
+    /// Full‑height quadrilaterals at each interior column boundary.
+    fn vertical_bars<'a>(
+        &'a self,
+        span: impl Fn(f32, f32) -> (f32, f32) + 'a,
+        half: impl Fn(f32) -> f32 + 'a,
+    ) -> impl Iterator<Item = Face> + 'a {
+        (1..self.columns).map(move |c| {
+            let t = f32::from(c) / f32::from(self.columns);
+            let (lo, hi) = span(self.shape.x_at(t), half(t));
+            let h = self.shape.height_at(t) / 2.0;
+            Face::quad(
+                Vec3::new(lo, -h, 0.0),
+                Vec3::new(hi, -h, 0.0),
+                Vec3::new(hi, h, 0.0),
+                Vec3::new(lo, h, 0.0),
+            )
+        })
+    }
+
+    /// Edge‑to‑edge quadrilaterals at each interior row boundary, whose
+    /// thickness follows the local height so they converge like the frame.
+    fn horizontal_bars<'a>(
+        &'a self,
+        span: impl Fn(f32, f32) -> (f32, f32) + 'a,
+        half: impl Fn(f32) -> f32 + 'a,
+    ) -> impl Iterator<Item = Face> + 'a {
+        (1..self.rows).map(move |r| {
             let s = f32::from(r) / f32::from(self.rows);
-            let half_at = |t: f32| self.mullion * shape.tall * scale(t) / 2.0;
-            let (l, r) = (shape.point(0.0, s), shape.point(1.0, s));
-            faces.push(Face {
-                points: vec![
-                    Vec3::new(l.x, l.y - half_at(0.0), 0.0),
-                    Vec3::new(r.x, r.y - half_at(1.0), 0.0),
-                    Vec3::new(r.x, r.y + half_at(1.0), 0.0),
-                    Vec3::new(l.x, l.y + half_at(0.0), 0.0),
-                ],
-            });
-        }
-
-        faces
+            let (l, rgt) = (self.shape.point(0.0, s), self.shape.point(1.0, s));
+            let (l_lo, l_hi) = span(l.y, half(0.0));
+            let (r_lo, r_hi) = span(rgt.y, half(1.0));
+            Face::quad(
+                Vec3::new(l.x, l_lo, 0.0),
+                Vec3::new(rgt.x, r_lo, 0.0),
+                Vec3::new(rgt.x, r_hi, 0.0),
+                Vec3::new(l.x, l_hi, 0.0),
+            )
+        })
     }
 
     /// Corners of the opening inside the frame.
@@ -200,6 +294,28 @@ mod tests {
         let expected = usize::from(window.columns - 1) + usize::from(window.rows - 1);
         assert_eq!(window.mullion_faces().len(), expected);
         assert_eq!(window.frame_faces().len(), 4);
+    }
+
+    #[test]
+    fn shadows_hug_their_bars() {
+        let window = Window::classic();
+        let faces = window.shadow_faces(Side::Front);
+        let inner_left = window.shape.x_at(0.0) + window.frame * window.shape.tall;
+        let min_x = faces[0].points.iter().map(|p| p.x).fold(f32::MAX, f32::min);
+        assert!((min_x - inner_left).abs() < 1e-6, "{min_x} vs {inner_left}");
+    }
+
+    #[test]
+    fn shadows_mirror_between_sides() {
+        let window = Window::classic();
+        let front = window.shadow_faces(Side::Front);
+        let back = window.shadow_faces(Side::Back);
+        assert_eq!(front.len(), back.len());
+        // The strip beside the middle upright moves from its right to its left.
+        let upright_x = window.shape.x_at(0.5);
+        let side_of = |faces: &[Face]| faces[1].points.iter().map(|p| p.x - upright_x).sum::<f32>();
+        assert!(side_of(&front) > 0.0);
+        assert!(side_of(&back) < 0.0);
     }
 
     #[test]

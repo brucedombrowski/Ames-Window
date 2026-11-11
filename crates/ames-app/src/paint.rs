@@ -49,15 +49,17 @@ impl Viewport {
     }
 }
 
-/// Draws the whole frame: backdrop, window and the little dial that shows
-/// what is really happening.
-pub fn paint(pixmap: &mut Pixmap, scene: &Scene) {
+/// Draws the whole frame: backdrop, window and, when `reveal` is set, the
+/// little dial that shows what is really happening.
+pub fn paint(pixmap: &mut Pixmap, scene: &Scene, reveal: bool) {
     let viewport = Viewport::fit(pixmap.width(), pixmap.height());
     backdrop(pixmap);
     for shape in scene.render() {
         draw_shape(pixmap, &viewport, &shape);
     }
-    dial(pixmap, &viewport, scene.angle());
+    if reveal {
+        dial(pixmap, &viewport, scene.angle());
+    }
 }
 
 /// What Rust says first.
@@ -140,6 +142,7 @@ fn draw_shape(pixmap: &mut Pixmap, viewport: &Viewport, shape: &Shape) {
             stroke(pixmap, &path, palette::FRAME_EDGE, viewport.scale * 0.004);
         }
         Style::Mullion => fill(pixmap, &path, palette::MULLION),
+        Style::Shadow => fill(pixmap, &path, palette::SHADOW),
         Style::Rod => stroke(pixmap, &path, palette::ROD, viewport.scale * 0.03),
     }
 }
@@ -234,22 +237,27 @@ mod tests {
         scene.rod = Some(Rod::default());
         scene.set_angle(Angle::degrees(30.0));
         let mut pixmap = Pixmap::new(390, 844).unwrap();
-        paint(&mut pixmap, &scene);
+        paint(&mut pixmap, &scene, false);
         assert!(count(&pixmap, palette::FRAME) > 1_000);
+        assert!(count(&pixmap, palette::SHADOW) > 300);
         assert!(count(&pixmap, palette::ROD) > 100);
+        assert_eq!(count(&pixmap, palette::PERCEIVED), 0);
+
+        paint(&mut pixmap, &scene, true);
+        assert!(count(&pixmap, palette::PERCEIVED) > 50);
     }
 
     #[test]
     fn the_splash_greets_in_green_and_fades_to_nothing() {
         let scene = Scene::new(Window::classic(), Camera::default());
         let mut pixmap = Pixmap::new(390, 844).unwrap();
-        paint(&mut pixmap, &scene);
+        paint(&mut pixmap, &scene, false);
         splash(&mut pixmap, 1.0, true);
         assert!(count(&pixmap, palette::SPLASH_TEXT) > 500);
         assert_eq!(count(&pixmap, palette::FRAME), 0);
 
         let mut plain = Pixmap::new(390, 844).unwrap();
-        paint(&mut plain, &scene);
+        paint(&mut plain, &scene, false);
         splash(&mut plain, 0.0, true);
         assert_eq!(count(&plain, palette::SPLASH_TEXT), 0);
     }

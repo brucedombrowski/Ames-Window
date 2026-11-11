@@ -1,6 +1,6 @@
 //! Spin the window, project it, and sort what comes out.
 
-use crate::{Angle, Camera, Rod, Vec2, Vec3, Window};
+use crate::{Angle, Camera, Rod, Side, Vec2, Vec3, Window};
 
 /// What a projected shape represents, so a renderer can pick colours.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -9,13 +9,15 @@ pub enum Style {
     Frame,
     /// One of the thin bars between panes.
     Mullion,
+    /// A painted shadow beside a bar.
+    Shadow,
     /// The rod through the window.
     Rod,
 }
 
 /// A flat shape ready to draw.
 ///
-/// `Frame` and `Mullion` shapes are closed polygons to fill. `Rod` shapes are
+/// `Frame`, `Mullion` and `Shadow` shapes are closed polygons to fill. `Rod` shapes are
 /// two‑point polylines to stroke. Shapes come out of [`Scene::render`] sorted
 /// from farthest to nearest.
 #[derive(Clone, Debug, PartialEq)]
@@ -90,6 +92,11 @@ impl Scene {
             }
         }
 
+        let shadows = self
+            .window
+            .shadow_faces(self.side())
+            .into_iter()
+            .map(|face| self.shape(Style::Shadow, &face.points));
         let frame = self
             .window
             .frame_faces()
@@ -103,10 +110,21 @@ impl Scene {
 
         behind
             .into_iter()
+            .chain(shadows)
             .chain(frame)
             .chain(mullions)
             .chain(in_front)
             .collect()
+    }
+
+    /// Which painted side currently faces the viewer.
+    #[must_use]
+    pub fn side(&self) -> Side {
+        if self.angle.sin_cos().1 >= 0.0 {
+            Side::Front
+        } else {
+            Side::Back
+        }
     }
 
     /// Whether a rod half, running from the plane out to its tip, points

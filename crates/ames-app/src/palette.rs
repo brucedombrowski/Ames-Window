@@ -32,6 +32,8 @@ pub const SPLASH: Swatch = rgb(0x0c, 0x0e, 0x12);
 pub const SPLASH_TEXT: Swatch = rgb(0x8c, 0xf0, 0x9a);
 /// Painted wood for the frame.
 pub const FRAME: Swatch = rgb(0xe8, 0xd9, 0xb5);
+/// Painted shadow beside each bar, the trick that sells the depth.
+pub const SHADOW: Swatch = rgb(0x4a, 0x3f, 0x30);
 /// The frame's edge line, a touch darker so bars read as separate pieces.
 pub const FRAME_EDGE: Swatch = rgb(0x8a, 0x75, 0x4a);
 /// Mullions, a shade lighter than the frame so they do not vanish edge‑on.

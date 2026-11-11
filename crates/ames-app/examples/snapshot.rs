@@ -25,7 +25,7 @@ fn main() -> std::io::Result<()> {
     scene.rod = Some(Rod::default());
 
     let mut pixmap = Pixmap::new(390, 844).expect("non-zero size");
-    paint::paint(&mut pixmap, &scene);
+    paint::paint(&mut pixmap, &scene, false);
     paint::splash(&mut pixmap, 1.0, true);
     let png = pixmap.encode_png().map_err(std::io::Error::other)?;
     std::fs::write(out.join("ames-splash.png"), png)?;
@@ -33,7 +33,7 @@ fn main() -> std::io::Result<()> {
     for degrees in [0.0, 30.0, 60.0, 120.0, 150.0] {
         scene.set_angle(Angle::degrees(degrees));
         let mut pixmap = Pixmap::new(390, 844).expect("non-zero size");
-        paint::paint(&mut pixmap, &scene);
+        paint::paint(&mut pixmap, &scene, true);
         let png = pixmap.encode_png().map_err(std::io::Error::other)?;
         std::fs::write(out.join(format!("ames-{degrees:03}.png")), png)?;
     }

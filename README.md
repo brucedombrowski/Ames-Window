@@ -7,9 +7,10 @@ bend and pass through solid wood.
 
 ![Five frames of the window turning](docs/preview.png)
 
-The small dial at the bottom is a bird's‑eye view. The thin cream bar with a
-dot on its tall end is what the window is *really* doing. The thick blue bar is
-what your eye insists it is doing.
+Tap the screen to reveal a small dial: a bird's‑eye view. The thin cream bar
+with a dot on its tall end is what the window is *really* doing. The thick blue
+bar is what your eye insists it is doing. Tap again to hide it and let the
+illusion back in.
 
 New to Rust? Start with [docs/tour.md](docs/tour.md), a file‑by‑file reading
 order that introduces one idea at a time.
@@ -37,9 +38,10 @@ dissolves into the window.
 
 | Gesture | Effect |
 |---|---|
-| Tap | Toggle the rod |
+| Tap | Show or hide the dial that reveals the true rotation |
 | Drag left or right | Turn the window by hand (spinning pauses while you hold it) |
-| `Space` (desktop) | Toggle the rod |
+| `Space` (desktop) | Show or hide the dial |
+| `X` (desktop) | Toggle the rod |
 | `R` (desktop) | Reverse the spin |
 
 ## Build
