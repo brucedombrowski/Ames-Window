@@ -1,0 +1,20 @@
+[package]
+name = "ames-app"
+description = "The Ames window illusion as a pure-Rust iOS (and desktop) application."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "ames-window"
+path = "src/main.rs"
+
+[dependencies]
+ames-core = { path = "../ames-core" }
+softbuffer = "0.4"
+tiny-skia = "0.12"
+winit = "0.30"
+
+[lints]
+workspace = true

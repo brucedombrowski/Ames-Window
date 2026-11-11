@@ -1,0 +1,12 @@
+[package]
+name = "ames-core"
+description = "Geometry of the Ames window illusion: a trapezoid that spins but seems to swing."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true
