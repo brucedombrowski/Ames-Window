@@ -64,8 +64,19 @@ jobs:
           scripts/ver.sh --check
 
       - name: Build the web bundle
+        run: scripts/web.sh
+      # What is about to be released is checked as built (REQ-1.10, REQ-2.1).
+      - name: The bundle names no network API
+        run: scripts/no-network.sh web/dist
+      - name: Install ClamAV and today's signatures
         run: |
-          scripts/web.sh
+          sudo apt-get update -qq && sudo apt-get install -y -qq clamav
+          sudo systemctl stop clamav-freshclam || true
+          sudo freshclam --quiet
+      - name: The bundle holds no known malware
+        run: scripts/malware.sh web/dist
+      - name: Zip the web bundle
+        run: |
           (cd web/dist && zip -r -X "../../ames-window-web.zip" .)
 
       - name: Software Version Description

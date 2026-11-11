@@ -9,6 +9,19 @@ No version has been released yet; everything is under Unreleased.
 ## [Unreleased]
 
 ### Added
+- `scripts/malware.sh` and REQ-1.10 (NIST SP 800-53 SI-3): ClamAV scans our
+  source and every component's source on pushes to `main`, pull requests and
+  weekly, and the built bundle before each deploy and each release (#23).
+- A Content-Security-Policy in `web/index.html`: the browser refuses any
+  load from or connection to another site, inline script and `eval`. The
+  page's script moved to `web/app.js` so that inline script can be refused.
+- `scripts/no-network.sh`: fails the build if the compiled module imports a
+  network API by name, if the bundle's JavaScript or HTML mentions one or has
+  any `fetch` but the loader's, or if the page lacks that policy. A tripwire,
+  not a proof; the README says what it cannot see. New evidence for REQ-2.1
+  (#23).
+- GitHub Dependabot alerts enabled on the repository, a second advisory
+  source beside RustSec (#23).
 - `sbom-web.cdx.json`: the SBOM for the browser build, which is what a
   release ships: the 54 components Cargo resolves for that target. `sbom.cdx.json` stays as the inventory of
   every target, 215 components. Both are generated and drift-checked by
@@ -24,8 +37,8 @@ No version has been released yet; everything is under Unreleased.
 - `rust-version = "1.87"` declared in the workspace; 1.86 fails to compile.
 - `docs/standards.md`: register of governing standards, all openly
   published, with what each is used for and which do not apply and why.
-- `docs/REQ-2026-001.json`: requirements in the `systems-engineering`
-  Phase 1 schema, BCP 14 keywords, each with evidence anchors.
+- `docs/REQ-2026-001.json`: requirements in the process
+  framework's Phase 1 schema, BCP 14 keywords, each with evidence anchors.
 - `docs/VER-2026-001.md`: verification matrix generated from those anchors
   by `scripts/ver.sh`; CI fails when it drifts from the code.
 - `docs/DM-2026-001` to `004`: decision memoranda for the no-network charter,
@@ -61,6 +74,10 @@ No version has been released yet; everything is under Unreleased.
   take longer than 11 ms.
 
 ### Changed
+- The source grep for network code also catches `XMLHttpRequest`,
+  `sendBeacon` and `EventSource`.
+- References to a separately kept process framework no longer name or link
+  it.
 - The browser build is compiled with WebAssembly SIMD (`.cargo/config.toml`)
   and keeps the painted backdrop between frames. In headless Chrome on an
   M2 Max at 1920x1080 the page went from 30 to 60 frames a second.
