@@ -16,7 +16,10 @@ path = "src/main.rs"
 ames-core = { path = "../ames-core" }
 softbuffer = "0.4"
 tiny-skia = "0.12"
-winit = "0.30"
+# Default features minus wayland-csd-adwaita, which pulls a font parser
+# (ab_glyph -> ttf-parser, RUSTSEC-2026-0192) only to draw the window title on
+# Wayland. The -notitle variant draws the same decorations without text.
+winit = { version = "0.30", default-features = false, features = ["rwh_06", "x11", "wayland", "wayland-dlopen", "wayland-csd-adwaita-notitle"] }
 
 [lints]
 workspace = true

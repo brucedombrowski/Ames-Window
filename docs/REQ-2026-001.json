@@ -1,12 +1,99 @@
 {
   "document_id": "REQ-2026-001",
   "title": "Ames Window Requirements Specification: IT Security Compliance Demonstration",
-  "version": "1.0",
+  "version": "1.1",
   "date": "2026-11-11",
   "keyword_convention": "BCP 14 (RFC 2119 + RFC 8174): keywords normative only in ALL CAPS",
   "scope": "Ames Window is a deliberately trivial application used to demonstrate a complete IT security compliance posture. These requirements govern how the software is built, inventoried, changed, documented and delivered. They do not govern what the application does, beyond the charter that it has no network capability. Only openly published standards are cited; see docs/standards.md.",
-  "evidence_convention": "Each requirement lists evidence anchors: a file and a fixed string that scripts/ver.sh locates to produce VER-2026-001.md. A requirement with status 'open' is not yet implemented and names the tracking issue.",
+  "evidence_convention": "Each requirement lists evidence anchors: a file and a fixed string that scripts/ver.sh locates to produce VER-2026-001.md. A requirement with status 'open' is not yet implemented and names the tracking issue. A requirement with status \"derived\" is an outcome: it is satisfied when every requirement in satisfied_by is satisfied, and it inherits OPEN from any of them.",
   "categories": [
+    {
+      "name": "Delivered-product outcomes",
+      "standard": "NIST SP 800-53 Rev. 5 RA-5, SI-2, CA-5, CM-7, CM-8, CM-3, SA-5; NIST SP 800-30 Rev. 1",
+      "note": "What an acquirer asks for, stated as outcomes. Each is satisfied by the mechanism requirements it names in the categories below.",
+      "requirements": [
+        {
+          "id": "REQ-0.1",
+          "standard": "NIST SP 800-53 Rev. 5",
+          "section": "RA-5 Vulnerability Monitoring; SI-2 Flaw Remediation; CA-5 Plan of Action and Milestones",
+          "text": "The delivered software SHALL be free from known vulnerabilities at the time of delivery, except those recorded in the risk register as accepted, each with a written reason, an owner and a review trigger.",
+          "priority": "mandatory",
+          "verification": "analysis",
+          "status": "derived",
+          "satisfied_by": [
+            "REQ-1.7",
+            "REQ-1.8"
+          ]
+        },
+        {
+          "id": "REQ-0.2",
+          "standard": "NIST SP 800-53 Rev. 5",
+          "section": "CM-8 System Component Inventory; SR-3, SR-11; SP 800-218 PW.4.1",
+          "text": "The delivered software SHALL contain only third-party components obtained from the approved source, under approved licences, each pinned by version and checksum and identified in the Software Bill of Materials.",
+          "priority": "mandatory",
+          "verification": "analysis",
+          "status": "derived",
+          "satisfied_by": [
+            "REQ-1.1",
+            "REQ-1.2",
+            "REQ-1.3",
+            "REQ-1.4",
+            "REQ-1.5",
+            "REQ-1.6",
+            "REQ-1.9"
+          ]
+        },
+        {
+          "id": "REQ-0.3",
+          "standard": "NIST SP 800-53 Rev. 5",
+          "section": "CM-7 Least Functionality",
+          "text": "The delivered software SHALL have no network capability and SHALL require no configuration.",
+          "priority": "mandatory",
+          "verification": "analysis",
+          "status": "derived",
+          "satisfied_by": [
+            "REQ-2.1",
+            "REQ-2.2",
+            "REQ-2.3"
+          ]
+        },
+        {
+          "id": "REQ-0.4",
+          "standard": "NIST SP 800-53 Rev. 5",
+          "section": "CM-3 Configuration Change Control; CM-9; AC-5; AU-3",
+          "text": "Every change to the software SHALL be classified, tested, reviewed by a second person and recorded before it reaches the main line.",
+          "priority": "mandatory",
+          "verification": "analysis",
+          "status": "derived",
+          "satisfied_by": [
+            "REQ-3.1",
+            "REQ-3.2",
+            "REQ-3.3",
+            "REQ-3.4",
+            "REQ-3.5",
+            "REQ-3.6",
+            "REQ-3.7"
+          ]
+        },
+        {
+          "id": "REQ-0.5",
+          "standard": "NIST SP 800-53 Rev. 5; MIL-STD-498",
+          "section": "SA-5 System Documentation; SR-4 Provenance; DI-IPSC-81442",
+          "text": "Every delivered version SHALL be reproducible from an identified commit and SHALL be accompanied by its Software Version Description, its Software Bill of Materials and checksums of every delivered file.",
+          "priority": "mandatory",
+          "verification": "analysis",
+          "status": "derived",
+          "satisfied_by": [
+            "REQ-4.1",
+            "REQ-4.2",
+            "REQ-4.3",
+            "REQ-4.4",
+            "REQ-4.5",
+            "REQ-4.6"
+          ]
+        }
+      ]
+    },
     {
       "name": "Component inventory and supply chain",
       "standard": "NIST SP 800-53 Rev. 5 CM-8, SR-3, SR-4, SR-11; NIST SP 800-161 Rev. 1; NIST SP 800-218 PS.3.2, PW.4.1, RV.1; NTIA SBOM Minimum Elements; ECMA-424",
@@ -19,8 +106,14 @@
           "priority": "mandatory",
           "verification": "inspection",
           "evidence": [
-            {"file": "sbom.cdx.json", "pattern": "\"bomFormat\": \"CycloneDX\""},
-            {"file": "scripts/sbom.sh", "pattern": "--spec-version 1.6"}
+            {
+              "file": "sbom.cdx.json",
+              "pattern": "\"bomFormat\": \"CycloneDX\""
+            },
+            {
+              "file": "scripts/sbom.sh",
+              "pattern": "--spec-version 1.6"
+            }
           ]
         },
         {
@@ -31,9 +124,18 @@
           "priority": "mandatory",
           "verification": "inspection",
           "evidence": [
-            {"file": "sbom.cdx.json", "pattern": "\"purl\": \"pkg:cargo/"},
-            {"file": "sbom.cdx.json", "pattern": "\"dependencies\": ["},
-            {"file": "sbom.cdx.json", "pattern": "\"timestamp\": \""}
+            {
+              "file": "sbom.cdx.json",
+              "pattern": "\"purl\": \"pkg:cargo/"
+            },
+            {
+              "file": "sbom.cdx.json",
+              "pattern": "\"dependencies\": ["
+            },
+            {
+              "file": "sbom.cdx.json",
+              "pattern": "\"timestamp\": \""
+            }
           ]
         },
         {
@@ -44,8 +146,14 @@
           "priority": "mandatory",
           "verification": "test",
           "evidence": [
-            {"file": "scripts/sbom.sh", "pattern": "SOURCE_DATE_EPOCH=0"},
-            {"file": "scripts/sbom.sh", "pattern": "generator_version=\"0.5.10\""}
+            {
+              "file": "scripts/sbom.sh",
+              "pattern": "SOURCE_DATE_EPOCH=0"
+            },
+            {
+              "file": "scripts/sbom.sh",
+              "pattern": "generator_version=\"0.5.10\""
+            }
           ]
         },
         {
@@ -56,7 +164,10 @@
           "priority": "mandatory",
           "verification": "test",
           "evidence": [
-            {"file": ".github/workflows/security.yml", "pattern": "scripts/sbom.sh --check"}
+            {
+              "file": ".github/workflows/security.yml",
+              "pattern": "scripts/sbom.sh --check"
+            }
           ]
         },
         {
@@ -67,8 +178,14 @@
           "priority": "mandatory",
           "verification": "inspection",
           "evidence": [
-            {"file": "deny.toml", "pattern": "unknown-registry = \"deny\""},
-            {"file": "deny.toml", "pattern": "unknown-git = \"deny\""}
+            {
+              "file": "deny.toml",
+              "pattern": "unknown-registry = \"deny\""
+            },
+            {
+              "file": "deny.toml",
+              "pattern": "unknown-git = \"deny\""
+            }
           ]
         },
         {
@@ -79,7 +196,10 @@
           "priority": "mandatory",
           "verification": "inspection",
           "evidence": [
-            {"file": "Cargo.lock", "pattern": "checksum = \""}
+            {
+              "file": "Cargo.lock",
+              "pattern": "checksum = \""
+            }
           ]
         },
         {
@@ -90,21 +210,40 @@
           "priority": "mandatory",
           "verification": "test",
           "evidence": [
-            {"file": "deny.toml", "pattern": "db-urls = [\"https://github.com/rustsec/advisory-db\"]"},
-            {"file": "deny.toml", "pattern": "yanked = \"deny\""},
-            {"file": ".github/workflows/security.yml", "pattern": "- cron:"}
+            {
+              "file": "deny.toml",
+              "pattern": "db-urls = [\"https://github.com/rustsec/advisory-db\"]"
+            },
+            {
+              "file": "deny.toml",
+              "pattern": "yanked = \"deny\""
+            },
+            {
+              "file": ".github/workflows/security.yml",
+              "pattern": "- cron:"
+            }
           ]
         },
         {
           "id": "REQ-1.8",
           "standard": "NIST SP 800-53 Rev. 5",
           "section": "CA-5 Plan of Action and Milestones; RA-5(5)",
-          "text": "An advisory that is accepted rather than remediated SHALL be recorded with a written reason and a tracking issue, and SHALL be reviewed when the affected component is next updated.",
+          "text": "An advisory that is accepted rather than remediated SHALL be recorded in the dependency policy with a written reason and in the risk register with an owner and a review trigger, and SHALL be reviewed when the affected component is next updated.",
           "priority": "mandatory",
           "verification": "inspection",
           "evidence": [
-            {"file": "deny.toml", "pattern": "reason = \"transitive via winit/sctk-adwaita"},
-            {"file": "deny.toml", "pattern": "Tracked in GitHub issue #6"}
+            {
+              "file": "deny.toml",
+              "pattern": "plus a risk in"
+            },
+            {
+              "file": "docs/RISK-2026-001.json",
+              "pattern": "\"response\": \"accept\""
+            },
+            {
+              "file": "docs/RISK-2026-001.json",
+              "pattern": "\"review\": "
+            }
           ]
         },
         {
@@ -115,8 +254,14 @@
           "priority": "mandatory",
           "verification": "inspection",
           "evidence": [
-            {"file": "deny.toml", "pattern": "[licenses]"},
-            {"file": "deny.toml", "pattern": "confidence-threshold = 0.8"}
+            {
+              "file": "deny.toml",
+              "pattern": "[licenses]"
+            },
+            {
+              "file": "deny.toml",
+              "pattern": "confidence-threshold = 0.8"
+            }
           ]
         }
       ]
@@ -133,8 +278,14 @@
           "priority": "mandatory",
           "verification": "analysis",
           "evidence": [
-            {"file": "deny.toml", "pattern": "Charter: this application never has network capability"},
-            {"file": ".github/workflows/security.yml", "pattern": "std::net|TcpStream|TcpListener|UdpSocket"}
+            {
+              "file": "deny.toml",
+              "pattern": "Charter: this application never has network capability"
+            },
+            {
+              "file": ".github/workflows/security.yml",
+              "pattern": "std::net|TcpStream|TcpListener|UdpSocket"
+            }
           ]
         },
         {
@@ -145,10 +296,22 @@
           "priority": "mandatory",
           "verification": "test",
           "evidence": [
-            {"file": "deny.toml", "pattern": "crate = \"reqwest\""},
-            {"file": "deny.toml", "pattern": "crate = \"socket2\""},
-            {"file": "deny.toml", "pattern": "deny = [\"net\", \"full\"]"},
-            {"file": "deny.toml", "pattern": "\"WebSocket\", \"XmlHttpRequest\""}
+            {
+              "file": "deny.toml",
+              "pattern": "crate = \"reqwest\""
+            },
+            {
+              "file": "deny.toml",
+              "pattern": "crate = \"socket2\""
+            },
+            {
+              "file": "deny.toml",
+              "pattern": "deny = [\"net\", \"full\"]"
+            },
+            {
+              "file": "deny.toml",
+              "pattern": "\"WebSocket\", \"XmlHttpRequest\""
+            }
           ]
         },
         {
@@ -159,7 +322,10 @@
           "priority": "mandatory",
           "verification": "inspection",
           "evidence": [
-            {"file": "scripts/svd.sh", "pattern": "### 3.4 Adaptation data"}
+            {
+              "file": "scripts/svd.sh",
+              "pattern": "### 3.4 Adaptation data"
+            }
           ]
         }
       ]
@@ -176,7 +342,10 @@
           "priority": "mandatory",
           "verification": "inspection",
           "evidence": [
-            {"file": "docs/configuration-management.md", "pattern": "## Change classes"}
+            {
+              "file": "docs/configuration-management.md",
+              "pattern": "## Change classes"
+            }
           ]
         },
         {
@@ -188,7 +357,7 @@
           "verification": "inspection",
           "status": "open",
           "tracking": "#9",
-          "note": "Practised, not yet enforced. Requires a branch ruleset and CODEOWNERS on the main branch."
+          "note": "Practised, not yet enforced. CODEOWNERS is committed (.github/CODEOWNERS); the branch ruleset on main is a repository setting not yet enabled."
         },
         {
           "id": "REQ-3.3",
@@ -198,9 +367,18 @@
           "priority": "mandatory",
           "verification": "test",
           "evidence": [
-            {"file": ".github/workflows/pages.yml", "pattern": "cargo test --workspace"},
-            {"file": ".github/workflows/security.yml", "pattern": "EmbarkStudios/cargo-deny-action"},
-            {"file": ".github/workflows/security.yml", "pattern": "pull_request:"}
+            {
+              "file": ".github/workflows/pages.yml",
+              "pattern": "cargo test --workspace"
+            },
+            {
+              "file": ".github/workflows/security.yml",
+              "pattern": "EmbarkStudios/cargo-deny-action"
+            },
+            {
+              "file": ".github/workflows/security.yml",
+              "pattern": "pull_request:"
+            }
           ]
         },
         {
@@ -222,8 +400,14 @@
           "priority": "mandatory",
           "verification": "inspection",
           "evidence": [
-            {"file": "CHANGELOG.md", "pattern": "keepachangelog.com"},
-            {"file": "CHANGELOG.md", "pattern": "## [Unreleased]"}
+            {
+              "file": "CHANGELOG.md",
+              "pattern": "keepachangelog.com"
+            },
+            {
+              "file": "CHANGELOG.md",
+              "pattern": "## [Unreleased]"
+            }
           ]
         },
         {
@@ -234,8 +418,14 @@
           "priority": "mandatory",
           "verification": "inspection",
           "evidence": [
-            {"file": "docs/DM-2026-001.md", "pattern": "## Options considered"},
-            {"file": "docs/DM-2026-002.md", "pattern": "## Options considered"}
+            {
+              "file": "docs/DM-2026-001.md",
+              "pattern": "## Options considered"
+            },
+            {
+              "file": "docs/DM-2026-002.md",
+              "pattern": "## Options considered"
+            }
           ]
         },
         {
@@ -246,8 +436,14 @@
           "priority": "mandatory",
           "verification": "inspection",
           "evidence": [
-            {"file": "deny.toml", "pattern": "(GitHub issue #8)"},
-            {"file": "docs/DM-2026-001.md", "pattern": "issue #8"}
+            {
+              "file": "deny.toml",
+              "pattern": "(GitHub issue #8)"
+            },
+            {
+              "file": "docs/DM-2026-001.md",
+              "pattern": "issue #8"
+            }
           ]
         }
       ]
@@ -264,8 +460,14 @@
           "priority": "mandatory",
           "verification": "inspection",
           "evidence": [
-            {"file": "scripts/svd.sh", "pattern": "DI-IPSC-81442"},
-            {"file": "scripts/svd.sh", "pattern": "### 3.7 Possible problems and known errors"}
+            {
+              "file": "scripts/svd.sh",
+              "pattern": "DI-IPSC-81442"
+            },
+            {
+              "file": "scripts/svd.sh",
+              "pattern": "### 3.7 Possible problems and known errors"
+            }
           ]
         },
         {
@@ -276,7 +478,10 @@
           "priority": "mandatory",
           "verification": "analysis",
           "evidence": [
-            {"file": "scripts/svd.sh", "pattern": "commit=\"$(git rev-parse HEAD)\""}
+            {
+              "file": "scripts/svd.sh",
+              "pattern": "commit=\"$(git rev-parse HEAD)\""
+            }
           ]
         },
         {
@@ -287,8 +492,14 @@
           "priority": "mandatory",
           "verification": "test",
           "evidence": [
-            {"file": "scripts/svd.sh", "pattern": "--from) from=\"$2\""},
-            {"file": "scripts/svd.sh", "pattern": "Skipped release"}
+            {
+              "file": "scripts/svd.sh",
+              "pattern": "--from) from=\"$2\""
+            },
+            {
+              "file": "scripts/svd.sh",
+              "pattern": "Skipped release"
+            }
           ]
         },
         {
@@ -299,8 +510,14 @@
           "priority": "mandatory",
           "verification": "inspection",
           "evidence": [
-            {"file": "scripts/svd.sh", "pattern": "git ls-files -z"},
-            {"file": "scripts/svd.sh", "pattern": "sha256sum \"$f\""}
+            {
+              "file": "scripts/svd.sh",
+              "pattern": "git ls-files -z"
+            },
+            {
+              "file": "scripts/svd.sh",
+              "pattern": "sha256sum \"$f\""
+            }
           ]
         },
         {
@@ -318,12 +535,23 @@
           "id": "REQ-4.6",
           "standard": "NIST SP 800-53 Rev. 5",
           "section": "CM-8 System Component Inventory: installed instances",
-          "text": "The project SHOULD maintain a record of which version is installed at each recipient, so that a Software Version Description can be cut against the correct baseline.",
-          "priority": "recommended",
+          "text": "The project SHALL maintain a record of which version has been delivered to and installed at each recipient, so that a Software Version Description is cut against the correct baseline. A release is not a delivery and a delivery is not an installation.",
+          "priority": "mandatory",
           "verification": "inspection",
-          "status": "open",
-          "tracking": "#10",
-          "note": "Proposed as a deployments record read by scripts/svd.sh --site."
+          "evidence": [
+            {
+              "file": "deployments.toml",
+              "pattern": "[sites."
+            },
+            {
+              "file": "deployments.toml",
+              "pattern": "installed = "
+            },
+            {
+              "file": "scripts/svd.sh",
+              "pattern": "--site) site=\"$2\""
+            }
+          ]
         }
       ]
     }

@@ -42,7 +42,8 @@ Do not edit by hand; CI fails if this file does not match a fresh run.
 Each requirement maps to the file and line where it is implemented. Method is
 the verification method the requirement specifies. **PASS** means every
 evidence anchor was found. **OPEN** means the requirement is not yet
-implemented and names the tracking issue.
+implemented and names the tracking issue. An outcome requirement is
+**derived**: it passes when every mechanism requirement it names passes.
 
 Traceability chain: standard → requirement → file:line → method → this entry.
 
@@ -55,6 +56,24 @@ jq -c '.categories[].requirements[]' "$req" | while IFS= read -r r; do
   std="$(jq -r .standard <<<"$r")"
   method="$(jq -r .verification <<<"$r")"
   status="$(jq -r '.status // "evidence"' <<<"$r")"
+  if [[ "$status" == "derived" ]]; then
+    children="$(jq -r '.satisfied_by | join(", ")' <<<"$r")"
+    unknown="$(jq -r --slurpfile q "$req" '[$q[0].categories[].requirements[].id] as $ids | .satisfied_by[] | select(. as $c | $ids | index($c) | not)' <<<"$r")"
+    if [[ -n "$unknown" ]]; then
+      printf '| %s | %s | derived from %s | unknown child %s | %s | **FAIL** |\n' "$id" "$std" "$children" "$unknown" "$method"
+      echo "MISSING $id: satisfied_by names unknown requirement $unknown" >&2
+      continue
+    fi
+    open_children="$(jq -r --slurpfile q "$req" '.satisfied_by as $c | [$q[0].categories[].requirements[] | select(.id as $i | $c | index($i)) | select(.status == "open") | .id] | join(", ")' <<<"$r")"
+    if [[ -n "$open_children" ]]; then
+      printf '| %s | %s | derived from %s | blocked by %s | %s | **OPEN** |\n' "$id" "$std" "$children" "$open_children" "$method"
+      echo "OPEN $id" >&2
+    else
+      printf '| %s | %s | derived from %s | see those entries | %s | PASS |\n' "$id" "$std" "$children" "$method"
+      echo "PASS $id derived" >&2
+    fi
+    continue
+  fi
   if [[ "$status" == "open" ]]; then
     tracking="$(jq -r '.tracking // "none"' <<<"$r")"
     note="$(jq -r '.note // ""' <<<"$r")"

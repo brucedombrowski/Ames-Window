@@ -4,6 +4,7 @@
 #   scripts/svd.sh                       # changes since our previous tag
 #   scripts/svd.sh --from v1.0.0         # changes since the version the
 #                                        # recipient has installed
+#   scripts/svd.sh --site example-lab    # baseline looked up in deployments.toml
 #   scripts/svd.sh --from v1.0.0 out.md  # to a given path
 #
 # We may release more often than a given site installs. An SVD is written
@@ -36,14 +37,27 @@ prev_tag="$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)"
 sbom="sbom.cdx.json"
 
 from=""
+site=""
 out=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --from) from="$2"; shift 2 ;;
+    --site) site="$2"; shift 2 ;;
     -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
     *) out="$1"; shift ;;
   esac
 done
+if [[ -n "$site" ]]; then
+  if [[ -n "$from" ]]; then echo "use --site or --from, not both" >&2; exit 1; fi
+  installed="$(sed -n "/^\[sites\.$site\]/,/^\[/p" deployments.toml | sed -n 's/^installed = "\(.*\)"/\1/p' | head -1)"
+  if [[ -z "$installed" ]]; then
+    echo "--site: '$site' is not in deployments.toml" >&2; exit 1
+  fi
+  if [[ "$installed" == "none" ]]; then
+    echo "--site: nothing is installed at '$site' yet; this is a first delivery, run without --site" >&2; exit 1
+  fi
+  from="$installed"
+fi
 if [[ -n "$from" ]]; then
   if ! git rev-parse --verify --quiet "$from^{commit}" >/dev/null; then
     echo "--from: '$from' is not a known tag or commit" >&2; exit 1
@@ -52,7 +66,11 @@ if [[ -n "$from" ]]; then
     echo "--from: '$from' is not an ancestor of HEAD" >&2; exit 1
   fi
   baseline="$from"
-  baseline_label="$from (installed at the recipient)"
+  if [[ -n "$site" ]]; then
+    baseline_label="$from (installed at site '$site' per deployments.toml)"
+  else
+    baseline_label="$from (installed at the recipient)"
+  fi
   from_slug="$(echo "$from" | tr -c 'A-Za-z0-9.\n' '-')"
   default_out="target/svd/SVD-${from_slug}-to-${version}-${short}.md"
 else
@@ -194,10 +212,10 @@ if [[ -n "$baseline" ]]; then
     echo "Releases made between the two that were **not** installed at the"
     echo "recipient, whose changes are therefore included below:"
     echo
-    echo "| Skipped release | Date |"
-    echo "|---|---|"
+    echo "| Skipped release | Date | Its own SVD |"
+    echo "|---|---|---|"
     for t in $skipped; do
-      printf '| %s | %s |\n' "$t" "$(git log -1 --format=%cd --date=format:%Y-%m-%d "$t")"
+      printf '| %s | %s | docs/releases/SVD-%s.md |\n' "$t" "$(git log -1 --format=%cd --date=format:%Y-%m-%d "$t")" "$t"
     done
   fi
   range="$baseline..HEAD"
@@ -258,7 +276,20 @@ Accepted advisories, from the \`ignore\` list in \`deny.toml\`:
 | Advisory | Reason recorded |
 |---|---|
 EOF
-grep -E '^\s*\{ id = ' deny.toml | sed -E 's/.*id = "([^"]+)".*reason = "([^"]+)".*/| \1 | \2 |/' || true
+if grep -qE '^\s*\{ id = ' deny.toml; then
+  grep -E '^\s*\{ id = ' deny.toml | sed -E 's/.*id = "([^"]+)".*reason = "([^"]+)".*/| \1 | \2 |/'
+else
+  echo "| none | No advisory is accepted at this commit. |"
+fi
+
+cat <<EOF
+
+Open risks from the risk register (\`docs/RISK-2026-001.json\`, NIST SP 800-30):
+
+| Risk | Title | Response | Owner |
+|---|---|---|---|
+EOF
+jq -r '.risks[] | select(.status == "open") | "| \(.id) | \(.title) | \(.response) | \(.owner) |"' docs/RISK-2026-001.json
 
 cat <<EOF
 

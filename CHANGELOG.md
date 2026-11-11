@@ -9,6 +9,21 @@ No version has been released yet; everything is under Unreleased.
 ## [Unreleased]
 
 ### Added
+- `docs/RISK-2026-001.json` and its rendering `docs/RISK-2026-001.md`
+  (`scripts/risk.sh`): six risks in NIST SP 800-30 terms, each with controls
+  traced to requirements, residual rating, owner and review trigger.
+- Outcome requirements REQ-0.1 to REQ-0.5 in `docs/REQ-2026-001.json`, in
+  the form an acquirer writes them, each derived from the mechanisms that
+  satisfy it; `scripts/ver.sh` evaluates derived requirements.
+- `docs/facts.json` (`scripts/facts.sh`): every number documents quote,
+  generated and drift-checked.
+- `deployments.toml`: per-site delivered and installed versions;
+  `scripts/svd.sh --site` reads the baseline from it. REQ-4.6 now has evidence.
+- `.github/CODEOWNERS` naming reviewers for the policy files (#9).
+- `docs/start-here.md`: reading order for the compliance documents.
+- `docs/DM-2026-005.md` (dependencies not vendored; registry compromise
+  accepted as RISK-3) and `docs/DM-2026-006.md` (Wayland decorations
+  without a font parser).
 - `docs/standards.md`: register of governing standards, all openly
   published, with what each is used for and which do not apply and why.
 - `docs/REQ-2026-001.json`: requirements in the `systems-engineering`
@@ -33,8 +48,19 @@ No version has been released yet; everything is under Unreleased.
   weekly (#7).
 - `ames-app` marked `publish = false`.
 
+### Changed
+- `winit` declared with `default-features = false` and
+  `wayland-csd-adwaita-notitle` in place of `wayland-csd-adwaita`. Same
+  window frame on Wayland, no title text, three components fewer (#6,
+  DM-2026-006).
+
+### Removed
+- The `ignore` entry for RUSTSEC-2026-0192 in `deny.toml`; the component
+  is no longer in the tree.
+
 ### Security
-- RUSTSEC-2026-0192 (`ttf-parser` unmaintained, transitive via winit)
-  accepted with a recorded reason; tracked in #6.
+- RUSTSEC-2026-0192 (`ttf-parser` unmaintained, transitive via winit) was
+  accepted with a recorded reason, then resolved by removing the component.
+  RISK-2 closed; #6 closed.
 
 [Unreleased]: https://github.com/brucedombrowski/Ames-Window/commits/main

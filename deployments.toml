@@ -1,0 +1,17 @@
+# Deployments record: what has been delivered to and installed at each
+# recipient site. NIST SP 800-53 Rev. 5 CM-8 (installed instances).
+#
+# Updating this file after a delivery or an installation is a Standard change
+# under docs/configuration-management.md. A release is not a delivery and a
+# delivery is not an installation; the three are recorded separately.
+#
+#   scripts/svd.sh --site example-lab      # SVD cut against the site's installed version
+#
+# Versions are git tags. "none" means nothing has happened yet.
+
+[sites.example-lab]
+description = "Placeholder recipient used to exercise the delivery path. Replace or remove when a real site exists."
+delivered = "none"
+installed = "none"
+# installed_on = "YYYY-MM-DD"
+# delivered_on = "YYYY-MM-DD"

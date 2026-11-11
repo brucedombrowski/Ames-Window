@@ -28,6 +28,10 @@ jobs:
         run: scripts/sbom.sh --check
       - name: Verification matrix matches the code
         run: scripts/ver.sh --check
+      - name: Risk register rendering is current
+        run: scripts/risk.sh --check
+      - name: Quoted facts match the repository
+        run: scripts/facts.sh --check
       - name: Generate the Software Version Description
         run: scripts/svd.sh
       - uses: actions/upload-artifact@v4

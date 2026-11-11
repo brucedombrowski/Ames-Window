@@ -27,12 +27,10 @@ all-features = true
 db-path = "$CARGO_HOME/advisory-dbs"
 db-urls = ["https://github.com/rustsec/advisory-db"]
 yanked = "deny"
-ignore = [
-  # ttf-parser is unmaintained. It reaches us only through winit's default
-  # Wayland window decorations (sctk-adwaita -> ab_glyph) and parses fonts we
-  # ship, not user input. Tracked in GitHub issue #6.
-  { id = "RUSTSEC-2026-0192", reason = "transitive via winit/sctk-adwaita; no upstream fix yet" },
-]
+# Each entry: { id = "RUSTSEC-YYYY-NNNN", reason = "..." }, plus a risk in
+# docs/RISK-2026-001.json with an owner and a review trigger. Empty since
+# DM-2026-006 removed the component behind RUSTSEC-2026-0192.
+ignore = []
 
 [licenses]
 # Permissive licences only. Anything not listed fails the build, so a new

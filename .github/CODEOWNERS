@@ -1,0 +1,27 @@
+# Reviewers required for the files that define the policy itself.
+# Takes effect when the branch ruleset on main requires code-owner review
+# (issue #9). NIST SP 800-53 Rev. 5 CM-5, AC-5.
+#
+# One owner is a placeholder. A real deployment names at least two people so
+# that no change to the policy can be approved by its author.
+
+*                                   @brucedombrowski
+
+# Component set and policy
+Cargo.toml                          @brucedombrowski
+Cargo.lock                          @brucedombrowski
+crates/*/Cargo.toml                 @brucedombrowski
+deny.toml                           @brucedombrowski
+sbom.cdx.json                       @brucedombrowski
+
+# Automation
+.github/workflows/                  @brucedombrowski
+scripts/                            @brucedombrowski
+
+# Baseline documents
+docs/REQ-*.json                     @brucedombrowski
+docs/RISK-*.json                    @brucedombrowski
+docs/DM-*.md                        @brucedombrowski
+docs/configuration-management.md    @brucedombrowski
+docs/standards.md                   @brucedombrowski
+deployments.toml                    @brucedombrowski
