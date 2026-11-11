@@ -39,8 +39,8 @@ MAY are normative only in ALL CAPS. The requirements themselves are in
 
 ## Context only, not normative here
 
-These are cited by the process framework in the `systems-engineering`
-repository but are not freely available. They are listed so a reader knows
+These are cited by the process framework this repository follows but are not
+freely available. They are listed so a reader knows
 where the framework's vocabulary comes from. Nothing in this repository
 depends on their text.
 

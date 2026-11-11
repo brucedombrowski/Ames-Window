@@ -9,7 +9,7 @@
 # and a fixed string that must appear in it) or is marked "open" with a
 # tracking issue. This script locates every anchor, records file:line, and
 # fails if any anchor is missing, which is how a stale matrix is caught
-# (systems-engineering Phase 4; NIST SP 800-53 SA-11). The output depends only
+# (NIST SP 800-53 SA-11). The output depends only
 # on the REQ document and the files it points at, so it is reproducible and
 # is committed, with CI running --check.
 #
