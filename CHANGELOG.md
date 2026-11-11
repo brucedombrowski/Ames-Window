@@ -9,6 +9,13 @@ No version has been released yet; everything is under Unreleased.
 ## [Unreleased]
 
 ### Added
+- A Windows program. `ames-window-windows-x64.zip` holds a single
+  `ames-window.exe` that needs nothing installed, a README, its SBOM
+  (`sbom-windows.cdx.json`, 42 components) and the licences. It is built and
+  tested on Windows on every pull request (`.github/workflows/windows.yml`),
+  checked to import no networking library (`scripts/windows-imports.sh`),
+  scanned with ClamAV at release, and covered by `SHA256SUMS` and the
+  provenance attestation. Not code-signed.
 - `scripts/malware.sh` and REQ-1.10 (NIST SP 800-53 SI-3): ClamAV scans our
   source and every component's source on pushes to `main`, pull requests and
   weekly, and the built bundle before each deploy and each release (#23).

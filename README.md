@@ -36,7 +36,8 @@ order that introduces one idea at a time.
 | `.github/workflows/pages.yml` | CI: tests, builds the wasm, deploys to GitHub Pages. |
 | `.github/workflows/release.yml` | CI: on a `v*` tag, builds and seals the release. See [Releasing](#releasing). |
 | `.github/workflows/security.yml` | CI: SBOM and verification‑matrix drift checks, `cargo deny`, and a grep for socket code. Runs on pushes to `main`, pull requests, weekly, and by hand. |
-| `deny.toml`, `sbom-web.cdx.json`, `sbom.cdx.json` | Dependency policy, and the committed CycloneDX bills of materials for the browser build and for every target. See [Supply chain](#supply-chain). |
+| `deny.toml`, `sbom-web.cdx.json`, `sbom-windows.cdx.json`, `sbom.cdx.json` | Dependency policy, and the committed CycloneDX bills of materials for the browser build, the Windows program, and every target. See [Supply chain](#supply-chain). |
+| `packaging/windows/README.txt`, `.github/workflows/windows.yml`, `scripts/windows-imports.sh` | The Windows package: its README, the workflow that builds and tests it on Windows, and the check that the program imports no networking library. |
 | `scripts/no-network.sh`, `scripts/malware.sh` | Fail the build if the bundle names a network API; scan files for known malware with ClamAV. |
 | `scripts/sbom.sh`, `scripts/svd.sh`, `scripts/ver.sh` | Regenerate the SBOM, write a Software Version Description, regenerate the verification matrix. |
 | `scripts/release.sh` | Bump the version, close the changelog, commit and tag. |
@@ -136,6 +137,25 @@ submits the form. Until the link is followed the page sends nothing.
 Known gaps in the web build are tracked in issue #4: the wasm is about 1 MB
 unoptimised, and touch on a real phone browser has not been confirmed.
 
+### Windows
+
+A release carries `ames-window-windows-x64.zip`: one program,
+`ames-window.exe`, with a README, its SBOM and the licences. Unzip and
+double-click; there is nothing to install, and the C runtime is linked in so
+no redistributable is needed. It is not code-signed, so Windows SmartScreen
+warns the first time it runs; the package's README says what to do and how to
+check the download against the release's checksums.
+
+Every pull request also builds the same package on a Windows machine. It can
+be downloaded from the pull request's `CI` run as the
+`ames-window-windows-x64` artifact, to try a change before it is released.
+
+To build it yourself, on Windows with Rust and the Visual Studio build tools:
+
+```sh
+cargo build --release -p ames-app      # target\release\ames-window.exe
+```
+
 ### iOS
 
 ```sh
@@ -188,7 +208,7 @@ What has been verified, as of 2026‑11‑11 (details in issues #2 and #4):
 | macOS | `cargo test --workspace` passed on a Mac. The windowed app has not been reported run. |
 | iOS simulator | The app used to install, launch, then crash at once under iOS 27. It now declares a scene manifest and adopts the scene (`ios_scene.rs`); commit `64595f7` records it running on an iPhone 18 Pro simulator: splash, then the window and pen, animating. |
 | iPhone | Install previously failed for want of a provisioning profile. Not yet run. |
-| Windows | `cargo check --target x86_64-pc-windows-msvc` passes, on a Mac and in CI. Never linked or run natively; the browser build is what a Windows machine has run. |
+| Windows | Built and tested on Windows in CI on every pull request (`windows.yml`), and packaged as a single `ames-window.exe` that needs nothing installed. Whether anyone has yet run the program on a Windows desktop is not recorded here; the browser build is what a Windows machine has been seen to run. |
 
 ## Compliance documentation
 
@@ -233,6 +253,7 @@ dependency graph:
 | File | Covers | Components |
 |---|---|---|
 | [`sbom-web.cdx.json`](sbom-web.cdx.json) | The browser build, which is what a release ships. **This is the release SBOM.** See below for its exact scope. | 54 |
+| [`sbom-windows.cdx.json`](sbom-windows.cdx.json) | The Windows program, which a release also ships, on the same terms: what Cargo resolves for that target. | 42 |
 | [`sbom.cdx.json`](sbom.cdx.json) | Every target the source builds for at once: browser, iOS, macOS, Windows, Linux, Android. An audit view; no single build contains all of it. | 215 |
 
 What the browser file is, exactly: everything Cargo resolves for the browser
@@ -261,8 +282,8 @@ Three questions a security review asks, and what answers each:
 | Question | Checked by | When |
 |---|---|---|
 | Known vulnerabilities | `cargo deny check` against the RustSec advisory database; GitHub Dependabot alerts against the GitHub Advisory Database | Pushes to `main`, every pull request, weekly; Dependabot continuously |
-| Malware | `scripts/malware.sh` (ClamAV, signatures refreshed each run) over our source, every component's source, and the built bundle | Source and components: pushes to `main`, every pull request, weekly. Bundle: before every deploy and every release |
-| Network capability | Crate bans and feature denials in `deny.toml`; a grep of `crates/` and `web/`; `scripts/no-network.sh` on the built bundle; and in the browser, the page's Content-Security-Policy | Pushes to `main` and every pull request; on the built bundle before every deploy and release; the policy, every time the page runs |
+| Malware | `scripts/malware.sh` (ClamAV, signatures refreshed each run) over our source, every component's source, the built bundle, and the Windows package | Source and components: pushes to `main`, every pull request, weekly. Bundle: before every deploy and every release |
+| Network capability | Crate bans and feature denials in `deny.toml`; a grep of `crates/` and `web/`; `scripts/no-network.sh` on the built bundle; in the browser, the page's Content-Security-Policy; for the Windows program, `scripts/windows-imports.sh`, which fails if it imports a networking library | Pushes to `main` and every pull request; on the built bundle before every deploy and release; the policy, every time the page runs |
 
 Pushes to branches other than `main` are checked when they become a pull
 request.
@@ -341,6 +362,7 @@ takes the tag or commit the recipient has; the skipped releases are listed.
 
 | Looking for | It is here |
 |---|---|
+| The Windows program | `ames-window-windows-x64.zip` on a GitHub Release, or the `ames-window-windows-x64` artifact of any pull request's `CI` run. Its SBOM is [`sbom-windows.cdx.json`](sbom-windows.cdx.json), also inside the zip. |
 | The release SBOM | [`sbom-web.cdx.json`](sbom-web.cdx.json): the browser build, which is what a release ships. Will be attached to each GitHub Release; none has been cut yet. |
 | The SBOM for every platform | [`sbom.cdx.json`](sbom.cdx.json). An audit view; no single build contains all of it. |
 | Vulnerability scan results | The `Supply chain` workflow on the [Actions tab](https://github.com/brucedombrowski/Ames-Window/actions/workflows/security.yml), job `cargo deny`. Policy in [`deny.toml`](deny.toml). GitHub's own alerts are under Security, Dependabot, visible to maintainers only. |

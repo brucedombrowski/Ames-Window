@@ -27,7 +27,7 @@ recipient's document system, generated from the same templates.
 |---|---|---|
 | Source code | Every commit on `main` | Git history; review before merge |
 | Third-party components | `Cargo.lock` | Pinned versions and SHA-256 checksums; `deny.toml` |
-| Component inventory | `sbom.cdx.json` (every target) and `sbom-web.cdx.json` (the browser build) | Regenerated from the lockfile; CI fails on drift |
+| Component inventory | `sbom.cdx.json` (every target), `sbom-web.cdx.json` (the browser build) and `sbom-windows.cdx.json` (the Windows program) | Regenerated from the lockfile; CI fails on drift |
 | Dependency policy | `deny.toml` | Reviewed like code; changes to it are Normal or Major |
 | Requirements | `docs/REQ-2026-001.json` | Reviewed like code; a change is a Normal change |
 | Decisions | `docs/DM-*.md` and GitHub issues | Append-only in practice; a reversal is a new memorandum |

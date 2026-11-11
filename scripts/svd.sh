@@ -71,6 +71,7 @@ fi
 
 components="$(jq '.components | length' "$sbom")"
 web_components="$(jq '.components | length' sbom-web.cdx.json)"
+windows_components="$(jq '.components | length' sbom-windows.cdx.json)"
 licences="$(jq -r '[.components[].licenses[]? | (.expression // .license.id)] | unique | length' "$sbom")"
 
 {
@@ -119,7 +120,7 @@ reproducible from the commit identified in 1.1.
 | MIL-STD-498, Software Development and Documentation | US Department of Defense, 1994 |
 | DI-IPSC-81442, Software Version Description | Data Item Description under MIL-STD-498 |
 | CycloneDX Bill of Materials Specification 1.6 | https://cyclonedx.org/specification/overview/ |
-| Software Bills of Materials for this version | \`sbom-web.cdx.json\` (the browser build) and \`sbom.cdx.json\` (every target) in the repository at the build commit |
+| Software Bills of Materials for this version | \`sbom-web.cdx.json\` (the browser build), \`sbom-windows.cdx.json\` (the Windows program) and \`sbom.cdx.json\` (every target) in the repository at the build commit |
 | Dependency policy | \`deny.toml\` in the repository at the build commit |
 | Project README (build and installation) | \`README.md\` |
 | Source code tour | \`docs/tour.md\` |
@@ -137,7 +138,9 @@ SBOM exist; the others are produced at release time.
 |---|---|
 | Source archive | The repository at commit \`$short\`, as a git tag or archive |
 | \`ames-window-web.zip\` | The WebAssembly build and its host page, ready to serve from any static web server |
+| \`ames-window-windows-x64.zip\` | The Windows program \`ames-window.exe\`, 64-bit, with its README, SBOM and licences. Needs nothing installed |
 | \`sbom-web.cdx.json\` | CycloneDX 1.6 Software Bill of Materials for the browser build behind \`ames-window-web.zip\`: $web_components components. See 3.2.2 for what it does and does not cover |
+| \`sbom-windows.cdx.json\` | The same for the Windows program: $windows_components components |
 | \`sbom.cdx.json\` | The same for every target the source builds for (browser, iOS, macOS, Windows, Linux, Android): $components components. No single build contains all of them |
 | \`SHA256SUMS\` | SHA-256 checksum of every released file |
 | \`$(basename "$out")\` | This document |
@@ -147,7 +150,7 @@ Checksums of the materials that exist at the build commit:
 | File | SHA-256 |
 |---|---|
 EOF
-for f in Cargo.lock sbom.cdx.json sbom-web.cdx.json deny.toml; do
+for f in Cargo.lock sbom.cdx.json sbom-web.cdx.json sbom-windows.cdx.json deny.toml; do
   printf '| `%s` | `%s` |\n' "$f" "$(sha256sum "$f" | cut -d' ' -f1)"
 done
 
@@ -247,7 +250,7 @@ variables or run-time parameters.
 |---|---|
 | \`README.md\` | Build, run and deployment instructions for every platform |
 | \`docs/tour.md\` | Guided reading order through the source code |
-| \`sbom-web.cdx.json\`, \`sbom.cdx.json\` | Machine-readable component inventories: the browser build, and every target |
+| \`sbom-web.cdx.json\`, \`sbom-windows.cdx.json\`, \`sbom.cdx.json\` | Machine-readable component inventories: the browser build, the Windows program, and every target |
 | \`deny.toml\` | Machine-enforced dependency policy |
 | GitHub issues | Record of decisions and known problems |
 
@@ -260,11 +263,15 @@ web server over HTTPS. No server-side code is required. Open \`index.html\`.
 simulator or \`scripts/ios.sh device\` for a signed device build. The script
 compiles with Cargo, assembles the \`.app\` bundle and installs it.
 
-**Desktop.** Run \`cargo run -p ames-app --release\`, or run the prebuilt
-\`ames-window\` executable for the platform.
+**Windows.** Unzip \`ames-window-windows-x64.zip\` and run
+\`ames-window.exe\`. Nothing is installed. The program is not code-signed, so
+Windows SmartScreen warns on first run; the README inside the zip explains.
+
+**Other desktops.** Run \`cargo run -p ames-app --release\`.
 
 **Verification.** Compare each file's SHA-256 against \`SHA256SUMS\` before
-installation. The SBOM for the installed web bundle is \`sbom-web.cdx.json\`.
+installation. The SBOM for the web bundle is \`sbom-web.cdx.json\`, and for
+the Windows program \`sbom-windows.cdx.json\`.
 
 **Removal.** Delete the installed files or the app bundle. The software writes
 nothing outside its own installation directory.

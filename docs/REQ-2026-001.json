@@ -21,7 +21,8 @@
           "evidence": [
             {"file": "sbom.cdx.json", "pattern": "\"bomFormat\": \"CycloneDX\""},
             {"file": "scripts/sbom.sh", "pattern": "--spec-version 1.6"},
-            {"file": "sbom-web.cdx.json", "pattern": "\"value\": \"wasm32-unknown-unknown\""}
+            {"file": "sbom-web.cdx.json", "pattern": "\"value\": \"wasm32-unknown-unknown\""},
+            {"file": "sbom-windows.cdx.json", "pattern": "\"value\": \"x86_64-pc-windows-msvc\""}
           ]
         },
         {
@@ -134,7 +135,8 @@
             {"file": "scripts/malware.sh", "pattern": "clamscan --recursive --infected"},
             {"file": ".github/workflows/security.yml", "pattern": "scripts/malware.sh . ~/.cargo/registry/src"},
             {"file": ".github/workflows/pages.yml", "pattern": "scripts/malware.sh web/dist"},
-            {"file": ".github/workflows/release.yml", "pattern": "scripts/malware.sh web/dist"}
+            {"file": ".github/workflows/release.yml", "pattern": "scripts/malware.sh web/dist"},
+            {"file": ".github/workflows/release.yml", "pattern": "scripts/malware.sh ames-window-windows-x64"}
           ]
         }
       ]
@@ -157,7 +159,8 @@
             {"file": ".github/workflows/ci.yml", "pattern": "scripts/no-network.sh web/dist"},
             {"file": ".github/workflows/pages.yml", "pattern": "scripts/no-network.sh web/dist"},
             {"file": "web/index.html", "pattern": "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; connect-src 'self'; worker-src blob:; base-uri 'none'; form-action 'none'\">"},
-            {"file": ".github/workflows/release.yml", "pattern": "scripts/no-network.sh web/dist"}
+            {"file": ".github/workflows/release.yml", "pattern": "scripts/no-network.sh web/dist"},
+            {"file": ".github/workflows/windows.yml", "pattern": "scripts/windows-imports.sh target/release/ames-window.exe"}
           ]
         },
         {

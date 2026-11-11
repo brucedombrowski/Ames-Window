@@ -21,7 +21,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-          targets: wasm32-unknown-unknown, x86_64-pc-windows-msvc
+          targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
       - name: Format
         run: cargo fmt --all --check
@@ -35,5 +35,8 @@ jobs:
         run: scripts/web.sh
       - name: The bundle names no network API
         run: scripts/no-network.sh web/dist
-      - name: The Windows build compiles
-        run: cargo check -p ames-app --target x86_64-pc-windows-msvc
+
+  # The Windows program, built and tested on Windows. The package it produces
+  # can be downloaded from the run, for trying a change before it is released.
+  windows:
+    uses: ./.github/workflows/windows.yml
