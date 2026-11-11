@@ -2,6 +2,10 @@
 
 **Try it in the browser:** https://brucedombrowski.github.io/Ames-Window/
 
+**Download:** the [latest release](https://github.com/brucedombrowski/Ames-Window/releases/latest)
+has a Windows program (`ames-window-windows-x64.zip`: unzip and run, nothing
+to install) and the web bundle, with their SBOMs and checksums.
+
 **The inspiration:** [this YouTube short](https://www.youtube.com/shorts/LdZxRlyM30o)
 of the demonstration, which the app sets out to reproduce.
 
@@ -213,7 +217,7 @@ What has been verified, as of 2026‑11‑11 (details in issues #2 and #4):
 | macOS | `cargo test --workspace` passed on a Mac. The windowed app has not been reported run. |
 | iOS simulator | The app used to install, launch, then crash at once under iOS 27. It now declares a scene manifest and adopts the scene (`ios_scene.rs`); commit `64595f7` records it running on an iPhone 18 Pro simulator: splash, then the window and pen, animating. |
 | iPhone | Install previously failed for want of a provisioning profile. Not yet run. |
-| Windows | Built and tested on Windows in CI on every pull request (`windows.yml`), and packaged as a single `ames-window.exe` that needs nothing installed. Whether anyone has yet run the program on a Windows desktop is not recorded here; the browser build is what a Windows machine has been seen to run. |
+| Windows | Built and tested on Windows in CI on every pull request (`windows.yml`), where the program is also started and seen to stay up, and released in v0.0.1 as a single `ames-window.exe` that needs nothing installed. Nobody has yet reported what it looks like on a Windows desktop. |
 
 ## Compliance documentation
 
@@ -375,13 +379,13 @@ takes the tag or commit the recipient has; the skipped releases are listed.
 
 | Looking for | It is here |
 |---|---|
-| The Windows program | `ames-window-windows-x64.zip` on a GitHub Release (none cut yet). Its SBOM is [`sbom-windows.cdx.json`](sbom-windows.cdx.json), and the same file, byte for byte, is inside the zip. An unscanned build of any pull request is the `ames-window-windows-x64` artifact of its `CI` run. |
-| The release SBOM | [`sbom-web.cdx.json`](sbom-web.cdx.json): the browser build, which is what a release ships. Will be attached to each GitHub Release; none has been cut yet. |
+| The Windows program | `ames-window-windows-x64.zip` on the [latest release](https://github.com/brucedombrowski/Ames-Window/releases/latest). Its SBOM is [`sbom-windows.cdx.json`](sbom-windows.cdx.json), and the same file, byte for byte, is inside the zip. An unscanned build of any pull request is the `ames-window-windows-x64` artifact of its `CI` run. |
+| The release SBOMs | [`sbom-web.cdx.json`](sbom-web.cdx.json) for the web bundle and [`sbom-windows.cdx.json`](sbom-windows.cdx.json) for the Windows program. Both are attached to each GitHub Release and listed in its `SHA256SUMS`. |
 | The SBOM for every platform | [`sbom.cdx.json`](sbom.cdx.json). An audit view; no single build contains all of it. |
 | Vulnerability scan results | The `Supply chain` workflow on the [Actions tab](https://github.com/brucedombrowski/Ames-Window/actions/workflows/security.yml), job `cargo deny`. Policy in [`deny.toml`](deny.toml). GitHub's own alerts are under Security, Dependabot, visible to maintainers only. |
 | Licence check results | The same `cargo deny` job; the allowlist is in [`deny.toml`](deny.toml). |
-| The Software Version Description | Generated on every `Supply chain` run and downloadable from that run as the `sbom-and-svd` artifact (needs a signed-in GitHub account; artifacts expire). Will be attached to each GitHub Release. |
-| Releases | The [Releases page](https://github.com/brucedombrowski/Ames-Window/releases). **No release has been cut yet.** When one is, it carries the web bundle, both SBOMs, the SVD and `SHA256SUMS`, and GitHub holds a signed provenance attestation tying them to a commit and a build, checked with `gh attestation verify`. |
+| The Software Version Description | Generated on every `Supply chain` run and downloadable from that run as the `sbom-and-svd` artifact (needs a signed-in GitHub account; artifacts expire). Attached to each GitHub Release as `SVD-vX.Y.Z.md`. |
+| Releases | The [Releases page](https://github.com/brucedombrowski/Ames-Window/releases). A release carries the web bundle, the Windows package, three SBOMs, the SVD and `SHA256SUMS`, and GitHub holds a signed provenance attestation tying them to a commit and a build, checked with `gh attestation verify`. The first, v0.0.1, was cut on 2026‑11‑11. |
 | Requirements and their evidence | [`docs/REQ-2026-001.json`](docs/REQ-2026-001.json) and [`docs/VER-2026-001.md`](docs/VER-2026-001.md). |
 | Decisions and why | `docs/DM-2026-*.md`. |
 | Why the SBOM timestamp says 1970 | Deliberate: a fixed timestamp makes the file reproducible byte for byte, so CI can prove it matches `Cargo.lock`. When it was really generated is the commit date, and for a release the attestation ([`docs/DM-2026-002.md`](docs/DM-2026-002.md), Consequences). |
@@ -389,24 +393,31 @@ takes the tag or commit the recipient has; the skipped releases are listed.
 
 ## Releasing
 
-No version has been released yet. The procedure, from
+The first release, v0.0.1, was cut on 2026‑11‑11. The procedure, from
 [`docs/configuration-management.md`](docs/configuration-management.md):
 
-1. The release authority approves the version (a Major change).
+1. The Human, who is the release authority, directs the release and its
+   version (a Major change).
 2. On a clean `main`: `scripts/release.sh vX.Y.Z` bumps `Cargo.toml`,
    `Cargo.lock` and `ios/Info.plist`, turns the changelog's Unreleased
-   section into the version's section, commits and tags. Add `--dry-run` to
-   see the diff first.
+   section into the version's section, regenerates the SBOMs and the
+   verification matrix, commits and tags. Add `--dry-run` to see the diff
+   first.
 3. `git push origin main vX.Y.Z`.
-4. The `Release` workflow tests, checks the SBOM and verification matrix,
-   builds `ames-window-web.zip`, generates the Software Version Description
-   at the tagged commit, writes `SHA256SUMS`, signs a build‑provenance
-   attestation, and creates the GitHub Release carrying all of them. It then
-   opens a pull request that files the SVD under `docs/releases/`.
-5. After a delivery or installation, update `deployments.toml` (issue #10).
+4. The `Release` workflow builds and tests the Windows program on Windows;
+   tests, checks the SBOMs and verification matrix, builds the web bundle;
+   runs the network check on the bundle and the malware scan on both
+   packages; generates the Software Version Description at the tagged
+   commit; writes `SHA256SUMS`; signs a build‑provenance attestation; and
+   creates the GitHub Release carrying all of them.
+5. Its last step pushes a branch, `release/svd-vX.Y.Z`, that files the SVD
+   under `docs/releases/`. This repository does not let Actions open pull
+   requests, so the pull request for that branch is opened by hand.
+6. After a delivery or installation, update `deployments.toml` (issue #10).
 
-The workflow has not run yet, because there is no tag; the dry run of the
-script has.
+Checked after v0.0.1 was published, from a fresh download: every file
+matched `SHA256SUMS`, the attestations verified, and ClamAV had found nothing
+in either package.
 
 ## Why it works
 

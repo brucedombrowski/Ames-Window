@@ -82,13 +82,16 @@ s = open(p).read()
 s = s.replace("No version has been released yet; everything is under Unreleased.\n", "", 1)
 s = s.replace("## [Unreleased]\n", f"## [Unreleased]\n\n## [{version}] - {today}\n", 1)
 repo = "https://github.com/brucedombrowski/Ames-Window"
-s = re.sub(r"\n\[Unreleased\]: .*\n?$", "\n", s)
-s = s.rstrip("\n") + "\n\n"
+# The link references at the foot: Unreleased now compares from this
+# version, this version gets its line, and the older versions' lines follow.
+older = re.findall(r"^\[\d[^\]]*\]: .*$", s, flags=re.M)
+s = re.sub(r"^\[[^\]]+\]: .*\n?", "", s, flags=re.M).rstrip("\n") + "\n\n"
 s += f"[Unreleased]: {repo}/compare/v{version}...HEAD\n"
 if prev:
     s += f"[{version}]: {repo}/compare/{prev}...v{version}\n"
 else:
     s += f"[{version}]: {repo}/releases/tag/v{version}\n"
+s += "".join(line + "\n" for line in older)
 open(p, "w").write(s)
 PY
 }
@@ -102,6 +105,14 @@ regenerate() {
   scripts/ver.sh >/dev/null
 }
 
+# Between here and the commit the script changes files. If a step fails, say
+# how to get back; nothing has been committed or tagged at that point.
+recover() {
+  echo >&2
+  echo "release.sh failed before committing. Nothing was committed, tagged or pushed." >&2
+  echo "To discard what it changed:  git checkout -- . && git clean -fd docs/releases" >&2
+}
+
 if [[ -n "$dry" ]]; then
   tmp="$(mktemp -d)"
   trap 'rm -rf "$tmp"' EXIT
@@ -113,9 +124,11 @@ if [[ -n "$dry" ]]; then
   exit 0
 fi
 
+trap recover ERR
 bump
 changelog
 regenerate
+trap - ERR
 git add Cargo.toml Cargo.lock ios/Info.plist CHANGELOG.md sbom.cdx.json sbom-*.cdx.json docs/VER-2026-001.md
 git commit -q -m "Release $tag" -m "Version $version. Changelog section closed; see CHANGELOG.md."
 git tag -a "$tag" -m "Ames Window $tag"

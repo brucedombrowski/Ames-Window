@@ -7,6 +7,19 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+- After the first release: the README links the latest release for download
+  and describes the release procedure as it ran; REQ-4.5 (releases built by
+  automation, with checksums and provenance) now carries evidence instead of
+  an open status; the CM plan's release procedure is no longer "planned".
+
+### Fixed
+- `scripts/release.sh` left a stale `[Unreleased]` link reference from the
+  second release on; it now rebuilds the references. It prints how to
+  recover if a step fails before the commit.
+- `scripts/svd.sh` took any tag for a release; only `v*` tags count now
+  (#37).
+
 ## [0.0.1] - 2026-11-11
 
 ### Added
