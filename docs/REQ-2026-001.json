@@ -108,8 +108,9 @@
           "priority": "mandatory",
           "verification": "inspection",
           "evidence": [
-            {"file": "deny.toml", "pattern": "reason = \"transitive via winit/sctk-adwaita"},
-            {"file": "deny.toml", "pattern": "Tracked in GitHub issue #6"}
+            {"file": "deny.toml", "pattern": "Each entry: { id = \"RUSTSEC-YYYY-NNNN\", reason = \"...\" }"},
+            {"file": "deny.toml", "pattern": "ignore = []"},
+            {"file": "docs/DM-2026-006.md", "pattern": "The `ignore` entry for RUSTSEC-2026-0192 is removed"}
           ]
         },
         {

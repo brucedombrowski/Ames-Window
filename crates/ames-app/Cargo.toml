@@ -16,7 +16,10 @@ path = "src/main.rs"
 [dependencies]
 ames-core = { path = "../ames-core" }
 tiny-skia = "0.12"
-winit = "0.30"
+# Default features minus wayland-csd-adwaita, which pulls a font parser
+# (ab_glyph -> ttf-parser, RUSTSEC-2026-0192) only to draw the window title on
+# Wayland. The -notitle variant draws the same decorations without text.
+winit = { version = "0.30", default-features = false, features = ["rwh_06", "x11", "wayland", "wayland-dlopen", "wayland-csd-adwaita-notitle"] }
 
 # iOS only: putting winit's window onto a UIScene. Pinned to the same objc2
 # versions winit 0.30 links, so there is one UIKit binding in the graph.

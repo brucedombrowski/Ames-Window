@@ -288,12 +288,17 @@ nothing outside its own installation directory.
 
 ### 3.7 Possible problems and known errors
 
-Accepted advisories, from the \`ignore\` list in \`deny.toml\`:
-
-| Advisory | Reason recorded |
-|---|---|
 EOF
-grep -E '^\s*\{ id = ' deny.toml | sed -E 's/.*id = "([^"]+)".*reason = "([^"]+)".*/| \1 | \2 |/' || true
+accepted="$(grep -E '^[[:space:]]*\{ id = ' deny.toml | sed -E 's/.*id = "([^"]+)".*reason = "([^"]+)".*/| \1 | \2 |/' || true)"
+if [[ -n "$accepted" ]]; then
+  echo "Accepted advisories, from the \`ignore\` list in \`deny.toml\`:"
+  echo
+  echo "| Advisory | Reason recorded |"
+  echo "|---|---|"
+  echo "$accepted"
+else
+  echo "No advisory is accepted: the \`ignore\` list in \`deny.toml\` is empty."
+fi
 
 cat <<EOF
 
