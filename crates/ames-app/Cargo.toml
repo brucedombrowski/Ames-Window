@@ -1,6 +1,8 @@
 [package]
 name = "ames-app"
 description = "The Ames window illusion as a pure-Rust iOS (and desktop) application."
+# An application, never published to crates.io.
+publish = false
 version.workspace = true
 edition.workspace = true
 license.workspace = true

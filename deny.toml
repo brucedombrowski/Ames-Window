@@ -1,0 +1,71 @@
+# Dependency policy, enforced by `cargo deny check` locally and in CI.
+#
+#   cargo install cargo-deny --locked
+#   cargo deny check
+#
+# Four checks run: known vulnerabilities (advisories), licence allowlist,
+# duplicate or wildcard versions (bans), and where crates may come from
+# (sources). The SBOM at sbom.cdx.json records what we ship; this file says
+# what we are willing to ship.
+
+[graph]
+# Check every target the app builds for, not just the host.
+targets = [
+  "aarch64-apple-ios",
+  "aarch64-apple-ios-sim",
+  "aarch64-apple-darwin",
+  "x86_64-apple-darwin",
+  "x86_64-pc-windows-msvc",
+  "x86_64-unknown-linux-gnu",
+  "wasm32-unknown-unknown",
+]
+all-features = true
+
+[advisories]
+# RustSec advisory database. Fails on any vulnerability, unmaintained crate
+# or yanked version. Add an id to `ignore` only with a comment saying why.
+db-path = "$CARGO_HOME/advisory-dbs"
+db-urls = ["https://github.com/rustsec/advisory-db"]
+yanked = "deny"
+ignore = [
+  # ttf-parser is unmaintained. It reaches us only through winit's default
+  # Wayland window decorations (sctk-adwaita -> ab_glyph) and parses fonts we
+  # ship, not user input. Tracked in GitHub issue #6.
+  { id = "RUSTSEC-2026-0192", reason = "transitive via winit/sctk-adwaita; no upstream fix yet" },
+]
+
+[licenses]
+# Permissive licences only. Anything not listed fails the build, so a new
+# dependency under a copyleft or unknown licence is caught at review time.
+allow = [
+  "0BSD",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "MIT",
+  "Unicode-3.0",
+  "Unlicense",
+  "Zlib",
+]
+confidence-threshold = 0.8
+
+[bans]
+# Several versions of one crate bloat the binary and widen the audit surface,
+# but are usually transitive and not ours to fix, so warn rather than fail.
+multiple-versions = "warn"
+# A wildcard version means "whatever is newest", which defeats the lockfile
+# review process.
+wildcards = "deny"
+# Workspace members reference each other by path, with no version. That is
+# not a registry wildcard, so it is allowed.
+allow-wildcard-paths = true
+highlight = "all"
+
+[sources]
+# Only crates.io. A dependency pulled from an arbitrary git URL or a second
+# registry is exactly the kind of thing a security review wants to see.
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

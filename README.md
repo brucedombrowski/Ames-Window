@@ -75,6 +75,26 @@ scripts/ios.sh device     # needs CODESIGN_IDENTITY, see the script header
 The script compiles the binary with Cargo, copies it next to `ios/Info.plist`
 inside an `.app` folder, and hands that to `simctl`. That is the whole pipeline.
 
+## Supply chain
+
+`sbom.cdx.json` is a [CycloneDX](https://cyclonedx.org) 1.6 Software Bill of
+Materials listing every crate the binary depends on, for every target, with
+versions, licences and the dependency graph. It is generated from `Cargo.lock`
+by `scripts/sbom.sh` and is byte-for-byte reproducible, so it lives in git and
+the `Supply chain` workflow fails if it ever drifts from the lockfile.
+
+`deny.toml` is the policy: `cargo deny check` fails on known vulnerabilities,
+licences outside the permissive allowlist, wildcard versions, or crates from
+anywhere other than crates.io. The same workflow runs it on every push and
+weekly, so new advisories surface without a code change.
+
+```sh
+cargo install cargo-cyclonedx --version 0.5.10 --locked
+cargo install cargo-deny --locked
+scripts/sbom.sh           # regenerate after changing dependencies
+cargo deny check          # vulnerabilities, licences, bans, sources
+```
+
 ## Why it works
 
 The brain assumes the taller edge of the trapezoid is nearer, because that is
