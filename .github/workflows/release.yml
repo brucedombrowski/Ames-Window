@@ -1,0 +1,68 @@
+name: Release
+
+# Runs when a release tag is pushed (scripts/release.sh creates it). Rebuilds
+# from the tag, re-verifies every generated document against the tag, and
+# publishes the GitHub Release with the web bundle, SBOM, SVD, checksums and
+# a signed build provenance attestation. REQ-4.5; NIST SP 800-218 PS.3.1,
+# SP 800-53 SR-4, SI-7(1); FIPS 180-4.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # the SVD needs tags and history
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - name: Install pinned tools
+        run: |
+          cargo install wasm-bindgen-cli --version 0.2.130 --locked
+          cargo install cargo-cyclonedx --version 0.5.10 --locked
+      - name: Tests
+        run: cargo test --workspace
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+          arguments: --all-features
+      - name: Every generated document matches the tag
+        run: |
+          scripts/sbom.sh --check
+          scripts/ver.sh --check
+          scripts/risk.sh --check
+          scripts/facts.sh --check
+          scripts/svd.sh --release "$GITHUB_REF_NAME" --check
+      - name: Build the web bundle
+        run: scripts/web.sh
+      - name: Assemble release files
+        run: |
+          mkdir -p dist
+          (cd web/dist && zip -qr "../../dist/ames-window-web-$GITHUB_REF_NAME.zip" .)
+          cp sbom.cdx.json "dist/sbom-$GITHUB_REF_NAME.cdx.json"
+          cp "docs/releases/SVD-$GITHUB_REF_NAME.md" dist/
+          (cd dist && sha256sum * > SHA256SUMS)
+          ls -l dist
+      - name: Sign build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*
+      - name: Release notes from the changelog
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          awk -v v="$v" '$0 ~ "^## \\["v"\\]" {p=1; next} /^## \[/ {p=0} p' CHANGELOG.md > notes.md
+          printf '\nSoftware Version Description: `SVD-%s.md`. Verify files against `SHA256SUMS`; provenance is attested (`gh attestation verify`).\n' "$GITHUB_REF_NAME" >> notes.md
+      - name: Publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "Ames Window $GITHUB_REF_NAME" --notes-file notes.md --verify-tag

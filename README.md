@@ -133,6 +133,21 @@ scripts/svd.sh --site example-lab   # ...baseline looked up in deployments.toml
 scripts/ver.sh && scripts/risk.sh && scripts/facts.sh   # regenerate the checked documents
 ```
 
+### Release and delivery
+
+A release is not a delivery. `scripts/release.sh vX.Y.Z` prepares a release
+on `main`: version bump, every check, every generated document, changelog,
+the release SVD in `docs/releases/`, a commit and an annotated tag. It does
+not push; the release authority reviews and pushes, and the `Release`
+workflow publishes the GitHub Release with the web bundle, SBOM, SVD,
+`SHA256SUMS` and a signed provenance attestation.
+
+`scripts/deliver.sh --to <site> --version vX.Y.Z` hands a release to a
+recipient: a Software Version Description cut from that site's installed
+version, the SVDs of releases it skipped, the assets, checksums and a
+delivery record. `--installed` records the installation afterwards. Both
+update `deployments.toml`.
+
 An SVD is written for whoever receives the software. If a site is on 1.0 and
 is being given 1.4, its "changes installed" section must cover 1.0 to 1.4,
 including the 1.1 through 1.3 releases that site never installed. `--from`

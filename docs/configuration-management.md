@@ -31,8 +31,8 @@ recipient's document system, generated from the same templates.
 | Requirements | `docs/REQ-2026-001.json` | Reviewed like code; a change is a Normal change |
 | Decisions | `docs/DM-*.md` and GitHub issues | Append-only in practice; a reversal is a new memorandum |
 | Verification | `docs/VER-2026-001.md` | Generated from REQ anchors; CI fails on drift |
-| Release | Git tag `vX.Y.Z` and its GitHub Release | Built by automation (issue #10) |
-| Installed instances | `deployments.toml` (planned, issue #10) | Updated after each installation as a Standard change |
+| Release | Git tag `vX.Y.Z` and its GitHub Release; `docs/releases/SVD-vX.Y.Z.md` | `scripts/release.sh`, then the `Release` workflow |
+| Deliveries and installed instances | `deployments.toml` | `scripts/deliver.sh`; each update a Standard change |
 
 ## Change classes
 
@@ -63,8 +63,8 @@ Misclassifying a change is itself a finding, recorded as an issue.
 3. **Human review.** A second person reads the change, confirms the class and
    approves. The author cannot approve their own work (AC-5).
 4. **Merge.** The change joins `main`. History is permanent.
-5. **Release.** A Major change: the release authority tags a version, and
-   automation builds and seals the release package (issue #10).
+5. **Release.** A Major change: the release authority runs `scripts/release.sh`,
+   reviews, and pushes the tag; automation builds and seals the package.
 
 ## What the tools enforce and what people own
 
@@ -91,15 +91,39 @@ Misclassifying a change is itself a finding, recorded as an issue.
 | Every delivery | GitHub Release: executable, SBOM, SVD, `SHA256SUMS`, attestation |
 | Changelog | `CHANGELOG.md`, Keep a Changelog format |
 
-## Release procedure (planned, issue #10)
+## Release, delivery and installation
 
-1. Release authority approves the version as a Major change.
-2. Move `CHANGELOG.md` Unreleased items under the new version.
-3. Tag `vX.Y.Z` on `main`.
-4. The release workflow builds the web bundle, regenerates the SBOM, runs
-   `scripts/svd.sh --from <recipient baseline>`, writes `SHA256SUMS`, signs a
-   provenance attestation and attaches everything to the GitHub Release.
-5. After installation at a recipient, update `deployments.toml` (Standard).
+Three events, three records. A release is not a delivery, and a delivery is
+not an installation.
+
+### Release (Major change)
+
+1. The release authority approves the version number.
+2. On `main` with a clean tree: `scripts/release.sh vX.Y.Z`. It sets the
+   version, runs every check, regenerates the SBOM, verification matrix, risk
+   rendering and facts, moves the changelog's Unreleased items under the new
+   heading, generates `docs/releases/SVD-vX.Y.Z.md` in release mode, commits
+   "Release vX.Y.Z" and creates an annotated tag. It does not push.
+3. The release authority reviews the commit and pushes the branch and tag.
+4. The `Release` workflow rebuilds from the tag, re-verifies every generated
+   document against it, builds the web bundle, writes `SHA256SUMS`, signs a
+   provenance attestation and publishes the GitHub Release with the bundle,
+   SBOM, SVD and checksums.
+
+### Delivery (Normal change)
+
+`scripts/deliver.sh --to <site> --version vX.Y.Z`. Reads the site's installed
+version from `deployments.toml`, generates the spanning SVD from that baseline
+at the release tag (or uses the release's own SVD for a first delivery),
+collects the per-release SVDs the site skipped, adds the release assets,
+writes `SHA256SUMS` and `DELIVERY.md`, and marks the site as delivered.
+Commit `deployments.toml`.
+
+### Installation (Standard change)
+
+When the recipient confirms: `scripts/deliver.sh --installed <site> vX.Y.Z`,
+then commit `deployments.toml`. The site's baseline for the next delivery is
+now this version.
 
 ## Standards
 

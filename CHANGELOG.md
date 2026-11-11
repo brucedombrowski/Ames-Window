@@ -9,6 +9,16 @@ No version has been released yet; everything is under Unreleased.
 ## [Unreleased]
 
 ### Added
+- `scripts/release.sh`: cuts a release in one command and stops before the
+  push. `.github/workflows/release.yml`: rebuilds from the tag, re-verifies
+  every generated document, publishes the web bundle, SBOM, SVD, `SHA256SUMS`
+  and a signed provenance attestation. REQ-4.5 now has evidence (#10).
+- `scripts/svd.sh --release vX.Y.Z`: release mode, committed as
+  `docs/releases/SVD-vX.Y.Z.md`, identical before the release commit and at
+  the tag; `--check` verifies it.
+- `scripts/deliver.sh`: delivers a release to a site with a spanning SVD from
+  that site's installed version, the skipped releases' SVDs, assets, checksums
+  and a delivery record; `--installed` records the installation.
 - `docs/RISK-2026-001.json` and its rendering `docs/RISK-2026-001.md`
   (`scripts/risk.sh`): nine risks in NIST SP 800-30 terms, each with controls
   traced to requirements, residual rating, owner and review trigger. Four are

@@ -1,7 +1,7 @@
 {
   "document_id": "REQ-2026-001",
   "title": "Ames Window Requirements Specification: IT Security Compliance Demonstration",
-  "version": "1.1",
+  "version": "1.2",
   "date": "2026-11-11",
   "keyword_convention": "BCP 14 (RFC 2119 + RFC 8174): keywords normative only in ALL CAPS",
   "scope": "Ames Window is a deliberately trivial application used to demonstrate a complete IT security compliance posture. These requirements govern how the software is built, inventoried, changed, documented and delivered. They do not govern what the application does, beyond the charter that it has no network capability. Only openly published standards are cited; see docs/standards.md.",
@@ -499,6 +499,10 @@
             {
               "file": "scripts/svd.sh",
               "pattern": "Skipped release"
+            },
+            {
+              "file": "scripts/deliver.sh",
+              "pattern": "scripts/svd.sh --from \"$installed\""
             }
           ]
         },
@@ -524,12 +528,31 @@
           "id": "REQ-4.5",
           "standard": "NIST SP 800-218; NIST SP 800-53 Rev. 5",
           "section": "PS.3.1 Archive and protect each software release; SR-4 Provenance; SI-7(1)",
-          "text": "Releases SHALL be built by automation from a tagged commit and SHALL carry the executable, the SBOM, the SVD, a SHA-256 checksum file and a signed provenance attestation naming the commit and build.",
+          "text": "Releases SHALL be built by automation from a tagged commit and SHALL carry the executable, the SBOM, the SVD, a SHA-256 checksum file and a signed provenance attestation naming the commit and build. Every generated document SHALL be re-verified against the tag before publication.",
           "priority": "mandatory",
           "verification": "test",
-          "status": "open",
-          "tracking": "#10",
-          "note": "No release workflow exists yet. The SBOM and SVD are produced on every CI run as artifacts."
+          "evidence": [
+            {
+              "file": ".github/workflows/release.yml",
+              "pattern": "tags: [\"v*\"]"
+            },
+            {
+              "file": ".github/workflows/release.yml",
+              "pattern": "actions/attest-build-provenance"
+            },
+            {
+              "file": ".github/workflows/release.yml",
+              "pattern": "sha256sum * > SHA256SUMS"
+            },
+            {
+              "file": ".github/workflows/release.yml",
+              "pattern": "scripts/svd.sh --release \"$GITHUB_REF_NAME\" --check"
+            },
+            {
+              "file": "scripts/release.sh",
+              "pattern": "git tag -a \"$tag\""
+            }
+          ]
         },
         {
           "id": "REQ-4.6",
@@ -550,6 +573,10 @@
             {
               "file": "scripts/svd.sh",
               "pattern": "--site) site=\"$2\""
+            },
+            {
+              "file": "scripts/deliver.sh",
+              "pattern": "set_field delivered \"$version\""
             }
           ]
         }
