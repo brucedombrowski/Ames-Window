@@ -30,16 +30,19 @@ order that introduces one idea at a time.
 | `web/index.html`, `scripts/web.sh` | The browser shell and the build script that produces `web/dist`. |
 | `ios/Info.plist`, `scripts/ios.sh` | The iOS bundle metadata and the build‑sign‑install script. |
 | `.github/workflows/pages.yml` | CI: tests, builds the wasm, deploys to GitHub Pages. |
-| `docs/` | Preview images and the tour. |
+| `.github/workflows/security.yml` | CI: SBOM and verification‑matrix drift checks, `cargo deny`, and a grep for socket code. Runs on pushes to `main`, pull requests, weekly, and by hand. |
+| `deny.toml`, `sbom.cdx.json` | Dependency policy and the committed CycloneDX bill of materials. See [Supply chain](#supply-chain). |
+| `scripts/sbom.sh`, `scripts/svd.sh`, `scripts/ver.sh` | Regenerate the SBOM, write a Software Version Description, regenerate the verification matrix. |
+| `CHANGELOG.md` | Keep a Changelog format. |
+| `docs/` | Preview images, the tour, and the compliance documents listed below. |
 
 There is no Swift, no Objective‑C, no Xcode project and no GPU code. Both
 crates are `#![forbid(unsafe_code)]`. On Apple platforms the Objective‑C
 runtime is reached through the `objc2` bindings that `winit` and `softbuffer`
 depend on.
 
-The app has no network capability of any kind and never will: no networking
-crate is in the dependency tree and the source uses no sockets. That is a
-charter item, recorded in issue #8.
+The app has no network capability of any kind and never will. See
+[Supply chain](#supply-chain).
 
 ## Requirements
 
@@ -166,20 +169,28 @@ This repository is an IT security compliance demonstration for an
 application. The application is deliberately trivial so that the process
 around it is the subject. One rule follows from that and is permanent: **the
 application never has network capability.** No telemetry, analytics, crash
-reporting or update checks, inbound or outbound. The dependency policy rejects
-any component that could provide it, CI rejects socket code in our own source,
-and every Software Version Description states the claim. See issue #8.
+reporting or update checks, inbound or outbound. Checked on 2026‑11‑11: no
+networking crate is in `Cargo.lock` and the source uses no sockets. The
+dependency policy rejects any component that could provide it, the
+`Supply chain` workflow greps our own source for socket code, and every
+Software Version Description states the claim. See issue #8.
 
 `sbom.cdx.json` is a [CycloneDX](https://cyclonedx.org) 1.6 Software Bill of
 Materials listing every crate the binary depends on, for every target, with
 versions, licences and the dependency graph. It is generated from `Cargo.lock`
 by `scripts/sbom.sh` and is byte-for-byte reproducible, so it lives in git and
-the `Supply chain` workflow fails if it ever drifts from the lockfile.
+the `Supply chain` workflow fails if it ever drifts from the lockfile. The
+committed file was generated before the latest code changes, but `Cargo.lock`
+has not changed since, so it should still match; the workflow is the check.
 
 `deny.toml` is the policy: `cargo deny check` fails on known vulnerabilities,
 licences outside the permissive allowlist, wildcard versions, or crates from
-anywhere other than crates.io. The same workflow runs it on every push and
-weekly, so new advisories surface without a code change.
+anywhere other than crates.io. One advisory is explicitly ignored with a
+reason in the file: RUSTSEC‑2026‑0192, `ttf-parser` unmaintained, reached only
+through `winit` (issue #6). The same workflow runs the check on every push to
+`main` and weekly, so new advisories surface without a code change. The
+workflow's latest result is on the Actions tab; it was first merged to `main`
+on 2026‑11‑11.
 
 `scripts/svd.sh` writes a Software Version Description to `target/svd/`,
 following MIL-STD-498 (DI-IPSC-81442) section by section: materials released,
