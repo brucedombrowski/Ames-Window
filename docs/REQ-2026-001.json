@@ -1,0 +1,331 @@
+{
+  "document_id": "REQ-2026-001",
+  "title": "Ames Window Requirements Specification: IT Security Compliance Demonstration",
+  "version": "1.0",
+  "date": "2026-11-11",
+  "keyword_convention": "BCP 14 (RFC 2119 + RFC 8174): keywords normative only in ALL CAPS",
+  "scope": "Ames Window is a deliberately trivial application used to demonstrate a complete IT security compliance posture. These requirements govern how the software is built, inventoried, changed, documented and delivered. They do not govern what the application does, beyond the charter that it has no network capability. Only openly published standards are cited; see docs/standards.md.",
+  "evidence_convention": "Each requirement lists evidence anchors: a file and a fixed string that scripts/ver.sh locates to produce VER-2026-001.md. A requirement with status 'open' is not yet implemented and names the tracking issue.",
+  "categories": [
+    {
+      "name": "Component inventory and supply chain",
+      "standard": "NIST SP 800-53 Rev. 5 CM-8, SR-3, SR-4, SR-11; NIST SP 800-161 Rev. 1; NIST SP 800-218 PS.3.2, PW.4.1, RV.1; NTIA SBOM Minimum Elements; ECMA-424",
+      "requirements": [
+        {
+          "id": "REQ-1.1",
+          "standard": "NIST SP 800-53 Rev. 5",
+          "section": "CM-8 System Component Inventory; SP 800-218 PS.3.2",
+          "text": "The project SHALL maintain a machine-readable inventory of every software component in the delivered executable, in the CycloneDX format defined by ECMA-424.",
+          "priority": "mandatory",
+          "verification": "inspection",
+          "evidence": [
+            {"file": "sbom.cdx.json", "pattern": "\"bomFormat\": \"CycloneDX\""},
+            {"file": "scripts/sbom.sh", "pattern": "--spec-version 1.6"}
+          ]
+        },
+        {
+          "id": "REQ-1.2",
+          "standard": "NTIA Minimum Elements for an SBOM",
+          "section": "Data fields: supplier, component name, version, unique identifier, dependency relationship, author, timestamp",
+          "text": "The inventory SHALL contain, for every component, its name, version, a package URL as unique identifier, its licence, and its position in the dependency graph, together with the identity of the generating tool and a timestamp.",
+          "priority": "mandatory",
+          "verification": "inspection",
+          "evidence": [
+            {"file": "sbom.cdx.json", "pattern": "\"purl\": \"pkg:cargo/"},
+            {"file": "sbom.cdx.json", "pattern": "\"dependencies\": ["},
+            {"file": "sbom.cdx.json", "pattern": "\"timestamp\": \""}
+          ]
+        },
+        {
+          "id": "REQ-1.3",
+          "standard": "NIST SP 800-218",
+          "section": "PS.1.1 Protect code integrity; PO.3.2 Toolchain automation",
+          "text": "The inventory SHALL be reproducible: regenerating it from the same lockfile and generator version SHALL yield a byte-identical file.",
+          "priority": "mandatory",
+          "verification": "test",
+          "evidence": [
+            {"file": "scripts/sbom.sh", "pattern": "SOURCE_DATE_EPOCH=0"},
+            {"file": "scripts/sbom.sh", "pattern": "generator_version=\"0.5.10\""}
+          ]
+        },
+        {
+          "id": "REQ-1.4",
+          "standard": "NIST SP 800-53 Rev. 5",
+          "section": "SA-10 Developer Configuration Management; CM-3 Configuration Change Control",
+          "text": "Continuous integration SHALL fail when the committed inventory does not match the inventory regenerated from the lockfile.",
+          "priority": "mandatory",
+          "verification": "test",
+          "evidence": [
+            {"file": ".github/workflows/security.yml", "pattern": "scripts/sbom.sh --check"}
+          ]
+        },
+        {
+          "id": "REQ-1.5",
+          "standard": "NIST SP 800-161 Rev. 1; NIST SP 800-53 Rev. 5 SR-3",
+          "section": "Supply chain controls and processes: single trusted source",
+          "text": "Third-party components SHALL be obtained only from the designated registry (crates.io). Components from any other registry or from a git repository SHALL be rejected.",
+          "priority": "mandatory",
+          "verification": "inspection",
+          "evidence": [
+            {"file": "deny.toml", "pattern": "unknown-registry = \"deny\""},
+            {"file": "deny.toml", "pattern": "unknown-git = \"deny\""}
+          ]
+        },
+        {
+          "id": "REQ-1.6",
+          "standard": "NIST SP 800-53 Rev. 5; FIPS 180-4",
+          "section": "SI-7 Software, Firmware, and Information Integrity; SR-11 Component Authenticity",
+          "text": "Every third-party component SHALL be pinned to an exact version and a SHA-256 checksum of its source archive, and the build SHALL refuse a component whose checksum does not match.",
+          "priority": "mandatory",
+          "verification": "inspection",
+          "evidence": [
+            {"file": "Cargo.lock", "pattern": "checksum = \""}
+          ]
+        },
+        {
+          "id": "REQ-1.7",
+          "standard": "NIST SP 800-53 Rev. 5; NIST SP 800-218",
+          "section": "RA-5 Vulnerability Monitoring and Scanning; SI-2 Flaw Remediation; RV.1.1",
+          "text": "The dependency graph SHALL be checked against the RustSec advisory database on every change and at least weekly, and a known vulnerability, unmaintained component or yanked version SHALL fail the check.",
+          "priority": "mandatory",
+          "verification": "test",
+          "evidence": [
+            {"file": "deny.toml", "pattern": "db-urls = [\"https://github.com/rustsec/advisory-db\"]"},
+            {"file": "deny.toml", "pattern": "yanked = \"deny\""},
+            {"file": ".github/workflows/security.yml", "pattern": "- cron:"}
+          ]
+        },
+        {
+          "id": "REQ-1.8",
+          "standard": "NIST SP 800-53 Rev. 5",
+          "section": "CA-5 Plan of Action and Milestones; RA-5(5)",
+          "text": "An advisory that is accepted rather than remediated SHALL be recorded with a written reason and a tracking issue, and SHALL be reviewed when the affected component is next updated.",
+          "priority": "mandatory",
+          "verification": "inspection",
+          "evidence": [
+            {"file": "deny.toml", "pattern": "reason = \"transitive via winit/sctk-adwaita"},
+            {"file": "deny.toml", "pattern": "Tracked in GitHub issue #6"}
+          ]
+        },
+        {
+          "id": "REQ-1.9",
+          "standard": "NIST SP 800-218",
+          "section": "PW.4.1 Acquire and maintain well-secured software components; project licence policy",
+          "text": "Every third-party component SHALL be licensed under a licence in the approved allowlist. A component under any other licence SHALL fail the check.",
+          "priority": "mandatory",
+          "verification": "inspection",
+          "evidence": [
+            {"file": "deny.toml", "pattern": "[licenses]"},
+            {"file": "deny.toml", "pattern": "confidence-threshold = 0.8"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Least functionality and charter",
+      "standard": "NIST SP 800-53 Rev. 5 CM-7, SA-8; DM-2026-001",
+      "requirements": [
+        {
+          "id": "REQ-2.1",
+          "standard": "NIST SP 800-53 Rev. 5",
+          "section": "CM-7 Least Functionality; SA-8(14) Least Functionality",
+          "text": "The application SHALL NOT have network capability of any kind, inbound or outbound, including telemetry, analytics, crash reporting and update checks. This requirement is permanent and is outside every change class.",
+          "priority": "mandatory",
+          "verification": "analysis",
+          "evidence": [
+            {"file": "deny.toml", "pattern": "Charter: this application never has network capability"},
+            {"file": ".github/workflows/security.yml", "pattern": "std::net|TcpStream|TcpListener|UdpSocket"}
+          ]
+        },
+        {
+          "id": "REQ-2.2",
+          "standard": "NIST SP 800-53 Rev. 5",
+          "section": "CM-7(5) Authorized Software, Allow-by-Exception; CM-7(2) Prevent Program Execution",
+          "text": "The dependency policy SHALL reject any component that provides HTTP, TLS, raw sockets, WebSocket, QUIC or DNS, and SHALL reject the network features of components that are otherwise permitted.",
+          "priority": "mandatory",
+          "verification": "test",
+          "evidence": [
+            {"file": "deny.toml", "pattern": "crate = \"reqwest\""},
+            {"file": "deny.toml", "pattern": "crate = \"socket2\""},
+            {"file": "deny.toml", "pattern": "deny = [\"net\", \"full\"]"},
+            {"file": "deny.toml", "pattern": "\"WebSocket\", \"XmlHttpRequest\""}
+          ]
+        },
+        {
+          "id": "REQ-2.3",
+          "standard": "MIL-STD-498 DI-IPSC-81442; NIST SP 800-53 Rev. 5 CM-6",
+          "section": "SVD 3.4 Adaptation data; CM-6 Configuration Settings",
+          "text": "The application SHALL NOT require adaptation data, configuration files, environment variables or run-time parameters, so that there are no configuration settings to secure.",
+          "priority": "mandatory",
+          "verification": "inspection",
+          "evidence": [
+            {"file": "scripts/svd.sh", "pattern": "### 3.4 Adaptation data"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Configuration management and change control",
+      "standard": "NIST SP 800-53 Rev. 5 CM-2, CM-3, CM-5, CM-9, AC-5; NIST SP 800-128",
+      "requirements": [
+        {
+          "id": "REQ-3.1",
+          "standard": "NIST SP 800-53 Rev. 5",
+          "section": "CM-9 Configuration Management Plan; SP 800-128 §3.2",
+          "text": "The project SHALL maintain a configuration management plan defining baselines, change classes, decision authority per class, and the records kept.",
+          "priority": "mandatory",
+          "verification": "inspection",
+          "evidence": [
+            {"file": "docs/configuration-management.md", "pattern": "## Change classes"}
+          ]
+        },
+        {
+          "id": "REQ-3.2",
+          "standard": "NIST SP 800-53 Rev. 5",
+          "section": "CM-3 Configuration Change Control; AC-5 Separation of Duties",
+          "text": "Every change SHALL be reviewed and approved by a person other than its author before it joins the main line, and the repository SHALL be configured so that this cannot be bypassed.",
+          "priority": "mandatory",
+          "verification": "inspection",
+          "status": "open",
+          "tracking": "#9",
+          "note": "Practised, not yet enforced. Requires a branch ruleset and CODEOWNERS on the main branch."
+        },
+        {
+          "id": "REQ-3.3",
+          "standard": "NIST SP 800-53 Rev. 5",
+          "section": "CM-3(2) Testing, Validation, and Documentation of Changes; SA-11 Developer Testing and Evaluation",
+          "text": "The unit tests, the dependency policy and the inventory consistency check SHALL run automatically on every proposed change, and SHALL pass before the change is merged.",
+          "priority": "mandatory",
+          "verification": "test",
+          "evidence": [
+            {"file": ".github/workflows/pages.yml", "pattern": "cargo test --workspace"},
+            {"file": ".github/workflows/security.yml", "pattern": "EmbarkStudios/cargo-deny-action"},
+            {"file": ".github/workflows/security.yml", "pattern": "pull_request:"}
+          ]
+        },
+        {
+          "id": "REQ-3.4",
+          "standard": "NIST SP 800-53 Rev. 5",
+          "section": "CM-3 and AU-3 Content of Audit Records; SP 800-128 §2.3.2",
+          "text": "Every change SHALL be recorded in version control with a message describing the change, and published history SHALL NOT be rewritten or deleted.",
+          "priority": "mandatory",
+          "verification": "inspection",
+          "status": "open",
+          "tracking": "#9",
+          "note": "Commit discipline is practised. Protection against force-push and branch deletion requires the same ruleset as REQ-3.2."
+        },
+        {
+          "id": "REQ-3.5",
+          "standard": "Semantic Versioning 2.0.0; Keep a Changelog 1.1.0",
+          "section": "NIST SP 800-53 Rev. 5 CM-8 component identification",
+          "text": "The project SHALL identify versions by semantic version numbers and SHALL maintain a changelog in the Keep a Changelog format with an Unreleased section.",
+          "priority": "mandatory",
+          "verification": "inspection",
+          "evidence": [
+            {"file": "CHANGELOG.md", "pattern": "keepachangelog.com"},
+            {"file": "CHANGELOG.md", "pattern": "## [Unreleased]"}
+          ]
+        },
+        {
+          "id": "REQ-3.6",
+          "standard": "MIL-STD-498",
+          "section": "§5.1 Project planning and oversight: documenting decisions; systems-engineering Phase 3",
+          "text": "A design or policy choice with more than one defensible option SHALL be recorded as a decision memorandum naming the options considered, the decision and the rationale with standard references.",
+          "priority": "mandatory",
+          "verification": "inspection",
+          "evidence": [
+            {"file": "docs/DM-2026-001.md", "pattern": "## Options considered"},
+            {"file": "docs/DM-2026-002.md", "pattern": "## Options considered"}
+          ]
+        },
+        {
+          "id": "REQ-3.7",
+          "standard": "NIST SP 800-53 Rev. 5",
+          "section": "AU-3 Content of Audit Records; systems-engineering Phase 5",
+          "text": "Decisions, accepted risks and review findings SHALL be recorded as issues in the repository's issue tracker and referenced from the artifact they affect.",
+          "priority": "mandatory",
+          "verification": "inspection",
+          "evidence": [
+            {"file": "deny.toml", "pattern": "(GitHub issue #8)"},
+            {"file": "docs/DM-2026-001.md", "pattern": "issue #8"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Documentation and delivery",
+      "standard": "NIST SP 800-53 Rev. 5 SA-5, SI-7, SR-4; MIL-STD-498 DI-IPSC-81442; NIST SP 800-218 PS.3; FIPS 180-4",
+      "requirements": [
+        {
+          "id": "REQ-4.1",
+          "standard": "MIL-STD-498",
+          "section": "DI-IPSC-81442 Software Version Description",
+          "text": "Each delivered version SHALL be accompanied by a Software Version Description following DI-IPSC-81442 section by section.",
+          "priority": "mandatory",
+          "verification": "inspection",
+          "evidence": [
+            {"file": "scripts/svd.sh", "pattern": "DI-IPSC-81442"},
+            {"file": "scripts/svd.sh", "pattern": "### 3.7 Possible problems and known errors"}
+          ]
+        },
+        {
+          "id": "REQ-4.2",
+          "standard": "NIST SP 800-53 Rev. 5",
+          "section": "SA-5 System Documentation; SA-10 Developer Configuration Management",
+          "text": "The Software Version Description SHALL be generated from the repository at the delivered commit, SHALL identify that commit, and SHALL be reproducible from it.",
+          "priority": "mandatory",
+          "verification": "analysis",
+          "evidence": [
+            {"file": "scripts/svd.sh", "pattern": "commit=\"$(git rev-parse HEAD)\""}
+          ]
+        },
+        {
+          "id": "REQ-4.3",
+          "standard": "MIL-STD-498",
+          "section": "DI-IPSC-81442 §3.3 Changes installed",
+          "text": "The changes-installed section SHALL span from the version installed at the recipient to the version delivered, and SHALL list any intermediate releases the recipient did not install.",
+          "priority": "mandatory",
+          "verification": "test",
+          "evidence": [
+            {"file": "scripts/svd.sh", "pattern": "--from) from=\"$2\""},
+            {"file": "scripts/svd.sh", "pattern": "Skipped release"}
+          ]
+        },
+        {
+          "id": "REQ-4.4",
+          "standard": "FIPS 180-4; NIST SP 800-53 Rev. 5",
+          "section": "SI-7(1) Integrity Checks; DI-IPSC-81442 §3.2",
+          "text": "The Software Version Description SHALL list every source file and every third-party component of the delivered version, each with a SHA-256 checksum or pinned version.",
+          "priority": "mandatory",
+          "verification": "inspection",
+          "evidence": [
+            {"file": "scripts/svd.sh", "pattern": "git ls-files -z"},
+            {"file": "scripts/svd.sh", "pattern": "sha256sum \"$f\""}
+          ]
+        },
+        {
+          "id": "REQ-4.5",
+          "standard": "NIST SP 800-218; NIST SP 800-53 Rev. 5",
+          "section": "PS.3.1 Archive and protect each software release; SR-4 Provenance; SI-7(1)",
+          "text": "Releases SHALL be built by automation from a tagged commit and SHALL carry the executable, the SBOM, the SVD, a SHA-256 checksum file and a signed provenance attestation naming the commit and build.",
+          "priority": "mandatory",
+          "verification": "test",
+          "status": "open",
+          "tracking": "#10",
+          "note": "No release workflow exists yet. The SBOM and SVD are produced on every CI run as artifacts."
+        },
+        {
+          "id": "REQ-4.6",
+          "standard": "NIST SP 800-53 Rev. 5",
+          "section": "CM-8 System Component Inventory: installed instances",
+          "text": "The project SHOULD maintain a record of which version is installed at each recipient, so that a Software Version Description can be cut against the correct baseline.",
+          "priority": "recommended",
+          "verification": "inspection",
+          "status": "open",
+          "tracking": "#10",
+          "note": "Proposed as a deployments record read by scripts/svd.sh --site."
+        }
+      ]
+    }
+  ]
+}
