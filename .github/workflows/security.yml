@@ -35,6 +35,7 @@ jobs:
           name: sbom-and-svd
           path: |
             sbom.cdx.json
+            sbom-web.cdx.json
             target/svd/*.md
 
   deny:

@@ -5,8 +5,8 @@
 #
 # Four checks run: known vulnerabilities (advisories), licence allowlist,
 # duplicate or wildcard versions (bans), and where crates may come from
-# (sources). The SBOM at sbom.cdx.json records what we ship; this file says
-# what we are willing to ship.
+# (sources). The SBOMs, sbom.cdx.json and sbom-web.cdx.json, record what we
+# depend on; this file says what we are willing to.
 
 [graph]
 # Check every target the app builds for, not just the host.

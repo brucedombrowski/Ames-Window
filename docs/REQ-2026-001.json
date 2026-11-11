@@ -20,7 +20,8 @@
           "verification": "inspection",
           "evidence": [
             {"file": "sbom.cdx.json", "pattern": "\"bomFormat\": \"CycloneDX\""},
-            {"file": "scripts/sbom.sh", "pattern": "--spec-version 1.6"}
+            {"file": "scripts/sbom.sh", "pattern": "--spec-version 1.6"},
+            {"file": "sbom-web.cdx.json", "pattern": "\"value\": \"wasm32-unknown-unknown\""}
           ]
         },
         {
@@ -33,7 +34,10 @@
           "evidence": [
             {"file": "sbom.cdx.json", "pattern": "\"purl\": \"pkg:cargo/"},
             {"file": "sbom.cdx.json", "pattern": "\"dependencies\": ["},
-            {"file": "sbom.cdx.json", "pattern": "\"timestamp\": \""}
+            {"file": "sbom.cdx.json", "pattern": "\"timestamp\": \""},
+            {"file": "sbom-web.cdx.json", "pattern": "\"purl\": \"pkg:cargo/"},
+            {"file": "sbom-web.cdx.json", "pattern": "\"dependencies\": ["},
+            {"file": "sbom-web.cdx.json", "pattern": "\"timestamp\": \""}
           ]
         },
         {
