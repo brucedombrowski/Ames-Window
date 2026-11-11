@@ -51,9 +51,9 @@ Misclassifying a change is itself a finding, recorded as an issue.
 
 | Role | Holder |
 |---|---|
-| Human (Major decisions; observes and directs) | The repository owner. The one role an AI agent cannot hold (DM-2026-008). |
+| Human (Major decisions; release authority; observes and directs) | The repository owner. The one role an AI agent cannot hold (DM-2026-008). |
 | Technical lead (Normal changes; advises the Human on Major decisions) | [name], or an agent assigned the title Technical Lead |
-| Control board (Major changes) | Generic Software Control Board (GSCB), or its delegate [name] for urgent items. In this repository, the Human. |
+| Control board (Major changes) | Generic Software Control Board (GSCB), or its delegate [name] for urgent items. In this repository, the Human, and so not an agent. |
 | Reviewer pool (Standard changes) | Any committer other than the author, named in `CODEOWNERS` (issue #9), or an agent assigned the title Reviewer |
 
 Every role but Human may be held by a person or by an AI agent assigned that
@@ -67,19 +67,27 @@ waits on them.
 
 A Major decision is the Human's, and is made on an issue (DM-2026-008):
 
-1. **Question.** The issue states what is asked and what is needed to decide
-   it. For a risk: the statement, the ratings before and after controls, the
-   controls relied on, why it is carried, and the review trigger.
-2. **Technical Lead response.** An agent holding the title Technical Lead
-   replies with its own assessment and a recommendation, having checked the
-   question's claims against the repository. It is advice.
+1. **Question.** Any role may open the issue. It states what is asked and
+   what is needed to decide it. For a risk: the statement, the ratings before
+   and after controls, the controls relied on, why it is carried, and the
+   review trigger.
+2. **Technical Lead response.** An agent holding the title Technical Lead,
+   and not the agent that wrote the issue, replies with its own assessment
+   and a recommendation, having checked the question's claims against the
+   repository. It is advice; the Human may decide against it.
 3. **Decision.** The Human replies in their own words.
-4. **Record.** An agent brings the affected document into line, citing the
-   issue, and the issue is closed.
+4. **Record.** An agent brings the affected document into line with the
+   decision, whichever way it went, citing the issue. The issue is closed
+   once response, decision and record all exist.
 
-Steps 2 and 3 may come in either order; the Human never waits on an agent. A
-direction the Human gives in a working session is also sufficient, and is
-recorded in the change that carries it out.
+Steps 2 and 3 may come in either order; the Human never waits on an agent.
+If the response comes second and finds something new, the Human may let the
+decision stand or change it on the same issue.
+
+A direction the Human gives in a working session is sufficient for a Major
+change other than accepting a risk or a known weakness, and is recorded in
+the change that carries it out. Accepting a risk always takes the form
+above.
 
 ## The change process
 
@@ -103,7 +111,8 @@ recorded in the change that carries it out.
 | Verification matrix matches the code | `scripts/ver.sh --check` | Phase 4 quality criteria |
 | No network capability | `deny.toml` bans and feature denials; CI grep | REQ-2.1, REQ-2.2 |
 | Independent review; no force-push | Branch ruleset and `CODEOWNERS`, **not yet enabled** | REQ-3.2, REQ-3.4, issue #9 |
-| Who may approve each class | This plan, DM-2026-007 and the board's minutes | Procedural |
+| Who may approve each class | This plan, DM-2026-007, DM-2026-008 and the board's minutes | Procedural |
+| Telling the Human's comments from an agent's | Convention only: agents act through the Human's account and sign their comments | DM-2026-008 |
 | When to cut a release | Release authority | Procedural |
 | Whether to accept a known weakness | Board, recorded in `deny.toml` with reason and issue | REQ-1.8 |
 | Incident response when an advisory is published | Procedural: search the SBOM, open an issue, classify the fix | REQ-1.7 |
@@ -115,7 +124,7 @@ recorded in the change that carries it out.
 |---|---|
 | Every change | Git history on `main`, with the pull request and review |
 | Every decision | `docs/DM-*.md`, linked to a GitHub issue |
-| Every accepted risk | `deny.toml` `ignore` entry with reason and issue |
+| Every accepted risk | The issue carrying the Human's decision; for a component advisory, also the `deny.toml` `ignore` entry with reason and issue |
 | Every delivery | GitHub Release: executable, SBOM, SVD, `SHA256SUMS`, attestation |
 | Changelog | `CHANGELOG.md`, Keep a Changelog format |
 
