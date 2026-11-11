@@ -113,6 +113,9 @@ No version has been released yet; everything is under Unreleased.
   claims a test fails when the column count changes, because none does.
 
 ### Fixed
+- The Software Version Description names Microsoft's C runtime among the
+  things linked into the Windows program that no SBOM lists, as the README
+  said it did.
 - `scripts/release.sh` committed a release whose SBOMs and verification
   matrix were stale, because both change with the version and the changelog,
   and the release workflow would then have failed its own drift checks at the
