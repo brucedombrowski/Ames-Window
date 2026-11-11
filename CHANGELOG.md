@@ -9,6 +9,10 @@ No version has been released yet; everything is under Unreleased.
 ## [Unreleased]
 
 ### Added
+- `sbom-web.cdx.json`: the SBOM for the browser build, which is what a
+  release ships: the 54 components Cargo resolves for that target. `sbom.cdx.json` stays as the inventory of
+  every target, 215 components. Both are generated and drift-checked by
+  `scripts/sbom.sh`, and both are attached to a release (#21, #26).
 - `.github/workflows/release.yml`: on a `v*` tag, tests, checks the SBOM and
   verification matrix, builds `ames-window-web.zip`, generates the SVD at the
   tagged commit, writes `SHA256SUMS`, signs a build-provenance attestation,
