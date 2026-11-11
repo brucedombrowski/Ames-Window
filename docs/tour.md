@@ -124,10 +124,14 @@ comment saying why the promise holds. That is the convention: `unsafe` is not
 
 ## Try changing something
 
-1. In `window.rs`, change `columns: 2` to `columns: 4` in `Window::classic`.
-2. Run `cargo test`. A test fails, because it knows how many mullions to expect.
-   Read the failure, then read the test. That loop is how Rust is learned.
-3. Run `cargo run -p ames-app --example snapshot -- out` and open the PNGs.
+1. In `window.rs`, change `columns: 3` to `columns: 5` in `Window::classic`.
+2. Run `cargo test`. It still passes, because the tests work out what to
+   expect from the window itself rather than from fixed numbers. Read
+   `mullion_count_matches_panes` to see how.
+3. Run `cargo run -p ames-app --example snapshot -- out` and open the PNGs:
+   five panes across. Then make a test that *would* fail, for example by
+   asserting the pane count, and watch it do so. That loop is how Rust is
+   learned.
 
 `cargo fmt` formats everything. `cargo clippy` is a stricter compiler that
 explains itself; read its hints, they are good teaching.
