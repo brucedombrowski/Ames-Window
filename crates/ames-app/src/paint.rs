@@ -142,8 +142,8 @@ fn draw_shape(pixmap: &mut Pixmap, viewport: &Viewport, shape: &Shape) {
             stroke(pixmap, &path, palette::FRAME_EDGE, viewport.scale * 0.004);
         }
         Style::Mullion => fill(pixmap, &path, palette::MULLION),
-        Style::Shadow => fill(pixmap, &path, palette::SHADOW),
-        Style::Rod => stroke(pixmap, &path, palette::ROD, viewport.scale * 0.03),
+        Style::Reveal => fill(pixmap, &path, palette::REVEAL),
+        Style::Rod => stroke(pixmap, &path, palette::ROD, viewport.scale * 0.055),
     }
 }
 
@@ -239,7 +239,7 @@ mod tests {
         let mut pixmap = Pixmap::new(390, 844).unwrap();
         paint(&mut pixmap, &scene, false);
         assert!(count(&pixmap, palette::FRAME) > 1_000);
-        assert!(count(&pixmap, palette::SHADOW) > 300);
+        assert!(count(&pixmap, palette::REVEAL) > 300);
         assert!(count(&pixmap, palette::ROD) > 100);
         assert_eq!(count(&pixmap, palette::PERCEIVED), 0);
 

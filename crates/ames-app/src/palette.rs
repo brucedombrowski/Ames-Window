@@ -22,28 +22,28 @@ impl From<Swatch> for Color {
     }
 }
 
-/// Deep slate at the top of the backdrop.
-pub const SKY_TOP: Swatch = rgb(0x16, 0x1b, 0x24);
-/// Warmer slate at the bottom of the backdrop.
-pub const SKY_BOTTOM: Swatch = rgb(0x2a, 0x2f, 0x3a);
+/// Dark maroon at the top of the backdrop, like the demonstration's curtain.
+pub const SKY_TOP: Swatch = rgb(0x24, 0x11, 0x13);
+/// A touch lighter at the bottom.
+pub const SKY_BOTTOM: Swatch = rgb(0x3c, 0x1c, 0x1e);
 /// Splash screen backdrop, a terminal black.
 pub const SPLASH: Swatch = rgb(0x0c, 0x0e, 0x12);
 /// Splash screen lettering, phosphor green.
 pub const SPLASH_TEXT: Swatch = rgb(0x8c, 0xf0, 0x9a);
-/// Painted wood for the frame.
-pub const FRAME: Swatch = rgb(0xe8, 0xd9, 0xb5);
-/// Painted shadow beside each bar, the trick that sells the depth.
-pub const SHADOW: Swatch = rgb(0x4a, 0x3f, 0x30);
+/// Whitewashed board for the frame.
+pub const FRAME: Swatch = rgb(0xf1, 0xea, 0xdc);
+/// The painted reveals, the red that sells the depth.
+pub const REVEAL: Swatch = rgb(0xd8, 0x44, 0x26);
 /// The frame's edge line, a touch darker so bars read as separate pieces.
-pub const FRAME_EDGE: Swatch = rgb(0x8a, 0x75, 0x4a);
-/// Mullions, a shade lighter than the frame so they do not vanish edge‑on.
-pub const MULLION: Swatch = rgb(0xf4, 0xec, 0xd6);
-/// The steel rod.
-pub const ROD: Swatch = rgb(0xff, 0x6b, 0x4a);
+pub const FRAME_EDGE: Swatch = rgb(0xb9, 0xae, 0x9b);
+/// Mullions, the same board as the frame.
+pub const MULLION: Swatch = rgb(0xf1, 0xea, 0xdc);
+/// The blue pen.
+pub const ROD: Swatch = rgb(0x3d, 0x7c, 0xe6);
 /// Ring of the plan‑view dial.
 pub const DIAL: Swatch = rgba(0xff, 0xff, 0xff, 0x30);
 /// The window's true orientation on the dial.
-pub const ACTUAL: Swatch = rgb(0xe8, 0xd9, 0xb5);
+pub const ACTUAL: Swatch = rgb(0xf1, 0xea, 0xdc);
 /// The orientation the viewer is tricked into seeing.
 pub const PERCEIVED: Swatch = rgb(0x5e, 0xc8, 0xff);
 

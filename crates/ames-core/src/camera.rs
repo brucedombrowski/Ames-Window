@@ -23,8 +23,8 @@ impl Default for Camera {
     /// to betray which edge is really nearer.
     fn default() -> Self {
         Self {
-            distance: 14.0,
-            focal: 1.1,
+            distance: 12.0,
+            focal: 0.72,
         }
     }
 }

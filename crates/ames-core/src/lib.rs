@@ -39,4 +39,4 @@ pub use illusion::perceived_angle;
 pub use math::{Vec2, Vec3};
 pub use rod::Rod;
 pub use scene::{Scene, Shape, Style};
-pub use window::{Face, Side, Trapezoid, Window};
+pub use window::{Face, Trapezoid, Window};

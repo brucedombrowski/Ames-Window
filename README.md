@@ -1,9 +1,9 @@
 # Ames Window
 
 A pure‑Rust iOS app that performs the **Ames window illusion**: a flat
-trapezoid, painted like a window in perspective, that spins full circle but
-appears to swing back and forth. Thread a rod through it and the rod seems to
-bend and pass through solid wood.
+trapezoid, painted like a six‑pane window in perspective, that spins full
+circle but appears to swing back and forth. Thread a pen through it and the pen
+seems to bend and pass through solid wood.
 
 ![Five frames of the window turning](docs/preview.png)
 

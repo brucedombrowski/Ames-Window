@@ -67,18 +67,6 @@ impl Face {
     }
 }
 
-/// Which side of the window faces the viewer.
-///
-/// The physical model is painted on both sides so that its shadows always
-/// fall the same way on screen. A flat model has to mirror them instead.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Side {
-    /// The side seen while the tall edge is on the left.
-    Front,
-    /// The side seen once the window has turned past edge‑on.
-    Back,
-}
-
 /// A complete Ames window: outline, frame and mullions.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Window {
@@ -88,8 +76,8 @@ pub struct Window {
     pub frame: f32,
     /// Thickness of the mullions at the tall edge, as a fraction of `tall`.
     pub mullion: f32,
-    /// Width of the painted shadow beside each bar, as a fraction of `tall`.
-    pub shadow: f32,
+    /// Width of the painted reveal strips, as a fraction of `tall`.
+    pub reveal: f32,
     /// Number of panes across.
     pub columns: u8,
     /// Number of panes down.
@@ -97,20 +85,21 @@ pub struct Window {
 }
 
 impl Window {
-    /// The proportions Ames used: six panes, strongly foreshortened.
+    /// The proportions of the classic demonstration: a wide six‑pane window,
+    /// three across and two down, with bars as thick as the frame.
     #[must_use]
     pub fn classic() -> Self {
         Self {
             shape: Trapezoid {
-                width: 1.6,
+                width: 2.4,
                 tall: 1.2,
-                short: 0.6,
+                short: 0.68,
             },
-            frame: 0.06,
-            mullion: 0.03,
-            shadow: 0.035,
-            columns: 2,
-            rows: 3,
+            frame: 0.075,
+            mullion: 0.11,
+            reveal: 0.03,
+            columns: 3,
+            rows: 2,
         }
     }
 
@@ -142,63 +131,92 @@ impl Window {
             .collect()
     }
 
-    /// The painted shadows: dark strips beside each upright and below each
-    /// horizontal, as if lit from the upper left of the screen.
+    /// The painted reveals: the coloured strips that stand in for the
+    /// thickness of a real frame.
     ///
-    /// Seen from the `Front`, the left frame bar and the right side of each
-    /// mullion cast into the panes. Seen from the `Back` the picture is
-    /// mirrored, so it is the right frame bar and the left side of each
-    /// mullion. The top bar and the undersides stay where they are.
+    /// They sit where a viewer level with, and a little to the right of, a
+    /// receding rectangular window would see the inner faces of its
+    /// openings: the left side of every pane, the top of the upper row, the
+    /// bottom of the lower row, and the frame's outer left, top and bottom
+    /// faces. The physical model carries the same paint on both sides of the
+    /// board, so these are fixed in window coordinates and never mirrored.
     #[must_use]
-    pub fn shadow_faces(&self, side: Side) -> Vec<Face> {
+    pub fn reveal_faces(&self) -> Vec<Face> {
         let shape = &self.shape;
+        let t_of = |x: f32| (x - shape.x_at(0.0)) / shape.width;
         let inset = |t: f32| self.frame * shape.height_at(t);
         let bar = |t: f32| self.mullion * shape.tall * self.scale(t) / 2.0;
-        let strip = |t: f32| self.shadow * shape.tall * self.scale(t);
-        let (frame_t, toward) = match side {
-            Side::Front => (0.0, 1.0),
-            Side::Back => (1.0, -1.0),
-        };
+        let reveal = |t: f32| self.reveal * shape.tall * self.scale(t);
+        let (cols, rows) = (f32::from(self.columns), f32::from(self.rows));
 
-        // Uprights, as (column fraction, x of the edge the shadow starts at).
-        let frame_edge = (frame_t, shape.x_at(frame_t) + toward * inset(frame_t));
-        let mullion_edges = (1..self.columns).map(|c| {
-            let t = f32::from(c) / f32::from(self.columns);
-            (t, shape.x_at(t) + toward * bar(t))
-        });
-        let uprights = std::iter::once(frame_edge)
-            .chain(mullion_edges)
-            .map(|(t, edge)| {
-                let far = edge + toward * strip(t);
-                let h = shape.height_at(t) / 2.0;
-                Face::quad(
-                    Vec3::new(edge.min(far), -h, 0.0),
-                    Vec3::new(edge.max(far), -h, 0.0),
-                    Vec3::new(edge.max(far), h, 0.0),
-                    Vec3::new(edge.min(far), h, 0.0),
-                )
-            });
+        let mut faces = Vec::new();
 
-        // Rails, as functions giving the underside's y at column fraction t.
-        let top_bar = move |t: f32| shape.point(t, 1.0).y - inset(t);
-        let rails: Vec<Box<dyn Fn(f32) -> f32>> =
-            std::iter::once(Box::new(top_bar) as Box<dyn Fn(f32) -> f32>)
-                .chain((1..self.rows).map(|r| {
-                    let s = f32::from(r) / f32::from(self.rows);
-                    Box::new(move |t: f32| shape.point(t, s).y - bar(t)) as Box<dyn Fn(f32) -> f32>
-                }))
-                .collect();
-        let rails = rails.into_iter().map(|underside| {
-            let (l, r) = (underside(0.0), underside(1.0));
-            Face::quad(
-                Vec3::new(shape.x_at(0.0), l - strip(0.0), 0.0),
-                Vec3::new(shape.x_at(1.0), r - strip(1.0), 0.0),
-                Vec3::new(shape.x_at(1.0), r, 0.0),
-                Vec3::new(shape.x_at(0.0), l, 0.0),
-            )
-        });
+        // Outer faces of the frame.
+        let (x0, x1) = (shape.x_at(0.0), shape.x_at(1.0));
+        let h0 = shape.height_at(0.0) / 2.0;
+        faces.push(Face::quad(
+            Vec3::new(x0 - reveal(0.0), -h0, 0.0),
+            Vec3::new(x0, -h0, 0.0),
+            Vec3::new(x0, h0, 0.0),
+            Vec3::new(x0 - reveal(0.0), h0, 0.0),
+        ));
+        for (s, out) in [(1.0, 1.0), (0.0, -1.0)] {
+            let (l, r) = (shape.point(0.0, s), shape.point(1.0, s));
+            faces.push(Face::quad(
+                Vec3::new(x0, l.y, 0.0),
+                Vec3::new(x1, r.y, 0.0),
+                Vec3::new(x1, r.y + out * reveal(1.0), 0.0),
+                Vec3::new(x0, l.y + out * reveal(0.0), 0.0),
+            ));
+        }
 
-        uprights.chain(rails).collect()
+        // Inner faces of each pane.
+        for c in 0..self.columns {
+            let (t0, t1) = (f32::from(c) / cols, f32::from(c + 1) / cols);
+            let left = shape.x_at(t0) + if c == 0 { inset(t0) } else { bar(t0) };
+            let right = shape.x_at(t1)
+                - if c + 1 == self.columns {
+                    inset(t1)
+                } else {
+                    bar(t1)
+                };
+            let (tl, tr) = (t_of(left), t_of(right));
+            let inner = left + reveal(tl);
+            let ti = t_of(inner);
+
+            for r in 0..self.rows {
+                let (s0, s1) = (f32::from(r) / rows, f32::from(r + 1) / rows);
+                let bottom = |t: f32| shape.point(t, s0).y + if r == 0 { inset(t) } else { bar(t) };
+                let top = |t: f32| {
+                    shape.point(t, s1).y - if r + 1 == self.rows { inset(t) } else { bar(t) }
+                };
+
+                faces.push(Face::quad(
+                    Vec3::new(left, bottom(tl), 0.0),
+                    Vec3::new(inner, bottom(ti), 0.0),
+                    Vec3::new(inner, top(ti), 0.0),
+                    Vec3::new(left, top(tl), 0.0),
+                ));
+                if r + 1 == self.rows {
+                    faces.push(Face::quad(
+                        Vec3::new(left, top(tl) - reveal(tl), 0.0),
+                        Vec3::new(right, top(tr) - reveal(tr), 0.0),
+                        Vec3::new(right, top(tr), 0.0),
+                        Vec3::new(left, top(tl), 0.0),
+                    ));
+                }
+                if r == 0 {
+                    faces.push(Face::quad(
+                        Vec3::new(left, bottom(tl), 0.0),
+                        Vec3::new(right, bottom(tr), 0.0),
+                        Vec3::new(right, bottom(tr) + reveal(tr), 0.0),
+                        Vec3::new(left, bottom(tl) + reveal(tl), 0.0),
+                    ));
+                }
+            }
+        }
+
+        faces
     }
 
     /// How much everything shrinks at horizontal fraction `t`.
@@ -297,25 +315,26 @@ mod tests {
     }
 
     #[test]
-    fn shadows_hug_their_bars() {
+    fn reveals_cover_every_pane_and_the_outer_faces() {
         let window = Window::classic();
-        let faces = window.shadow_faces(Side::Front);
-        let inner_left = window.shape.x_at(0.0) + window.frame * window.shape.tall;
-        let min_x = faces[0].points.iter().map(|p| p.x).fold(f32::MAX, f32::min);
-        assert!((min_x - inner_left).abs() < 1e-6, "{min_x} vs {inner_left}");
+        let panes = usize::from(window.columns) * usize::from(window.rows);
+        let lit_tops = usize::from(window.columns);
+        let lit_bottoms = usize::from(window.columns);
+        let outer = 3;
+        assert_eq!(
+            window.reveal_faces().len(),
+            panes + lit_tops + lit_bottoms + outer
+        );
     }
 
     #[test]
-    fn shadows_mirror_between_sides() {
+    fn pane_reveals_start_at_the_pane_edge() {
         let window = Window::classic();
-        let front = window.shadow_faces(Side::Front);
-        let back = window.shadow_faces(Side::Back);
-        assert_eq!(front.len(), back.len());
-        // The strip beside the middle upright moves from its right to its left.
-        let upright_x = window.shape.x_at(0.5);
-        let side_of = |faces: &[Face]| faces[1].points.iter().map(|p| p.x - upright_x).sum::<f32>();
-        assert!(side_of(&front) > 0.0);
-        assert!(side_of(&back) < 0.0);
+        let faces = window.reveal_faces();
+        let inner_left = window.shape.x_at(0.0) + window.frame * window.shape.tall;
+        // Face 3 is the first pane's left reveal (after the three outer faces).
+        let min_x = faces[3].points.iter().map(|p| p.x).fold(f32::MAX, f32::min);
+        assert!((min_x - inner_left).abs() < 1e-6, "{min_x} vs {inner_left}");
     }
 
     #[test]
