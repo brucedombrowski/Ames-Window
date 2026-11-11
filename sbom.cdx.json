@@ -16,7 +16,7 @@
       "bom-ref": "path+file:///src/crates/ames-app#0.1.0",
       "name": "ames-app",
       "version": "0.1.0",
-      "description": "The Ames window illusion as a pure-Rust iOS (and desktop) application.",
+      "description": "The Ames window illusion as a pure-Rust application for the browser, iOS and the desktop.",
       "scope": "required",
       "licenses": [
         {

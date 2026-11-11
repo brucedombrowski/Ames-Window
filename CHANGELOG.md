@@ -74,6 +74,11 @@ No version has been released yet; everything is under Unreleased.
   take longer than 11 ms.
 
 ### Changed
+- `ames-app`'s package description names the browser as well as iOS and the
+  desktop; it appears as the root component of both SBOMs (#21).
+- README: a "Where is..." table for the things a reviewer looks for (#26),
+  and the application is described as deliberately trivial yet sufficiently
+  complex to be a fair test (#29).
 - The source grep for network code also catches `XMLHttpRequest`,
   `sendBeacon` and `EventSource`.
 - References to a separately kept process framework no longer name or link
