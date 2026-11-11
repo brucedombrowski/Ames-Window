@@ -83,3 +83,10 @@ fact nearer, perception and reality agree. Once the short edge swings nearer,
 the assumption is wrong, so the brain mirrors the motion rather than abandon
 it, and the window appears to reverse. `ames_core::perceived_angle` is that
 rule in six lines.
+
+## License
+
+Licensed under either of the [MIT license](LICENSE-MIT) or the
+[Apache License, Version 2.0](LICENSE-APACHE), at your option. This is the
+convention across the Rust ecosystem, so the code can be used anywhere other
+Rust crates can.
