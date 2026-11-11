@@ -10,8 +10,10 @@ No version has been released yet; everything is under Unreleased.
 
 ### Added
 - `docs/RISK-2026-001.json` and its rendering `docs/RISK-2026-001.md`
-  (`scripts/risk.sh`): six risks in NIST SP 800-30 terms, each with controls
-  traced to requirements, residual rating, owner and review trigger.
+  (`scripts/risk.sh`): nine risks in NIST SP 800-30 terms, each with controls
+  traced to requirements, residual rating, owner and review trigger. Four are
+  carried deliberately (RISK-1, 3, 7, 8) with the cost comparison written out;
+  RISK-9 is carried into the first release so the second can show it closed.
 - Outcome requirements REQ-0.1 to REQ-0.5 in `docs/REQ-2026-001.json`, in
   the form an acquirer writes them, each derived from the mechanisms that
   satisfy it; `scripts/ver.sh` evaluates derived requirements.
