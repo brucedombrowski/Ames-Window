@@ -32,8 +32,10 @@ version="${tag#v}"
 today="$(date -u +%Y-%m-%d)"
 
 # 1. Preconditions.
-if ! git diff --quiet || ! git diff --cached --quiet; then
-  echo "Working tree is not clean. Commit or stash first." >&2; exit 1
+# `git status --porcelain` rather than `git diff`: an untracked file is not a
+# difference, but step 7's `git add -A` would put it in the release commit.
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "Working tree is not clean (untracked files count). Commit, stash or remove first." >&2; exit 1
 fi
 branch="$(git rev-parse --abbrev-ref HEAD)"
 if [[ "$branch" != "main" && "$branch_ok" != "--allow-branch" ]]; then
@@ -45,6 +47,20 @@ fi
 if ! grep -q '^## \[Unreleased\]' CHANGELOG.md; then
   echo "CHANGELOG.md has no Unreleased section." >&2; exit 1
 fi
+if ! sed -n '/^## \[Unreleased\]/,/^## \[[0-9]/p' CHANGELOG.md | grep -q '^- '; then
+  echo "The Unreleased section of CHANGELOG.md is empty; nothing to release." >&2; exit 1
+fi
+prev_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)"
+
+# From here on the script changes files, and at the end commits and tags. If
+# any step fails, say how to get back to where we started.
+start="$(git rev-parse --short HEAD)"
+undo() {
+  echo >&2
+  echo "release.sh failed; nothing was pushed. To undo what it changed:" >&2
+  echo "  git tag -d $tag 2>/dev/null; git reset --hard $start && git clean -fd docs/releases" >&2
+}
+trap undo ERR
 
 # 2. Version.
 # First match only: the workspace version. (perl, not GNU-only `sed -i 0,/re/`.)
@@ -61,7 +77,7 @@ PY
 # 3. Checks.
 echo "== tests";            cargo test --workspace -q 2>&1 | grep -E 'test result|error'
 echo "== dependency policy"; cargo deny check 2>&1 | tail -1
-echo "== charter";          if grep -rnE 'std::net|TcpStream|TcpListener|UdpSocket|\.fetch\(|XmlHttpRequest|WebSocket' crates/; then echo "network code found" >&2; exit 1; fi
+echo "== charter";          if grep -rnE 'std::net|TcpStream|TcpListener|UdpSocket|\.fetch\(|XmlHttpRequest|WebSocket' crates/ web/; then echo "network code found" >&2; exit 1; fi
 
 # 4. Generated files that depend on the version or the lockfile.
 scripts/sbom.sh
@@ -70,15 +86,21 @@ scripts/risk.sh
 scripts/facts.sh >/dev/null
 
 # 5. Changelog: Unreleased becomes the version; a fresh Unreleased is opened.
-python3 - "$version" "$today" <<'PY'
+python3 - "$version" "$today" "$prev_tag" <<'PY'
 import re, sys
-version, today = sys.argv[1], sys.argv[2]
+version, today, prev = sys.argv[1:4]
+repo = "https://github.com/brucedombrowski/Ames-Window"
 p = "CHANGELOG.md"; s = open(p).read()
 s = s.replace("## [Unreleased]\n", f"## [Unreleased]\n\n## [{version}] - {today}\n", 1)
-s = re.sub(r"\n\[Unreleased\]: .*\n?$",
-           f"\n[Unreleased]: https://github.com/brucedombrowski/Ames-Window/compare/v{version}...main\n"
-           f"[{version}]: https://github.com/brucedombrowski/Ames-Window/releases/tag/v{version}\n", s)
 s = s.replace("No version has been released yet; everything is under Unreleased.\n", "")
+# Link references at the bottom: Unreleased now compares from this version,
+# and this version gets its own line above the older ones.
+older = re.findall(r"^\[\d[^\]]*\]: .*$", s, flags=re.M)
+s = re.sub(r"^\[[^\]]+\]: .*\n?", "", s, flags=re.M).rstrip("\n") + "\n\n"
+s += f"[Unreleased]: {repo}/compare/v{version}...main\n"
+s += (f"[{version}]: {repo}/compare/{prev}...v{version}\n" if prev
+      else f"[{version}]: {repo}/releases/tag/v{version}\n")
+s += "".join(line + "\n" for line in older)
 open(p, "w").write(s)
 PY
 

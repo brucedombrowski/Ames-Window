@@ -24,13 +24,6 @@ order that introduces one idea at a time.
 
 | Path | What it is |
 |---|---|
-| `crates/ames-core` | The geometry. No dependencies, no pixels. Trapezoid, camera, rotation, projection, and the perceived‑angle model. Fully unit tested. |
-| `crates/ames-app` | The application. `winit` for the window and touch, `tiny-skia` to rasterise, `softbuffer` to present. The same binary runs on iOS, macOS, Windows, Linux and the browser. |
-
-There is no Swift, no Objective‑C, no Xcode project and no GPU code. The
-Objective‑C runtime is reached through the `objc2` bindings that `winit` and
-`softbuffer` already use. On Wayland the window frame is drawn without a title
-string, which keeps a font parser out of the dependency tree (DM-2026-006).
 | `crates/ames-core` | The geometry. No dependencies, no pixels. Trapezoid, painted reveals, pen, camera, rotation, projection, and the perceived‑angle model. Every module has unit tests. |
 | `crates/ames-app` | The application, binary name `ames-window`. `winit` for the window and input, `tiny-skia` to rasterise on the CPU, `softbuffer` to present. One source tree for every platform; the only platform‑specific code is the entry point and the clock on wasm, and `ios_scene.rs` on iOS. |
 | `crates/ames-app/examples/snapshot.rs` | Renders frames to PNG without opening a window. |
@@ -50,7 +43,9 @@ There is no Swift, no Objective‑C, no Xcode project and no GPU code. `ames-cor
 `#![forbid(unsafe_code)]`; `ames-app` is `#![deny(unsafe_code)]` with one
 exception, `ios_scene.rs`, which calls UIKit to put the window on screen. On
 Apple platforms the Objective‑C runtime is reached through the `objc2`
-bindings that `winit` and `softbuffer` depend on.
+bindings that `winit` and `softbuffer` depend on. On Wayland the window frame
+is drawn without a title string, which keeps a font parser out of the
+dependency tree (DM-2026-006).
 
 The app has no network capability of any kind and never will. See
 [Supply chain](#supply-chain).
@@ -243,9 +238,10 @@ the file differed between machines, which is why the workflow's first run on
 
 `deny.toml` is the policy: `cargo deny check` fails on known vulnerabilities,
 licences outside the permissive allowlist, wildcard versions, or crates from
-anywhere other than crates.io. One advisory is explicitly ignored with a
-reason in the file: RUSTSEC‑2026‑0192, `ttf-parser` unmaintained, reached only
-through `winit` (issue #6). The same workflow runs the check on every push to
+anywhere other than crates.io. No advisory is ignored: the one that was,
+RUSTSEC‑2026‑0192 (`ttf-parser` unmaintained, reached through `winit`), went
+away when the component was removed from the tree (issue #6, DM-2026-006).
+The same workflow runs the check on every push to
 `main` and weekly, so new advisories surface without a code change. The
 workflow's latest result is on the Actions tab; it was first merged to `main`
 on 2026‑11‑11.

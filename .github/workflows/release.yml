@@ -31,7 +31,7 @@ jobs:
           cargo install wasm-bindgen-cli --version 0.2.130 --locked
           cargo install cargo-cyclonedx --version 0.5.10 --locked
       - name: Tests
-        run: cargo test --workspace
+        run: cargo test --workspace --locked
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
           command: check
@@ -48,8 +48,9 @@ jobs:
       - name: Assemble release files
         run: |
           mkdir -p dist
-          (cd web/dist && zip -qr "../../dist/ames-window-web-$GITHUB_REF_NAME.zip" .)
-          cp sbom.cdx.json "dist/sbom-$GITHUB_REF_NAME.cdx.json"
+          # File names are the ones the SVD's inventory lists (scripts/svd.sh).
+          (cd web/dist && zip -qr -X "../../dist/ames-window-web.zip" .)
+          cp sbom.cdx.json dist/sbom.cdx.json
           cp "docs/releases/SVD-$GITHUB_REF_NAME.md" dist/
           (cd dist && sha256sum * > SHA256SUMS)
           ls -l dist

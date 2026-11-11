@@ -61,7 +61,7 @@
           "id": "REQ-0.4",
           "standard": "NIST SP 800-53 Rev. 5",
           "section": "CM-3 Configuration Change Control; CM-9; AC-5; AU-3",
-          "text": "Every change to the software SHALL be classified, tested, reviewed by a second person and recorded before it reaches the main line.",
+          "text": "Every change to the software SHALL be classified, tested, reviewed by someone other than its author and recorded before it reaches the main line.",
           "priority": "mandatory",
           "verification": "analysis",
           "status": "derived",

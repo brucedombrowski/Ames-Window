@@ -120,7 +120,7 @@ not an installation.
    provenance attestation and publishes the GitHub Release with the bundle,
    SBOM, SVD and checksums.
 
-### Delivery (Normal change)
+### Delivery (Standard change)
 
 `scripts/deliver.sh --to <site> --version vX.Y.Z`. Reads the site's installed
 version from `deployments.toml`, generates the spanning SVD from that baseline
