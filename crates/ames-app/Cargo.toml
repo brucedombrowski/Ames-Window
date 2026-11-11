@@ -19,6 +19,20 @@ softbuffer = "0.4"
 tiny-skia = "0.12"
 winit = "0.30"
 
+# iOS only: putting winit's window onto a UIScene. Pinned to the same objc2
+# versions winit 0.30 links, so there is one UIKit binding in the graph.
+[target.'cfg(target_os = "ios")'.dependencies]
+objc2 = "0.5.3"
+objc2-foundation = { version = "0.2.2", features = ["NSArray", "NSEnumerator", "NSSet"] }
+objc2-ui-kit = { version = "0.2.2", features = [
+    "UIApplication",
+    "UIResponder",
+    "UIScene",
+    "UIView",
+    "UIWindow",
+    "UIWindowScene",
+] }
+
 [lints]
 workspace = true
 

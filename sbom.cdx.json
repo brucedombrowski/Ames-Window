@@ -7391,6 +7391,9 @@
       "dependsOn": [
         "path+file:///src/crates/ames-core#0.1.0",
         "registry+https://github.com/rust-lang/crates.io-index#console_error_panic_hook@0.1.7",
+        "registry+https://github.com/rust-lang/crates.io-index#objc2@0.5.3",
+        "registry+https://github.com/rust-lang/crates.io-index#objc2-foundation@0.2.2",
+        "registry+https://github.com/rust-lang/crates.io-index#objc2-ui-kit@0.2.2",
         "registry+https://github.com/rust-lang/crates.io-index#softbuffer@0.4.8",
         "registry+https://github.com/rust-lang/crates.io-index#tiny-skia@0.12.0",
         "registry+https://github.com/rust-lang/crates.io-index#wasm-bindgen@0.2.130",

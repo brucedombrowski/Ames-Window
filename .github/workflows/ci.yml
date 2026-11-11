@@ -1,0 +1,35 @@
+name: CI
+
+# The checks every change must pass before review (REQ-3.3). The Pages
+# workflow repeats the tests before it deploys from main; this one runs them
+# on pull requests, where a failure is cheapest.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Format, lint, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown, x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@v2
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Lint
+        run: cargo clippy --workspace --all-targets
+      - name: Test
+        run: cargo test --workspace
+      - name: The browser build compiles
+        run: cargo check -p ames-app --target wasm32-unknown-unknown
+      - name: The Windows build compiles
+        run: cargo check -p ames-app --target x86_64-pc-windows-msvc

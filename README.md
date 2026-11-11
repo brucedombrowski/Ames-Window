@@ -25,10 +25,11 @@ order that introduces one idea at a time.
 | Path | What it is |
 |---|---|
 | `crates/ames-core` | The geometry. No dependencies, no pixels. Trapezoid, painted reveals, pen, camera, rotation, projection, and the perceived‑angle model. Every module has unit tests. |
-| `crates/ames-app` | The application, binary name `ames-window`. `winit` for the window and input, `tiny-skia` to rasterise on the CPU, `softbuffer` to present. One source tree for every platform; the only platform‑specific code is the entry point and the clock on wasm. |
+| `crates/ames-app` | The application, binary name `ames-window`. `winit` for the window and input, `tiny-skia` to rasterise on the CPU, `softbuffer` to present. One source tree for every platform; the only platform‑specific code is the entry point and the clock on wasm, and `ios_scene.rs` on iOS. |
 | `crates/ames-app/examples/snapshot.rs` | Renders frames to PNG without opening a window. |
 | `web/index.html`, `scripts/web.sh` | The browser shell and the build script that produces `web/dist`. |
 | `ios/Info.plist`, `scripts/ios.sh` | The iOS bundle metadata and the build‑sign‑install script. |
+| `.github/workflows/ci.yml` | CI: formatting, clippy and tests on every pull request; checks that the wasm and Windows targets compile. |
 | `.github/workflows/pages.yml` | CI: tests, builds the wasm, deploys to GitHub Pages. |
 | `.github/workflows/release.yml` | CI: on a `v*` tag, builds and seals the release. See [Releasing](#releasing). |
 | `.github/workflows/security.yml` | CI: SBOM and verification‑matrix drift checks, `cargo deny`, and a grep for socket code. Runs on pushes to `main`, pull requests, weekly, and by hand. |
@@ -38,10 +39,11 @@ order that introduces one idea at a time.
 | `CHANGELOG.md` | Keep a Changelog format. |
 | `docs/` | Preview images, the tour, and the compliance documents listed below. |
 
-There is no Swift, no Objective‑C, no Xcode project and no GPU code. Both
-crates are `#![forbid(unsafe_code)]`. On Apple platforms the Objective‑C
-runtime is reached through the `objc2` bindings that `winit` and `softbuffer`
-depend on.
+There is no Swift, no Objective‑C, no Xcode project and no GPU code. `ames-core` is
+`#![forbid(unsafe_code)]`; `ames-app` is `#![deny(unsafe_code)]` with one
+exception, `ios_scene.rs`, which calls UIKit to put the window on screen. On
+Apple platforms the Objective‑C runtime is reached through the `objc2`
+bindings that `winit` and `softbuffer` depend on.
 
 The app has no network capability of any kind and never will. See
 [Supply chain](#supply-chain).
@@ -55,8 +57,8 @@ The app has no network capability of any kind and never will. See
   simulator and profile data).
 - For the web: the `wasm32-unknown-unknown` target and `wasm-bindgen-cli`
   **0.2.130** exactly, matching the pinned `wasm-bindgen` crate.
-- For iOS: a Mac with full Xcode (the script calls `vtool`, `simctl` and
-  `devicectl`) and the `aarch64-apple-ios` and `aarch64-apple-ios-sim` targets.
+- For iOS: a Mac with full Xcode (the script calls `simctl`, `codesign`
+  and `devicectl`) and the `aarch64-apple-ios` and `aarch64-apple-ios-sim` targets.
 
 ## Splash screen
 
@@ -83,7 +85,7 @@ The keys need a keyboard, so in practice they are desktop and browser only.
 ## Build
 
 ```sh
-cargo test --workspace                 # 23 core tests, 9 app tests, 1 doctest
+cargo test --workspace                 # 23 core tests, 15 app tests, 1 doctest
 cargo run -p ames-app                  # desktop window; needs a display
 cargo run -p ames-app --example snapshot -- out
 ```
@@ -125,18 +127,34 @@ What the script does:
 
 1. `cargo build --release` for the chosen target.
 2. Copies the binary and `ios/Info.plist` into `target/ios/<kind>/Ames Window.app`.
-3. Rewrites the binary's recorded SDK to iOS 26 with `vtool`. iOS 27 refuses to
-   run apps linked against its own SDK that do not adopt the UIScene lifecycle,
-   which `winit` 0.30 does not. This is a workaround until `winit` does.
-4. Simulator: boots an iPhone simulator if none is running, installs, launches.
-5. Device: finds a valid provisioning profile covering
-   `com.brucedombrowski.ames-window`, embeds it, signs with its entitlements
-   (using `CODESIGN_IDENTITY` or the first "Apple Development" identity), then
-   installs and launches with `devicectl`.
+3. Simulator: boots an iPhone simulator if none is running, installs, launches.
+4. Device: takes the provisioning profile named by `PROVISIONING_PROFILE`, or
+   finds a valid one covering `com.brucedombrowski.ames-window`; embeds it,
+   signs with its entitlements (using `CODESIGN_IDENTITY` or the first "Apple
+   Development" identity), then installs and launches with `devicectl`.
+
+`ios/Info.plist` declares a `UIApplicationSceneManifest`, and
+`crates/ames-app/src/ios_scene.rs` puts the window on the scene it names.
+Both are required on iOS 13 and later: without the manifest, iOS 26 and newer
+stop the app at launch; without the scene, the window is never shown and the
+screen stays black. See the header of `ios_scene.rs` for the detail. This
+replaces an earlier workaround that rewrote the binary's recorded SDK version
+with `vtool`.
 
 A device needs a provisioning profile for that bundle id. Xcode mints one the
 first time you run any project with that bundle id and your team on the phone;
-after that the script finds it on its own.
+after that the script finds it on its own. To choose one yourself, point
+`PROVISIONING_PROFILE` at it. Either way the entitlements are read back out of
+the profile, so the two cannot drift apart:
+
+```sh
+CODESIGN_IDENTITY="Apple Development: you (TEAMID)" \
+PROVISIONING_PROFILE=~/Library/MobileDevice/Provisioning\ Profiles/your.mobileprovision \
+  scripts/ios.sh device
+```
+
+Keep that profile outside the repository: it carries your team ID and the UDID
+of every registered device. `.gitignore` refuses `*.mobileprovision` for you.
 
 ## Status
 
@@ -147,9 +165,9 @@ What has been verified, as of 2026‑11‑11 (details in issues #2 and #4):
 | Linux | `cargo test --workspace` passes. The windowed app has not been run (no display in CI). |
 | Browser | Built in CI and deployed to Pages from `main`. Checked earlier in headless Chromium at phone size: splash, fade, spin, no console errors. Not yet tried on a real phone browser. |
 | macOS | `cargo test --workspace` passed on a Mac. The windowed app has not been reported run. |
-| iOS simulator | Before the `vtool` workaround the app installed, launched, then crashed at once under iOS 27. The workaround has not yet been confirmed on a simulator. |
+| iOS simulator | The app used to install, launch, then crash at once under iOS 27. It now declares a scene manifest and adopts the scene (`ios_scene.rs`); commit `64595f7` records it running on an iPhone 18 Pro simulator: splash, then the window and pen, animating. |
 | iPhone | Install previously failed for want of a provisioning profile. Not yet run. |
-| Windows | Never built. |
+| Windows | `cargo check --target x86_64-pc-windows-msvc` passes, on a Mac and in CI. Never linked or run natively; the browser build is what a Windows machine has run. |
 
 ## Compliance documentation
 
