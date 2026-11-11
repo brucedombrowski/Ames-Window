@@ -9,6 +9,15 @@ No version has been released yet; everything is under Unreleased.
 ## [Unreleased]
 
 ### Added
+- `.github/workflows/release.yml`: on a `v*` tag, tests, checks the SBOM and
+  verification matrix, builds `ames-window-web.zip`, generates the SVD at the
+  tagged commit, writes `SHA256SUMS`, signs a build-provenance attestation,
+  creates the GitHub Release with all of them, and opens a pull request
+  filing the SVD under `docs/releases/` (#10).
+- `scripts/release.sh vX.Y.Z`: bumps `Cargo.toml`, `Cargo.lock` and the iOS
+  bundle version, closes the changelog section, commits and tags.
+  `--dry-run` previews the diff.
+- `rust-version = "1.87"` declared in the workspace; 1.86 fails to compile.
 - `docs/standards.md`: register of governing standards, all openly
   published, with what each is used for and which do not apply and why.
 - `docs/REQ-2026-001.json`: requirements in the `systems-engineering`
@@ -32,6 +41,20 @@ No version has been released yet; everything is under Unreleased.
   no wildcard versions; `Supply chain` workflow on push, pull request and
   weekly (#7).
 - `ames-app` marked `publish = false`.
+
+### Changed
+- README rewritten from verified facts only: a Status table per platform,
+  what `scripts/ios.sh` really does, exact requirements.
+- The `Pages` workflow triggers on `main` only; a leftover development
+  branch was removed from its trigger list.
+- `docs/tour.md` exercise updated for the three-column window; it no longer
+  claims a test fails when the column count changes, because none does.
+
+### Fixed
+- `scripts/sbom.sh` rewrites the absolute workspace path that
+  `cargo-cyclonedx` puts in the workspace crates' `bom-ref`s to a fixed
+  `path+file:///src/` prefix, so the SBOM is the same on every machine. The
+  first `Supply chain` run on `main` failed on exactly this difference.
 
 ### Security
 - RUSTSEC-2026-0192 (`ttf-parser` unmaintained, transitive via winit)

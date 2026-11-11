@@ -30,9 +30,11 @@ order that introduces one idea at a time.
 | `web/index.html`, `scripts/web.sh` | The browser shell and the build script that produces `web/dist`. |
 | `ios/Info.plist`, `scripts/ios.sh` | The iOS bundle metadata and the build‑sign‑install script. |
 | `.github/workflows/pages.yml` | CI: tests, builds the wasm, deploys to GitHub Pages. |
+| `.github/workflows/release.yml` | CI: on a `v*` tag, builds and seals the release. See [Releasing](#releasing). |
 | `.github/workflows/security.yml` | CI: SBOM and verification‑matrix drift checks, `cargo deny`, and a grep for socket code. Runs on pushes to `main`, pull requests, weekly, and by hand. |
 | `deny.toml`, `sbom.cdx.json` | Dependency policy and the committed CycloneDX bill of materials. See [Supply chain](#supply-chain). |
 | `scripts/sbom.sh`, `scripts/svd.sh`, `scripts/ver.sh` | Regenerate the SBOM, write a Software Version Description, regenerate the verification matrix. |
+| `scripts/release.sh` | Bump the version, close the changelog, commit and tag. |
 | `CHANGELOG.md` | Keep a Changelog format. |
 | `docs/` | Preview images, the tour, and the compliance documents listed below. |
 
@@ -46,8 +48,9 @@ The app has no network capability of any kind and never will. See
 
 ## Requirements
 
-- Rust **1.87 or newer**. The workspace uses edition 2024 and
-  `u128::is_multiple_of`; 1.86 fails to compile.
+- Rust **1.87 or newer**, declared as `rust-version` in `Cargo.toml`. The
+  workspace uses edition 2024 and `u128::is_multiple_of`; 1.86 fails to
+  compile.
 - `python3`, used by both scripts (`web.sh` to serve locally, `ios.sh` to read
   simulator and profile data).
 - For the web: the `wasm32-unknown-unknown` target and `wasm-bindgen-cli`
@@ -99,11 +102,10 @@ scripts/web.sh serve      # builds, then serves http://localhost:8000
 ```
 
 The `Pages` workflow runs `cargo test --workspace`, builds the wasm, and
-deploys `web/dist` to GitHub Pages. It triggers on pushes to `main` (and on a
-leftover development branch named in the workflow file), and can be started by
-hand from the Actions tab. Deploys from branches other than `main` have failed
-at the deploy job; from `main` the deploy succeeded on 2026‑11‑11, so the app
-is at:
+deploys `web/dist` to GitHub Pages. It triggers on pushes to `main` and can be
+started by hand from the Actions tab. Deploys from branches other than `main`
+have failed at the deploy job; from `main` the deploy succeeded on
+2026‑11‑11, so the app is at:
 
 https://brucedombrowski.github.io/Ames-Window/
 
@@ -180,8 +182,10 @@ Materials listing every crate the binary depends on, for every target, with
 versions, licences and the dependency graph. It is generated from `Cargo.lock`
 by `scripts/sbom.sh` and is byte-for-byte reproducible, so it lives in git and
 the `Supply chain` workflow fails if it ever drifts from the lockfile. The
-committed file was generated before the latest code changes, but `Cargo.lock`
-has not changed since, so it should still match; the workflow is the check.
+script rewrites the absolute path `cargo-cyclonedx` records for the
+workspace's own crates to a fixed `path+file:///src/` prefix; without that
+the file differed between machines, which is why the workflow's first run on
+`main` failed.
 
 `deny.toml` is the policy: `cargo deny check` fails on known vulnerabilities,
 licences outside the permissive allowlist, wildcard versions, or crates from
@@ -212,6 +216,27 @@ An SVD is written for whoever receives the software. If a site is on 1.0 and
 is being given 1.4, its "changes installed" section must cover 1.0 to 1.4,
 including the 1.1 through 1.3 releases that site never installed. `--from`
 takes the tag or commit the recipient has; the skipped releases are listed.
+
+## Releasing
+
+No version has been released yet. The procedure, from
+[`docs/configuration-management.md`](docs/configuration-management.md):
+
+1. The release authority approves the version (a Major change).
+2. On a clean `main`: `scripts/release.sh vX.Y.Z` bumps `Cargo.toml`,
+   `Cargo.lock` and `ios/Info.plist`, turns the changelog's Unreleased
+   section into the version's section, commits and tags. Add `--dry-run` to
+   see the diff first.
+3. `git push origin main vX.Y.Z`.
+4. The `Release` workflow tests, checks the SBOM and verification matrix,
+   builds `ames-window-web.zip`, generates the Software Version Description
+   at the tagged commit, writes `SHA256SUMS`, signs a build‑provenance
+   attestation, and creates the GitHub Release carrying all of them. It then
+   opens a pull request that files the SVD under `docs/releases/`.
+5. After a delivery or installation, update `deployments.toml` (issue #10).
+
+The workflow has not run yet, because there is no tag; the dry run of the
+script has.
 
 ## Why it works
 

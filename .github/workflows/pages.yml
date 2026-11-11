@@ -2,7 +2,7 @@ name: Pages
 
 on:
   push:
-    branches: [main, claude/eager-bell-wxnw2p]
+    branches: [main]
   workflow_dispatch:
 
 permissions:

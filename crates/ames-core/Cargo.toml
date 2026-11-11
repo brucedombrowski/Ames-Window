@@ -3,6 +3,7 @@ name = "ames-core"
 description = "Geometry of the Ames window illusion: a trapezoid that spins but seems to swing."
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 

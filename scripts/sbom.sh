@@ -46,6 +46,13 @@ SOURCE_DATE_EPOCH=0 cargo cyclonedx \
   --override-filename sbom.tmp \
   --quiet
 
+# cargo-cyclonedx identifies the workspace's own crates by the absolute path
+# of their manifests (`path+file:///home/you/Ames-Window/crates/...`), which
+# differs between machines and would make the file depend on where the
+# repository was cloned. Rewrite that prefix to a fixed one so the output is
+# the same everywhere.
+sed -i "s#path+file://$root/#path+file:///src/#g" "$tmp.json"
+
 if [[ "${1:-}" == "--check" ]]; then
   if cmp -s "$tmp.json" "$out"; then
     echo "$out is up to date."
