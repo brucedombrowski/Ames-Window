@@ -2,7 +2,12 @@
 
 use std::num::NonZeroU32;
 use std::rc::Rc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::Instant;
+#[cfg(target_arch = "wasm32")]
+use web_time::Instant;
 
 use ames_core::{Angle, Camera, Rod, Scene, Window};
 use softbuffer::{Context, Surface};
@@ -150,12 +155,24 @@ impl App {
     }
 }
 
+/// A titled window on the desktop; a canvas appended to the page on the web.
+#[cfg(not(target_arch = "wasm32"))]
+fn window_attributes() -> winit::window::WindowAttributes {
+    winit::window::Window::default_attributes().with_title("Ames Window")
+}
+
+#[cfg(target_arch = "wasm32")]
+fn window_attributes() -> winit::window::WindowAttributes {
+    use winit::platform::web::WindowAttributesExtWebSys;
+    winit::window::Window::default_attributes().with_append(true)
+}
+
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.graphics.is_some() {
             return;
         }
-        let attributes = winit::window::Window::default_attributes().with_title("Ames Window");
+        let attributes = window_attributes();
         let Ok(window) = event_loop.create_window(attributes) else {
             event_loop.exit();
             return;

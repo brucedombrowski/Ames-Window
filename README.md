@@ -19,7 +19,7 @@ order that introduces one idea at a time.
 | Crate | What it is |
 |---|---|
 | `crates/ames-core` | The geometry. No dependencies, no pixels. Trapezoid, camera, rotation, projection, and the perceived‑angle model. Fully unit tested. |
-| `crates/ames-app` | The application. `winit` for the window and touch, `tiny-skia` to rasterise, `softbuffer` to present. The same binary runs on iOS, macOS, Windows and Linux. |
+| `crates/ames-app` | The application. `winit` for the window and touch, `tiny-skia` to rasterise, `softbuffer` to present. The same binary runs on iOS, macOS, Windows, Linux and the browser. |
 
 There is no Swift, no Objective‑C, no Xcode project and no GPU code. The
 Objective‑C runtime is reached through the `objc2` bindings that `winit` and
@@ -48,6 +48,18 @@ dissolves into the window.
 cargo test                                  # core + app unit tests
 cargo run -p ames-app                       # desktop preview
 cargo run -p ames-app --example snapshot -- out   # PNG frames, no window needed
+```
+
+### Web
+
+The same code compiles to WebAssembly and runs in any modern browser. The
+`Pages` workflow builds it on every push and publishes it to GitHub Pages at
+`https://brucedombrowski.github.io/Ames-Window/`.
+
+```sh
+rustup target add wasm32-unknown-unknown
+cargo install wasm-bindgen-cli --version 0.2.130 --locked
+scripts/web.sh serve      # then open http://localhost:8000
 ```
 
 ### iOS

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ames Window</title>
+  <meta name="description" content="The Ames window illusion, rendered in pure Rust compiled to WebAssembly.">
+  <style>
+    html, body { margin: 0; height: 100%; background: #161b24; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; touch-action: none; outline: none; }
+    noscript { color: #e8d9b5; font: 16px system-ui, sans-serif; padding: 2rem; display: block; }
+  </style>
+</head>
+<body>
+  <noscript>This page needs JavaScript to load the WebAssembly module.</noscript>
+  <script type="module">
+    import init from "./ames-window.js";
+    init();
+  </script>
+</body>
+</html>

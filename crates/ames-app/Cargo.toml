@@ -18,3 +18,11 @@ winit = "0.30"
 
 [lints]
 workspace = true
+
+# The browser build. Everything here is pure Rust too; `web-time` is a
+# drop-in `std::time` for WebAssembly, where the real one has no clock.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1"
+wasm-bindgen = "=0.2.130"
+web-sys = { version = "0.3", features = ["Document", "Element", "HtmlCanvasElement", "Window"] }
+web-time = "1"
