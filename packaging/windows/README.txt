@@ -19,8 +19,9 @@ SmartScreen warning that the program is not signed by a publisher it knows.
 It is not signed: a signing certificate costs money and this is a
 demonstration. If you got this folder from the project's own Releases page
 and the checksum matches (see below), choose "More info", then "Run anyway".
-If your organisation forbids running unsigned programs, use the browser
-version instead: https://brucedombrowski.github.io/Ames-Window/
+If your organisation forbids running unsigned programs, or Windows 11's
+Smart App Control is on and blocks it with no way to continue, use the
+browser version instead: https://brucedombrowski.github.io/Ames-Window/
 
 
 Controls
@@ -40,8 +41,8 @@ What it does and does not do
 ----------------------------
 
 It opens one window and draws in it. It has no network code and makes no
-connections. It reads no files and writes none: no settings, no logs, no
-registry entries. To remove it, delete this folder.
+connections. It reads no files and the program writes none: no settings, no
+logs, no registry entries. To remove it, delete this folder.
 
 
 What is in this folder
@@ -66,13 +67,14 @@ in the file SHA256SUMS. In PowerShell:
 
   Get-FileHash ames-window-windows-x64.zip -Algorithm SHA256
 
-The two must match. The release also carries a signed build provenance
-attestation, which ties the zip to the commit and the build that made it:
+The two must match; PowerShell prints the checksum in capitals and
+SHA256SUMS in lower case, which is the same value. The release also carries a signed build provenance
+attestation, which ties the zip to the commit and the build that made it.
+With the GitHub command-line tool installed:
 
   gh attestation verify ames-window-windows-x64.zip --repo brucedombrowski/Ames-Window
 
-Before release the folder's contents were scanned with ClamAV. A clean scan
-means no match against the signatures known that day, not a guarantee.
+@SCAN@
 
 
 Source, issues and the rest of the documentation

@@ -1,0 +1,6 @@
+# Every text file is checked out with LF line endings on every platform.
+# Without this a Windows checkout rewrites them with CRLF, and a file copied
+# from there into a release package no longer matches the committed file or
+# its published checksum.
+* text=auto eol=lf
+*.png binary

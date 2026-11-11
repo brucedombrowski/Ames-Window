@@ -7,6 +7,11 @@ name: Windows
 
 on:
   workflow_call:
+    inputs:
+      release:
+        description: Whether this package is being built for a release.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -30,14 +35,41 @@ jobs:
         run: cargo build --release --locked -p ames-app
       - name: The program imports no networking library
         run: scripts/windows-imports.sh target/release/ames-window.exe
+      - name: The program starts and stays up
+        # Nothing else here opens a window. This starts the program as a
+        # person would, waits, and fails if it has exited: a missing library,
+        # or a window or drawing surface that could not be created.
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath target\release\ames-window.exe -PassThru
+          Start-Sleep -Seconds 8
+          if ($p.HasExited) { Write-Error "ames-window.exe exited within 8 seconds, code $($p.ExitCode)"; exit 1 }
+          Write-Host "Still running after 8 seconds, using $([math]::Round($p.WorkingSet64 / 1MB)) MB."
+          Stop-Process -Id $p.Id
       - name: Package
+        env:
+          # A pull request is built from a temporary merge commit; name the
+          # commit that is actually in the branch.
+          COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+          RELEASE: ${{ inputs.release }}
         run: |
           version="$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)"
-          commit="$(git rev-parse --short HEAD)"
+          # What the README may truthfully say about scanning depends on
+          # which kind of build this is.
+          if [[ "$RELEASE" == "true" ]]; then scan=scan-release.txt; else scan=scan-review.txt; fi
           mkdir -p ames-window-windows-x64
           cp target/release/ames-window.exe sbom-windows.cdx.json LICENSE-MIT LICENSE-APACHE ames-window-windows-x64/
-          sed -e "s/@VERSION@/$version/" -e "s/@COMMIT@/$commit/" \
-            packaging/windows/README.txt > ames-window-windows-x64/README.txt
+          # The SBOM and licences must be the committed files, byte for byte:
+          # their checksums are published. (.gitattributes keeps a Windows
+          # checkout from rewriting their line endings.)
+          for f in sbom-windows.cdx.json LICENSE-MIT LICENSE-APACHE; do
+            git show "HEAD:$f" | cmp - "ames-window-windows-x64/$f"
+          done
+          # The README is for Notepad, so it gets Windows line endings.
+          sed -e "s/@VERSION@/$version/" -e "s/@COMMIT@/${COMMIT:0:7}/" packaging/windows/README.txt \
+            | awk -v f="packaging/windows/$scan" '/^@SCAN@$/ { while ((getline line < f) > 0) print line; next } { print }' \
+            | sed 's/$/\r/' > ames-window-windows-x64/README.txt
+          ! grep -q '@[A-Z]*@' ames-window-windows-x64/README.txt
           ls -l ames-window-windows-x64
       - uses: actions/upload-artifact@v4
         with:

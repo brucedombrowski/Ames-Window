@@ -6,12 +6,17 @@
 #
 # A Windows program reaches the network through system libraries it names in
 # its import table: Winsock, WinHTTP, WinINet and their kin. This lists the
-# libraries the executable imports and fails if any of those is among them.
+# libraries the executable imports and fails if any is not on the short list
+# below, which is what the program imports today and contains no networking
+# library. A new library, harmless or not, is a change to make here in review.
 #
 # Like scripts/no-network.sh for the browser build, this is a tripwire and
-# not a proof: a program can load a library by name while it runs, which no
-# import table shows. The source grep and the banned crates in deny.toml are
-# the other checks; nothing here watches the running program.
+# not a proof. The program imports LoadLibrary and GetProcAddress, so it
+# could load any library by name while it runs, and it imports COM
+# (ole32), through which Windows components that use the network can be
+# created with no networking library named anywhere. No import table shows
+# either. The source grep and the banned crates in deny.toml are the other
+# checks; nothing here watches the running program.
 #
 # Requires: llvm-readobj, from `rustup component add llvm-tools`.
 set -euo pipefail
@@ -26,11 +31,18 @@ libraries="$("$readobj" --coff-imports "$exe" | sed -n 's/^ *Name: *//p' | tr 'A
 echo "$exe imports:"
 echo "$libraries" | sed 's/^/  /'
 
-network="$(echo "$libraries" | grep -E '^(ws2_32|wsock32|mswsock|winhttp|wininet|urlmon|dnsapi|iphlpapi|webio|httpapi|rasapi32|netapi32)\.dll$' || true)"
-if [[ -n "$network" ]]; then
-  echo "Networking library imported:" >&2
-  echo "$network" | sed 's/^/  /' >&2
-  echo "The charter forbids it; see issue #8." >&2
+# What the program imports today: windowing, drawing, input, theming, the
+# shell, COM, the kernel, and a random-number source for hash tables.
+allowed='^(api-ms-win-core-synch-l1-2-0|bcryptprimitives|dwmapi|gdi32|imm32|kernel32|ntdll|ole32|shell32|user32|uxtheme)\.dll$'
+unexpected="$(echo "$libraries" | grep -vE "$allowed" || true)"
+if [[ -n "$unexpected" ]]; then
+  echo "Imported, and not on the list in $0:" >&2
+  echo "$unexpected" | sed 's/^/  /' >&2
+  if echo "$unexpected" | grep -qE '^(ws2_32|wsock32|mswsock|winhttp|wininet|urlmon|dnsapi|iphlpapi|webio|httpapi|rasapi32|netapi32|mpr|wldap32|websocket|msquic|rpcrt4|secur32|crypt32|wlanapi)\.dll$'; then
+    echo "At least one is a networking library. The charter forbids it; see issue #8." >&2
+  else
+    echo "If it is not a networking library, add it to the list, in review." >&2
+  fi
   exit 1
 fi
-echo "None is a networking library."
+echo "All are on the expected list; none is a networking library."
