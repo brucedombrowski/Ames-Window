@@ -43,6 +43,9 @@ version = "0.1.0"
 dependencies = [
  "ames-core",
  "console_error_panic_hook",
+ "objc2 0.5.3",
+ "objc2-foundation 0.2.2",
+ "objc2-ui-kit",
  "softbuffer",
  "tiny-skia 0.12.0",
  "wasm-bindgen",

@@ -17,8 +17,8 @@ set -euo pipefail
 bundle_id="com.brucedombrowski.ames-window"
 kind="${1:-sim}"
 case "$kind" in
-  sim)    target="aarch64-apple-ios-sim"; platform="iossim" ;;
-  device) target="aarch64-apple-ios";     platform="ios" ;;
+  sim)    target="aarch64-apple-ios-sim" ;;
+  device) target="aarch64-apple-ios" ;;
   *) echo "usage: $0 [sim|device]" >&2; exit 2 ;;
 esac
 
@@ -33,20 +33,15 @@ mkdir -p "$app"
 cp "target/$target/release/ames-window" "$app/"
 cp ios/Info.plist "$app/"
 
-# iOS 27 refuses to run an app linked against the iOS 27 SDK unless it adopts
-# the UIScene lifecycle, which winit does not yet. Apps linked against older
-# SDKs are exempt, so record the iOS 26 SDK in the binary's load commands.
-# Remove this once winit's UIKit backend supports scenes.
-xcrun vtool -set-build-version "$platform" 13.0 26.0 -replace \
-  -output "$app/ames-window" "$app/ames-window"
-
 if [[ "$kind" == "sim" ]]; then
   booted="$(xcrun simctl list devices booted -j | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next((x["udid"] for v in d.values() for x in v), ""))')"
   if [[ -z "$booted" ]]; then
     booted="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for v in d.values() for x in v if "iPhone" in x["name"]))')"
     xcrun simctl boot "$booted"
   fi
-  open -a Simulator
+  # Xcode 27 does not install Simulator.app where `open -a` can find it, and
+  # install, launch and screenshot all work headless, so this is not fatal.
+  open -a Simulator 2>/dev/null || echo "note: Simulator.app not found; running headless"
   xcrun simctl install "$booted" "$app"
   xcrun simctl launch "$booted" "$bundle_id"
   echo "Launched on simulator $booted"

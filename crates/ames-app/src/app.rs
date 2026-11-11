@@ -192,6 +192,13 @@ impl ApplicationHandler for App {
         };
         self.last_tick = Instant::now();
         self.graphics = Some(Graphics { window, surface });
+
+        // winit hands us a window that belongs to no scene, which on iOS means
+        // it is never displayed. Give it one, or we render into the void.
+        #[cfg(target_os = "ios")]
+        if let Some(g) = &self.graphics {
+            crate::ios_scene::adopt(&g.window);
+        }
     }
 
     fn suspended(&mut self, _event_loop: &ActiveEventLoop) {

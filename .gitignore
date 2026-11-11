@@ -2,3 +2,11 @@
 *.app
 .DS_Store
 web/dist
+
+# Signing material never belongs in a public repo. The private key lives in
+# the macOS Keychain and is not a file here, but profiles and certificates
+# carry the team id and registered device UDIDs.
+*.mobileprovision
+*.p12
+*.cer
+*.certSigningRequest

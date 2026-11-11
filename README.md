@@ -77,6 +77,25 @@ scripts/ios.sh device     # needs CODESIGN_IDENTITY, see the script header
 The script compiles the binary with Cargo, copies it next to `ios/Info.plist`
 inside an `.app` folder, and hands that to `simctl`. That is the whole pipeline.
 
+`ios/Info.plist` declares a `UIApplicationSceneManifest`, and
+`crates/ames-app/src/ios_scene.rs` puts the window on the scene it names.
+Both are required on iOS 13 and later: without the manifest, iOS 26 and newer
+stop the app at launch; without the scene, the window is never shown and the
+screen stays black. See the header of `ios_scene.rs` for the detail.
+
+Installing on a real iPhone additionally needs a provisioning profile whose app
+ID matches `CFBundleIdentifier`. Point `PROVISIONING_PROFILE` at it and the
+entitlements are read back out of the profile, so the two cannot drift apart:
+
+```sh
+CODESIGN_IDENTITY="Apple Development: you (TEAMID)" \
+PROVISIONING_PROFILE=~/Library/MobileDevice/Provisioning\ Profiles/your.mobileprovision \
+  scripts/ios.sh device
+```
+
+Keep that profile outside the repository: it carries your team ID and the UDID
+of every registered device. `.gitignore` refuses `*.mobileprovision` for you.
+
 ## Why it works
 
 The brain assumes the taller edge of the trapezoid is nearer, because that is

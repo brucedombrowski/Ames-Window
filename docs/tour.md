@@ -93,6 +93,23 @@ or input, the test at the bottom can render a frame and count coloured pixels.
 for every touch, key and redraw. `let Some(x) = ... else { return; }` is an
 early exit when something we need is missing.
 
+## 10. `crates/ames-app/src/ios_scene.rs` — the one `unsafe` block
+
+Every other file is safe Rust, and `main.rs` says `#![deny(unsafe_code)]` to
+keep it that way. This file is the single exception, and it is worth reading
+precisely because it is the exception.
+
+Since iOS 13 a window only appears on screen once it belongs to a *scene*.
+`winit` still creates its window the old way, so on a modern iPhone the app
+runs perfectly and draws to nothing at all: a black screen, no error. This
+file hands the window to the scene.
+
+Talking to UIKit means calling Objective‑C methods, and the compiler cannot
+check those, so they are `unsafe` — a promise *you* make to the compiler
+rather than one it makes to you. Each block here is preceded by a `SAFETY:`
+comment saying why the promise holds. That is the convention: `unsafe` is not
+"this is dangerous", it is "I have checked what the compiler cannot".
+
 ## Things that will feel odd at first
 
 | You see | It means |
