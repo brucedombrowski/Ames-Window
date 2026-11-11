@@ -11,6 +11,9 @@ The small dial at the bottom is a bird's‑eye view. The thin cream bar with a
 dot on its tall end is what the window is *really* doing. The thick blue bar is
 what your eye insists it is doing.
 
+New to Rust? Start with [docs/tour.md](docs/tour.md), a file‑by‑file reading
+order that introduces one idea at a time.
+
 ## Layout
 
 | Crate | What it is |
