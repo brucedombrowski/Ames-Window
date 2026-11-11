@@ -30,14 +30,14 @@ order that introduces one idea at a time.
 | `crates/ames-core` | The geometry. No dependencies, no pixels. Trapezoid, painted reveals, pen, camera, rotation, projection, and the perceived‑angle model. Every module has unit tests. |
 | `crates/ames-app` | The application, binary name `ames-window`. `winit` for the window and input, `tiny-skia` to rasterise on the CPU, `softbuffer` to present. One source tree for every platform; the only platform‑specific code is the entry point and the clock on wasm, and `ios_scene.rs` on iOS. |
 | `crates/ames-app/examples/snapshot.rs` | Renders frames to PNG without opening a window. |
-| `web/index.html`, `scripts/web.sh` | The browser shell and the build script that produces `web/dist`. |
+| `web/index.html`, `web/app.js`, `scripts/web.sh` | The browser shell with its Content-Security-Policy, the page's script, and the build script that produces `web/dist`. |
 | `ios/Info.plist`, `scripts/ios.sh` | The iOS bundle metadata and the build‑sign‑install script. |
 | `.github/workflows/ci.yml` | CI: formatting, clippy and tests on every pull request; checks that the wasm and Windows targets compile. |
 | `.github/workflows/pages.yml` | CI: tests, builds the wasm, deploys to GitHub Pages. |
 | `.github/workflows/release.yml` | CI: on a `v*` tag, builds and seals the release. See [Releasing](#releasing). |
 | `.github/workflows/security.yml` | CI: SBOM and verification‑matrix drift checks, `cargo deny`, and a grep for socket code. Runs on pushes to `main`, pull requests, weekly, and by hand. |
 | `deny.toml`, `sbom.cdx.json` | Dependency policy and the committed CycloneDX bill of materials. See [Supply chain](#supply-chain). |
-| `scripts/no-network.sh`, `scripts/malware.sh` | Prove the compiled module imports no network API; scan files for known malware with ClamAV. |
+| `scripts/no-network.sh`, `scripts/malware.sh` | Fail the build if the bundle names a network API; scan files for known malware with ClamAV. |
 | `scripts/sbom.sh`, `scripts/svd.sh`, `scripts/ver.sh` | Regenerate the SBOM, write a Software Version Description, regenerate the verification matrix. |
 | `scripts/release.sh` | Bump the version, close the changelog, commit and tag. |
 | `CHANGELOG.md` | Keep a Changelog format. |
@@ -238,16 +238,35 @@ Three questions a security review asks, and what answers each:
 
 | Question | Checked by | When |
 |---|---|---|
-| Known vulnerabilities | `cargo deny check` against the RustSec advisory database; GitHub Dependabot alerts against the GitHub Advisory Database | Every push to `main`, every pull request, weekly; Dependabot continuously |
-| Malware | `scripts/malware.sh` (ClamAV, signatures refreshed each run) over our source, every component's source, and the built bundle | Source and components: every push, pull request, weekly. Bundle: before every deploy |
-| Network capability | Crate bans and feature denials in `deny.toml`; a grep of `crates/` and `web/`; `scripts/no-network.sh`, which reads the compiled module's import list and fails on any network API | Every push and pull request, and on the built bundle before every deploy |
+| Known vulnerabilities | `cargo deny check` against the RustSec advisory database; GitHub Dependabot alerts against the GitHub Advisory Database | Pushes to `main`, every pull request, weekly; Dependabot continuously |
+| Malware | `scripts/malware.sh` (ClamAV, signatures refreshed each run) over our source, every component's source, and the built bundle | Source and components: pushes to `main`, every pull request, weekly. Bundle: before every deploy and every release |
+| Network capability | Crate bans and feature denials in `deny.toml`; a grep of `crates/` and `web/`; `scripts/no-network.sh` on the built bundle; and in the browser, the page's Content-Security-Policy | Pushes to `main` and every pull request; on the built bundle before every deploy and release; the policy, every time the page runs |
 
-What these do not show. A scan finds what is already known: a clean result
-means no match on that date, not that a file is benign or a component free of
-undisclosed flaws. A WebAssembly module can call only what it imports, so the
-import list is a complete account of the module, but not of the page around
-it: the page's one outbound link is described above. A program with its own
-approved scanners runs them on delivery; the SBOM exists so that it can.
+Pushes to branches other than `main` are checked when they become a pull
+request.
+
+What these do not show.
+
+- A scan finds what is already known. A clean result means no match on that
+  date, not that a file is benign or a component free of undisclosed flaws.
+- `scripts/no-network.sh` is a tripwire, not a proof. It fails the build if
+  the compiled module imports a network API by name, or if the JavaScript
+  beside it mentions one or contains any `fetch` but the loader's. It cannot
+  see a request made through functions that are not network APIs by name:
+  an `<img>` given a `src`, an assignment to `location`, a function looked up
+  at run time.
+- Those are stopped where they would happen. `web/index.html` carries a
+  Content-Security-Policy that allows the page to load from and connect to
+  its own site and nowhere else: no outside scripts, images, frames or
+  connections, no inline script, no `eval`. Checked in headless Chrome: a
+  `fetch`, a WebSocket and an image aimed at another site were each refused,
+  and the app ran at full speed under the policy.
+- A policy cannot stop navigation. The page's one outbound link, Report
+  feedback, is the viewer's choice and is described above; a module that
+  assigned `location` would take the viewer away from the page, which is
+  visible, but it is not prevented.
+- A program with its own approved scanners runs them on delivery. The SBOM
+  exists so that it can.
 
 `deny.toml` is the policy: `cargo deny check` fails on known vulnerabilities,
 licences outside the permissive allowlist, wildcard versions, or crates from

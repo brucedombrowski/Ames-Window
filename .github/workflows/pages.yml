@@ -30,8 +30,8 @@ jobs:
       - name: Build for the web
         run: scripts/web.sh
       # What is about to be published is checked as built, not as written.
-      - name: The bundle cannot reach the network
-        run: scripts/no-network.sh web/dist/ames-window_bg.wasm web/dist/ames-window.js
+      - name: The bundle names no network API
+        run: scripts/no-network.sh web/dist
       - name: Install ClamAV and today's signatures
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq clamav

@@ -129,7 +129,8 @@
           "evidence": [
             {"file": "scripts/malware.sh", "pattern": "clamscan --recursive --infected"},
             {"file": ".github/workflows/security.yml", "pattern": "scripts/malware.sh . ~/.cargo/registry/src"},
-            {"file": ".github/workflows/pages.yml", "pattern": "scripts/malware.sh web/dist"}
+            {"file": ".github/workflows/pages.yml", "pattern": "scripts/malware.sh web/dist"},
+            {"file": ".github/workflows/release.yml", "pattern": "scripts/malware.sh web/dist"}
           ]
         }
       ]
@@ -149,8 +150,9 @@
             {"file": "deny.toml", "pattern": "Charter: this application never has network capability"},
             {"file": ".github/workflows/security.yml", "pattern": "std::net|TcpStream|TcpListener|UdpSocket"},
             {"file": "scripts/no-network.sh", "pattern": "Network API imported by the module"},
-            {"file": ".github/workflows/ci.yml", "pattern": "scripts/no-network.sh target/wasm32-unknown-unknown"},
-            {"file": ".github/workflows/pages.yml", "pattern": "scripts/no-network.sh web/dist/ames-window_bg.wasm"}
+            {"file": ".github/workflows/ci.yml", "pattern": "scripts/no-network.sh web/dist"},
+            {"file": ".github/workflows/pages.yml", "pattern": "scripts/no-network.sh web/dist"},
+            {"file": "web/index.html", "pattern": "http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'"}
           ]
         },
         {

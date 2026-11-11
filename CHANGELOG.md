@@ -10,11 +10,16 @@ No version has been released yet; everything is under Unreleased.
 
 ### Added
 - `scripts/malware.sh` and REQ-1.10 (NIST SP 800-53 SI-3): ClamAV scans our
-  source and every component's source on each push, pull request and weekly,
-  and the built bundle before each deploy (#23).
-- `scripts/no-network.sh`: reads the compiled module's import list and fails
-  on any network API, in CI on pull requests and on the bundle before each
-  deploy. New evidence for REQ-2.1 (#23).
+  source and every component's source on pushes to `main`, pull requests and
+  weekly, and the built bundle before each deploy and each release (#23).
+- A Content-Security-Policy in `web/index.html`: the browser refuses any
+  load from or connection to another site, inline script and `eval`. The
+  page's script moved to `web/app.js` so that inline script can be refused.
+- `scripts/no-network.sh`: fails the build if the compiled module imports a
+  network API by name, if the bundle's JavaScript or HTML mentions one or has
+  any `fetch` but the loader's, or if the page lacks that policy. A tripwire,
+  not a proof; the README says what it cannot see. New evidence for REQ-2.1
+  (#23).
 - GitHub Dependabot alerts enabled on the repository, a second advisory
   source beside RustSec (#23).
 - `.github/workflows/release.yml`: on a `v*` tag, tests, checks the SBOM and

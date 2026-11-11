@@ -1,22 +1,42 @@
 #!/usr/bin/env bash
-# Prove the compiled app cannot reach the network (the charter, REQ-2.1).
+# Check that the built app names no network API (the charter, REQ-2.1).
 #
-#   scripts/no-network.sh path/to/app.wasm [path/to/glue.js]
+#   scripts/no-network.sh web/dist            # a built bundle: module, glue, page
+#   scripts/no-network.sh path/to/app.wasm    # a module alone
 #
-# A WebAssembly module can call nothing but the functions it imports, so its
-# import list is the complete set of things it is able to ask the browser to
-# do. This reads that list out of the binary and fails if any entry is a
-# network API. Given the JavaScript glue as well, it also checks that the
-# glue's only `fetch` is the one that loads the module itself.
+# Two checks.
 #
-# What it cannot see: a link the viewer chooses to follow (web/index.html has
-# one, Report feedback), which is navigation and not a call the app makes.
+# The module. A WebAssembly module can call nothing but the functions it
+# imports. This reads the import list out of the binary and fails if any
+# entry is a network API by name.
+#
+# The JavaScript and HTML beside it. wasm-bindgen names every constructor
+# `new`, so `new WebSocket(...)` is invisible in the import list and shows
+# only in the generated glue. Every .js and .html file in the bundle is
+# searched for network APIs, and the bundle may contain exactly one `fetch`:
+# the loader fetching the app's own .wasm.
+#
+# What this is: a tripwire for the ordinary ways of adding network code. What
+# it is not: a proof. A module can reach the network through functions that
+# are not network APIs by name, for example by creating an <img> and setting
+# its `src`, by assigning `location`, or by calling a function it looked up
+# at run time. Those are refused by the browser instead, under the
+# Content-Security-Policy in web/index.html, which allows connections to the
+# page's own site only. Navigation the viewer chooses, the Report feedback
+# link, is outside both.
 #
 # Requires: python3.
 set -euo pipefail
 
-wasm="${1:?usage: scripts/no-network.sh app.wasm [glue.js]}"
-glue="${2:-}"
+target="${1:?usage: scripts/no-network.sh <bundle directory | app.wasm>}"
+if [[ -d "$target" ]]; then
+  bundle="$target"
+  wasm="$(find "$bundle" -name '*.wasm' | head -1)"
+  [[ -n "$wasm" ]] || { echo "no .wasm file in $bundle" >&2; exit 1; }
+else
+  bundle=""
+  wasm="$target"
+fi
 
 python3 - "$wasm" <<'PY'
 import re, sys
@@ -70,19 +90,25 @@ if found:
              + "\nThe charter forbids it; see issue #8.")
 if not calls:
     sys.exit("The module imports nothing, so this is not the app.")
-print(f"{len(calls)} browser functions imported by {sys.argv[1]}; none is a network API.")
+print(f"{sys.argv[1]} imports {len(calls)} distinct browser functions; none is a network API by name.")
 PY
 
-if [[ -n "$glue" ]]; then
-  # The loader fetches the module's own .wasm file and nothing else.
-  fetches="$(grep -oE '(^|[^.A-Za-z_])fetch\(' "$glue" | wc -l | tr -d ' ')"
-  if [[ "$fetches" -ne 1 ]] || ! grep -qE 'module_or_path = fetch\(module_or_path\)' "$glue"; then
-    echo "$glue: expected exactly one fetch, the module loader; found $fetches." >&2
+if [[ -n "$bundle" ]]; then
+  pages=()
+  while IFS= read -r f; do pages+=("$f"); done < <(find "$bundle" -type f \( -name '*.js' -o -name '*.html' \) | sort)
+  if grep -nE 'XMLHttpRequest|WebSocket|sendBeacon|EventSource|RTCPeerConnection|WebTransport|importScripts' "${pages[@]}"; then
+    echo "Network API in the bundle's JavaScript or HTML." >&2
     exit 1
   fi
-  if grep -nE 'XMLHttpRequest|WebSocket|sendBeacon|EventSource|RTCPeerConnection' "$glue"; then
-    echo "$glue: network API in the JavaScript glue." >&2
+  # Every fetch, however it is called, on whatever object.
+  fetches="$(cat "${pages[@]}" | grep -oE 'fetch[[:space:]]*\(' | wc -l | tr -d ' ')"
+  if [[ "$fetches" -ne 1 ]] || ! grep -qE 'module_or_path = fetch\(module_or_path\)' "${pages[@]}"; then
+    echo "Expected exactly one fetch in the bundle, the module loader; found $fetches." >&2
     exit 1
   fi
-  echo "$glue: one fetch, the module loader."
+  if ! grep -qE "http-equiv=\"Content-Security-Policy\"[^>]*default-src 'none'[^>]*connect-src 'self'" "$bundle/index.html"; then
+    echo "$bundle/index.html carries no Content-Security-Policy limiting connections to this site." >&2
+    exit 1
+  fi
+  echo "${#pages[@]} JavaScript and HTML files: one fetch, the module loader; the page's policy allows connections to its own site only."
 fi
