@@ -35,6 +35,7 @@ jobs:
           name: sbom-and-svd
           path: |
             sbom.cdx.json
+            sbom-web.cdx.json
             target/svd/*.md
 
   deny:
@@ -55,8 +56,25 @@ jobs:
       - name: Charter check (issue 8)
         # deny.toml covers third-party crates. This covers our own code.
         run: |
-          if grep -rnE 'std::net|TcpStream|TcpListener|UdpSocket|\.fetch\(|XmlHttpRequest|WebSocket' crates/ web/; then
+          if grep -rnE 'std::net|TcpStream|TcpListener|UdpSocket|\.fetch\(|XMLHttpRequest|XmlHttpRequest|WebSocket|sendBeacon|EventSource' crates/ web/ --exclude-dir=dist; then
             echo "::error::Network code found. The charter forbids it; see issue #8." >&2
             exit 1
           fi
           echo "No network code in crates/ or web/."
+
+  malware:
+    name: No known malware in source or components
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Download every component named in Cargo.lock
+        run: cargo fetch --locked
+      - name: Install ClamAV and today's signatures
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq clamav
+          sudo systemctl stop clamav-freshclam || true
+          sudo freshclam --quiet
+      - name: Scan our source and the components' source
+        # The built bundle is scanned by the Pages workflow before it deploys.
+        run: scripts/malware.sh . ~/.cargo/registry/src

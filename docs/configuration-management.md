@@ -9,9 +9,10 @@ the evidence is in [`VER-2026-001.md`](VER-2026-001.md).
 ## Scope and charter
 
 Ames Window is an IT security compliance demonstration for an application.
-The application is kept deliberately trivial so that the process is the
+The application is kept deliberately trivial, yet sufficiently complex to be
+a fair test, so that the process is the
 subject. One charter item is permanent and outside every change class: **the
-application never has network capability** (DM-2026-001, issue #8).
+application never has network capability** ([DM-2026-001](DM-2026-001.md), issue #8).
 
 This repository is public and open-licensed. It carries the method:
 generic process, policy, templates and generators. Anything that identifies
@@ -26,7 +27,7 @@ recipient's document system, generated from the same templates.
 |---|---|---|
 | Source code | Every commit on `main` | Git history; review before merge |
 | Third-party components | `Cargo.lock` | Pinned versions and SHA-256 checksums; `deny.toml` |
-| Component inventory | `sbom.cdx.json` | Regenerated from the lockfile; CI fails on drift |
+| Component inventory | `sbom.cdx.json` (every target), `sbom-web.cdx.json` (the browser build) and `sbom-windows.cdx.json` (the Windows program) | Regenerated from the lockfile; CI fails on drift |
 | Dependency policy | `deny.toml` | Reviewed like code; changes to it are Normal or Major |
 | Requirements | `docs/REQ-2026-001.json` | Reviewed like code; a change is a Normal change |
 | Decisions | `docs/DM-*.md` and GitHub issues | Append-only in practice; a reversal is a new memorandum |
@@ -51,13 +52,13 @@ Misclassifying a change is itself a finding, recorded as an issue.
 
 | Role | Holder |
 |---|---|
-| Human (Major decisions; release authority; observes and directs) | The repository owner. The one role an AI agent cannot hold (DM-2026-008). |
+| Human (Major decisions; release authority; observes and directs) | The repository owner. The one role an AI agent cannot hold ([DM-2026-008](DM-2026-008.md)). |
 | Technical lead (Normal changes; advises the Human on Major decisions) | [name], or an agent assigned the title Technical Lead |
 | Control board (Major changes) | Generic Software Control Board (GSCB), or its delegate [name] for urgent items. In this repository, the Human, and so not an agent. |
 | Reviewer pool (Standard changes) | Any committer other than the author, named in `CODEOWNERS` (issue #9), or an agent assigned the title Reviewer |
 
 Every role but Human may be held by a person or by an AI agent assigned that
-job title (DM-2026-007). An agent's review counts when it is a separate
+job title ([DM-2026-007](DM-2026-007.md)). An agent's review counts when it is a separate
 session from the author's, it starts from the diff, and it records its title,
 the class it confirms, what it checked and its verdict as a comment on the
 pull request. The Human observes and directs; no Standard or Normal change
@@ -65,7 +66,7 @@ waits on them.
 
 ### Major decisions
 
-A Major decision is the Human's, and is made on an issue (DM-2026-008):
+A Major decision is the Human's, and is made on an issue ([DM-2026-008](DM-2026-008.md)):
 
 1. **Question.** Any role may open the issue. It states what is asked and
    what is needed to decide it. For a risk: the statement, the ratings before
@@ -109,10 +110,11 @@ above.
 | Tests, dependency policy, inventory and verification checks on every change | CI (`ci.yml`, `pages.yml`, `security.yml`) | REQ-1.4, REQ-1.7, REQ-3.3 |
 | Inventory matches the lockfile | `scripts/sbom.sh --check` | REQ-1.4 |
 | Verification matrix matches the code | `scripts/ver.sh --check` | Phase 4 quality criteria |
-| No network capability | `deny.toml` bans and feature denials; CI grep | REQ-2.1, REQ-2.2 |
+| No network capability | `deny.toml` bans and feature denials; CI grep; `scripts/no-network.sh` on the built bundle; the page's Content-Security-Policy in the browser | REQ-2.1, REQ-2.2 |
+| No known malware in source, components or the published bundle | `scripts/malware.sh` (ClamAV) in `security.yml`, `pages.yml` and `release.yml` | REQ-1.10 |
 | Independent review; no force-push | Branch ruleset and `CODEOWNERS`, **not yet enabled** | REQ-3.2, REQ-3.4, issue #9 |
-| Who may approve each class | This plan, DM-2026-007, DM-2026-008 and the board's minutes | Procedural |
-| Telling the Human's comments from an agent's | Convention only: agents act through the Human's account and sign their comments | DM-2026-008 |
+| Who may approve each class | This plan, [DM-2026-007](DM-2026-007.md), [DM-2026-008](DM-2026-008.md) and the board's minutes | Procedural |
+| Telling the Human's comments from an agent's | Convention only: agents act through the Human's account and sign their comments | [DM-2026-008](DM-2026-008.md) |
 | When to cut a release | Release authority | Procedural |
 | Whether to accept a known weakness | Board, recorded in `deny.toml` with reason and issue | REQ-1.8 |
 | Incident response when an advisory is published | Procedural: search the SBOM, open an issue, classify the fix | REQ-1.7 |

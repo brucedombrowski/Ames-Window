@@ -1,0 +1,3 @@
+Before it was published, this folder's contents were scanned with ClamAV by
+the release workflow, which stops the release on a match. A clean scan means
+no match against the signatures known that day, not a guarantee.

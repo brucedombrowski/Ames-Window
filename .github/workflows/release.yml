@@ -6,7 +6,7 @@ name: Release
 #   scripts/release.sh vX.Y.Z    # bumps versions, moves the changelog, tags
 #   git push origin main vX.Y.Z  # this workflow takes it from there
 #
-# It attaches to the GitHub Release: the web bundle, the SBOM, the Software
+# It attaches to the GitHub Release: the web bundle, the Windows package, the SBOMs, the Software
 # Version Description generated at the tagged commit, SHA256SUMS over all of
 # them, and a signed build-provenance attestation naming this commit and run.
 # It then opens a pull request that files the SVD under docs/releases/ so
@@ -25,7 +25,13 @@ permissions:
   pull-requests: write
 
 jobs:
+  windows:
+    uses: ./.github/workflows/windows.yml
+    with:
+      release: true
+
   release:
+    needs: windows
     runs-on: ubuntu-latest
     env:
       TAG: ${{ github.ref_name }}
@@ -64,21 +70,47 @@ jobs:
           scripts/ver.sh --check
 
       - name: Build the web bundle
+        run: scripts/web.sh
+      # What is about to be released is checked as built (REQ-1.10, REQ-2.1).
+      - name: The bundle names no network API
+        run: scripts/no-network.sh web/dist
+      - name: Install ClamAV and today's signatures
         run: |
-          scripts/web.sh
+          sudo apt-get update -qq && sudo apt-get install -y -qq clamav
+          sudo systemctl stop clamav-freshclam || true
+          sudo freshclam --quiet
+      - name: The bundle holds no known malware
+        run: scripts/malware.sh web/dist
+      - name: Zip the web bundle
+        run: |
           (cd web/dist && zip -r -X "../../ames-window-web.zip" .)
+
+      # The Windows package was built and tested by the job above, on Windows.
+      - uses: actions/download-artifact@v4
+        with:
+          name: ames-window-windows-x64
+          path: ames-window-windows-x64
+      - name: The package's SBOM is the committed one
+        run: cmp sbom-windows.cdx.json ames-window-windows-x64/sbom-windows.cdx.json
+      - name: The Windows package holds no known malware
+        run: scripts/malware.sh ames-window-windows-x64
+      - name: Zip the Windows package
+        run: zip -r -X ames-window-windows-x64.zip ames-window-windows-x64
 
       - name: Software Version Description
         run: scripts/svd.sh "SVD-$TAG.md"
 
       - name: Checksums
-        run: sha256sum ames-window-web.zip sbom.cdx.json "SVD-$TAG.md" > SHA256SUMS
+        run: sha256sum ames-window-web.zip ames-window-windows-x64.zip sbom-web.cdx.json sbom-windows.cdx.json sbom.cdx.json "SVD-$TAG.md" > SHA256SUMS
 
       - name: Provenance attestation
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
             ames-window-web.zip
+            ames-window-windows-x64.zip
+            sbom-web.cdx.json
+            sbom-windows.cdx.json
             sbom.cdx.json
             SVD-${{ github.ref_name }}.md
             SHA256SUMS
@@ -98,7 +130,8 @@ jobs:
             --title "Ames Window $TAG" \
             --notes-file notes.md \
             --verify-tag \
-            ames-window-web.zip sbom.cdx.json "SVD-$TAG.md" SHA256SUMS
+            ames-window-web.zip ames-window-windows-x64.zip \
+            sbom-web.cdx.json sbom-windows.cdx.json sbom.cdx.json "SVD-$TAG.md" SHA256SUMS
 
       - name: File the SVD in docs/releases (pull request)
         env:
@@ -116,4 +149,5 @@ jobs:
           git push -u origin "$branch"
           gh pr create --base main --head "$branch" \
             --title "Record the SVD for $TAG" \
-            --body "Files the Software Version Description that the Release workflow generated and attached to the $TAG release. Standard change: documentation only. See issue #10."
+            --body "Files the Software Version Description that the Release workflow generated and attached to the $TAG release. Standard change: documentation only. See issue #10." \
+            || echo "::warning::The release is published, but the pull request filing its SVD could not be opened. Allow GitHub Actions to create pull requests (Settings, Actions, General), or open one from branch $branch by hand."

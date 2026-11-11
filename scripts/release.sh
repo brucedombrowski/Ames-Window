@@ -32,7 +32,8 @@ fail() { echo "error: $*" >&2; exit 1; }
 # Preconditions.
 if [[ -z "$dry" ]]; then
   [[ "$(git branch --show-current)" == "main" ]] || fail "releases are cut from main"
-  git diff --quiet && git diff --cached --quiet || fail "working tree is not clean"
+  # Untracked files count: `git diff` does not see them.
+  [[ -z "$(git status --porcelain)" ]] || fail "working tree is not clean"
 fi
 git rev-parse -q --verify "refs/tags/$tag" >/dev/null && fail "tag $tag already exists"
 current="$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)"
@@ -40,7 +41,8 @@ grep -q '^## \[Unreleased\]' CHANGELOG.md || fail "CHANGELOG.md has no Unrelease
 if sed -n '/^## \[Unreleased\]/,/^## \[/p' CHANGELOG.md | grep -q '^### '; then :; else
   fail "the Unreleased section of CHANGELOG.md is empty; nothing to release"
 fi
-prev_tag="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+# Release tags only: any other tag in the clone is not a previous release.
+prev_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)"
 
 echo "Release $tag (workspace version $current -> $version), previous tag: ${prev_tag:-none}"
 
@@ -91,11 +93,20 @@ open(p, "w").write(s)
 PY
 }
 
+# The SBOMs record the workspace's own version, and the verification matrix
+# records line numbers in the changelog. Both therefore change with a
+# release, and the workflow that builds the tag checks both for drift, so
+# they are regenerated here and committed with it.
+regenerate() {
+  scripts/sbom.sh >/dev/null
+  scripts/ver.sh >/dev/null
+}
+
 if [[ -n "$dry" ]]; then
   tmp="$(mktemp -d)"
   trap 'rm -rf "$tmp"' EXIT
   git worktree add -q "$tmp" HEAD
-  (cd "$tmp" && bump && changelog && git --no-pager diff --stat && echo && git --no-pager diff CHANGELOG.md Cargo.toml ios/Info.plist)
+  (cd "$tmp" && bump && changelog && regenerate && git --no-pager diff --stat && echo && git --no-pager diff CHANGELOG.md Cargo.toml ios/Info.plist)
   git worktree remove --force "$tmp"
   echo
   echo "Dry run: nothing changed. Without --dry-run this commits 'Release $tag' and tags it."
@@ -104,7 +115,8 @@ fi
 
 bump
 changelog
-git add Cargo.toml Cargo.lock ios/Info.plist CHANGELOG.md
+regenerate
+git add Cargo.toml Cargo.lock ios/Info.plist CHANGELOG.md sbom.cdx.json sbom-*.cdx.json docs/VER-2026-001.md
 git commit -q -m "Release $tag" -m "Version $version. Changelog section closed; see CHANGELOG.md."
 git tag -a "$tag" -m "Ames Window $tag"
 echo

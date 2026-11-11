@@ -35,12 +35,12 @@ MAY are normative only in ALL CAPS. The requirements themselves are in
 |---|---|
 | FIPS 140-3, Security Requirements for Cryptographic Modules | The application performs no cryptography. The only hash in the project is SHA-256 over files, computed by the build toolchain, not by the application. |
 | NIST SP 800-171, Protecting CUI in Nonfederal Systems | The repository is public and contains no CUI. A filled-in System Security Plan for a real deployment would be CUI and lives outside this repository. See `configuration-management.md`. |
-| NIST SP 800-53 control families on network protection (SC-7 and related) | The application has no network capability by charter (issue #8, DM-2026-001). The claim is enforced by `deny.toml` and CI, not inherited. |
+| NIST SP 800-53 control families on network protection (SC-7 and related) | The application has no network capability by charter (issue #8, [DM-2026-001](DM-2026-001.md)). The claim is enforced by `deny.toml` and CI, not inherited. |
 
 ## Context only, not normative here
 
-These are cited by the process framework in the `systems-engineering`
-repository but are not freely available. They are listed so a reader knows
+These are cited by the process framework this repository follows but are not
+freely available. They are listed so a reader knows
 where the framework's vocabulary comes from. Nothing in this repository
 depends on their text.
 
