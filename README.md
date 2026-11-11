@@ -101,7 +101,13 @@ cargo install cargo-deny --locked
 scripts/sbom.sh           # regenerate after changing dependencies
 cargo deny check          # vulnerabilities, licences, bans, sources
 scripts/svd.sh            # Software Version Description for this commit
+scripts/svd.sh --from v1.0.0   # ...for a recipient still running v1.0.0
 ```
+
+An SVD is written for whoever receives the software. If a site is on 1.0 and
+is being given 1.4, its "changes installed" section must cover 1.0 to 1.4,
+including the 1.1 through 1.3 releases that site never installed. `--from`
+takes the tag or commit the recipient has; the skipped releases are listed.
 
 ## Why it works
 
