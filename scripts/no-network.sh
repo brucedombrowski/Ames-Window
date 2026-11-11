@@ -10,11 +10,11 @@
 # imports. This reads the import list out of the binary and fails if any
 # entry is a network API by name.
 #
-# The JavaScript and HTML beside it. wasm-bindgen names every constructor
-# `new`, so `new WebSocket(...)` is invisible in the import list and shows
-# only in the generated glue. Every .js and .html file in the bundle is
-# searched for network APIs, and the bundle may contain exactly one `fetch`:
-# the loader fetching the app's own .wasm.
+# The JavaScript, HTML and SVG beside it. wasm-bindgen names every
+# constructor `new`, so `new WebSocket(...)` is invisible in the import list
+# and shows only in the generated glue. Every .js, .html and .svg file in the
+# bundle is searched for network APIs, and the bundle may contain exactly one
+# `fetch`: the loader fetching the app's own .wasm.
 #
 # What this is: a tripwire for the ordinary ways of adding network code. What
 # it is not: a proof. A module can reach the network through functions that
@@ -26,6 +26,11 @@
 # navigation, whether the viewer's (the Report feedback link) or scripted,
 # and a WebRTC peer connection built by looking its constructor up at run
 # time, which the policy's `connect-src` does not cover.
+#
+# An SVG is a document too. As the page's icon it can do nothing: an image
+# runs no script and the page's policy stops its requests. But opened at its
+# own address it has no policy. So an SVG in the bundle may carry no script,
+# no event handler and no reference to anything, which this also checks.
 #
 # Requires: python3.
 set -euo pipefail
@@ -100,6 +105,12 @@ if [[ -n "$bundle" ]]; then
   while IFS= read -r f; do pages+=("$f"); done < <(find "$bundle" -type f \( -name '*.js' -o -name '*.html' -o -name '*.svg' \) | sort)
   if grep -nE 'XMLHttpRequest|WebSocket|sendBeacon|EventSource|RTCPeerConnection|WebTransport|importScripts' "${pages[@]}"; then
     echo "Network API in the bundle's JavaScript or HTML." >&2
+    exit 1
+  fi
+  # An SVG must be a picture and nothing else.
+  svgs="$(find "$bundle" -type f -name '*.svg')"
+  if [[ -n "$svgs" ]] && echo "$svgs" | tr '\n' '\0' | xargs -0 grep -nEi '<script|[[:space:]]on[a-z]+[[:space:]]*=|(href|src)[[:space:]]*=|url\(|@import|<foreignObject'; then
+    echo "An SVG in the bundle carries a script, an event handler or a reference." >&2
     exit 1
   fi
   # Every fetch, however it is called, on whatever object.

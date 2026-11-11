@@ -78,10 +78,10 @@ const TIMING_FRAMES: u32 = 60;
 /// Where a frame's time goes, averaged, so a feedback report can say whether
 /// the app is slow or something around it is.
 ///
-/// A frame has two halves. Painting is this app computing pixels, which is
-/// what slows down when the browser runs WebAssembly without compiling it.
-/// Presenting is copying those pixels to the browser, which is what slows
-/// down when the browser's canvas is.
+/// A frame has two halves. Painting is this app computing pixels.
+/// Presenting is getting those pixels to the screen. A report that gives
+/// both, beside the frame rate, shows which half a slow machine is slow at,
+/// or that neither is and the time is going elsewhere.
 #[derive(Debug, Default)]
 struct Timing {
     frames: u32,

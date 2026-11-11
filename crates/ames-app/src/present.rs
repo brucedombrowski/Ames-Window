@@ -9,11 +9,13 @@
 //!
 //! In the browser there is a shorter road. A canvas takes exactly the bytes
 //! the pixmap already holds, so they are handed over as they are and the
-//! browser copies them. That matters more than it looks: repacking is a loop
-//! over every pixel inside WebAssembly, and going through `softbuffer` there
-//! meant two such loops. Measured, they cost several times what drawing the
-//! picture did, and they are just the kind of work that is slowest when a
-//! browser runs WebAssembly without compiling it first.
+//! browser copies them. Going through `softbuffer` there meant repacking
+//! every pixel twice inside WebAssembly. Measured in Chrome, that cost about
+//! six times what drawing the picture did; handing the bytes over directly
+//! costs a small fraction of it. With WebAssembly's optimising compiler
+//! switched off, both drawing and repacking slowed about twofold, and the
+//! saving held. How it behaves where a browser does not compile WebAssembly
+//! at all has not been measured.
 
 use tiny_skia::Pixmap;
 

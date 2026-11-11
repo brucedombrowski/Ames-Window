@@ -1,11 +1,12 @@
 //! The Ames window, as an application.
 //!
 //! One binary runs everywhere `winit` does: iOS, macOS, Windows, Linux and
-//! the browser. Frames are rasterised on the CPU with `tiny-skia` and
-//! presented through `softbuffer`, so there is no GPU API and no shader.
-//! Apart from `ios_scene.rs`, the only platform‑specific lines are the
-//! handful below that hand the event loop to the browser instead of blocking
-//! on it.
+//! the browser. Frames are rasterised on the CPU with `tiny-skia`, so there
+//! is no GPU API and no shader. What differs by platform is kept in a few
+//! places: `present.rs` (how the picture reaches the screen), `ios_scene.rs`
+//! (iOS's scene), `publish` in `app.rs` (frame timings for the browser page),
+//! and the handful of lines below that hand the event loop to the browser
+//! instead of blocking on it.
 
 // `deny` rather than `forbid`: every module but `ios_scene` is unsafe-free,
 // and that one needs `objc2`'s UIKit setters to put the window on screen.
