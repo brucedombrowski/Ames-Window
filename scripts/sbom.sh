@@ -2,12 +2,12 @@
 # Generate the Software Bills of Materials: sbom.cdx.json and sbom-web.cdx.json.
 #
 #   scripts/sbom.sh            # regenerate
-#   scripts/sbom.sh --check    # fail if the committed file is out of date
+#   scripts/sbom.sh --check    # fail if either committed file is out of date
 #
 # Two files, both CycloneDX 1.6 JSON, including build dependencies:
 # sbom.cdx.json covers every crate for every target (desktop, iOS, wasm), and
-# sbom-web.cdx.json covers the browser build alone, which is what a release
-# ships. Both are derived entirely from Cargo.lock and crate metadata, so
+# sbom-web.cdx.json covers what Cargo resolves for the browser build, which
+# is what a release ships. Both are derived entirely from Cargo.lock and crate metadata, so
 # regenerating them is deterministic: the same lockfile always yields the
 # same bytes. CI runs the --check mode so neither can drift from the lock.
 #
@@ -39,8 +39,10 @@ trap cleanup EXIT
 #   sbom.cdx.json      every target at once: browser, iOS, macOS, Windows,
 #                      Linux and Android. The audit view; no single build
 #                      contains all of it.
-#   sbom-web.cdx.json  the browser build alone, which is what a release
-#                      ships. This is the one that describes the bundle.
+#   sbom-web.cdx.json  what Cargo resolves for the browser build, which is
+#                      what a release ships. A little more than is
+#                      delivered (it includes build-time tools), and not the
+#                      toolchain or the generated JavaScript glue.
 stale=0
 for pair in "all:sbom.cdx.json" "wasm32-unknown-unknown:sbom-web.cdx.json"; do
   target="${pair%%:*}"; out="${pair#*:}"

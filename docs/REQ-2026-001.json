@@ -34,7 +34,10 @@
           "evidence": [
             {"file": "sbom.cdx.json", "pattern": "\"purl\": \"pkg:cargo/"},
             {"file": "sbom.cdx.json", "pattern": "\"dependencies\": ["},
-            {"file": "sbom.cdx.json", "pattern": "\"timestamp\": \""}
+            {"file": "sbom.cdx.json", "pattern": "\"timestamp\": \""},
+            {"file": "sbom-web.cdx.json", "pattern": "\"purl\": \"pkg:cargo/"},
+            {"file": "sbom-web.cdx.json", "pattern": "\"dependencies\": ["},
+            {"file": "sbom-web.cdx.json", "pattern": "\"timestamp\": \""}
           ]
         },
         {
