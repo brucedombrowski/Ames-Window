@@ -7,12 +7,13 @@
 #   scripts/release.sh vX.Y.Z            # do it
 #   scripts/release.sh vX.Y.Z --dry-run  # show what would change, touch nothing
 #
-# Cutting a release is a Major change: the release authority approves the
-# version before this script is run. Semantic Versioning 2.0.0 applies.
+# Cutting a release is a Major change: the Human, who is the release
+# authority, directs it and its version before this script is run. Semantic Versioning 2.0.0 applies.
 #
 # Requires: git, a clean working tree on main, and the checks the workflow
 # will repeat: cargo test, scripts/sbom.sh --check, scripts/ver.sh --check.
-set -euo pipefail
+# -E: an ERR trap set here must also fire for failures inside functions.
+set -Eeuo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
@@ -82,13 +83,16 @@ s = open(p).read()
 s = s.replace("No version has been released yet; everything is under Unreleased.\n", "", 1)
 s = s.replace("## [Unreleased]\n", f"## [Unreleased]\n\n## [{version}] - {today}\n", 1)
 repo = "https://github.com/brucedombrowski/Ames-Window"
-s = re.sub(r"\n\[Unreleased\]: .*\n?$", "\n", s)
-s = s.rstrip("\n") + "\n\n"
+# The link references at the foot: Unreleased now compares from this
+# version, this version gets its line, and the older versions' lines follow.
+older = re.findall(r"^\[\d[^\]]*\]: .*$", s, flags=re.M)
+s = re.sub(r"^\[[^\]]+\]: .*\n?", "", s, flags=re.M).rstrip("\n") + "\n\n"
 s += f"[Unreleased]: {repo}/compare/v{version}...HEAD\n"
 if prev:
     s += f"[{version}]: {repo}/compare/{prev}...v{version}\n"
 else:
     s += f"[{version}]: {repo}/releases/tag/v{version}\n"
+s += "".join(line + "\n" for line in older)
 open(p, "w").write(s)
 PY
 }
@@ -102,25 +106,47 @@ regenerate() {
   scripts/ver.sh >/dev/null
 }
 
+# Between here and the commit the script changes files. If a step fails, say
+# how to get back; nothing has been committed or tagged at that point.
+recover() {
+  echo >&2
+  echo "release.sh failed before committing. Nothing was committed, tagged or pushed." >&2
+  echo "To discard what it changed:  git checkout -- ." >&2
+}
+
 if [[ -n "$dry" ]]; then
   tmp="$(mktemp -d)"
-  trap 'rm -rf "$tmp"' EXIT
+  # Whatever happens, leave no directory and no worktree registration behind.
+  trap 'git worktree remove --force "$tmp" 2>/dev/null || true; rm -rf "$tmp"; git worktree prune' EXIT
   git worktree add -q "$tmp" HEAD
-  (cd "$tmp" && bump && changelog && regenerate && git --no-pager diff --stat && echo && git --no-pager diff CHANGELOG.md Cargo.toml ios/Info.plist)
-  git worktree remove --force "$tmp"
+  # One command per line, not an && chain: inside a chain `set -e` is off, and
+  # a step that failed would be followed by "nothing changed" and exit 0.
+  (
+    cd "$tmp"
+    bump
+    changelog
+    regenerate
+    git --no-pager diff --stat
+    echo
+    git --no-pager diff CHANGELOG.md Cargo.toml ios/Info.plist
+  )
   echo
   echo "Dry run: nothing changed. Without --dry-run this commits 'Release $tag' and tags it."
   exit 0
 fi
 
+trap recover ERR
 bump
 changelog
 regenerate
+trap - ERR
 git add Cargo.toml Cargo.lock ios/Info.plist CHANGELOG.md sbom.cdx.json sbom-*.cdx.json docs/VER-2026-001.md
 git commit -q -m "Release $tag" -m "Version $version. Changelog section closed; see CHANGELOG.md."
 git tag -a "$tag" -m "Ames Window $tag"
 echo
 echo "Committed and tagged $tag. To publish:"
 echo "  git push origin main $tag"
-echo "The Release workflow then builds the web bundle, SBOM, SVD, checksums and"
-echo "attestation, creates the GitHub Release, and opens a PR filing the SVD."
+echo "The Release workflow then builds the Windows package and the web bundle,"
+echo "scans them, writes the SVD, checksums and attestation, creates the GitHub"
+echo "Release, and pushes a branch release/svd-$tag filing the SVD. Open the pull"
+echo "request for that branch by hand: Actions may not open one in this repository."

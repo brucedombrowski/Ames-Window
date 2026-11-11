@@ -31,8 +31,9 @@ short="$(git rev-parse --short HEAD)"
 dirty=""
 if ! git diff --quiet || ! git diff --cached --quiet; then dirty=" (uncommitted changes present)"; fi
 commit_date="$(git log -1 --format=%cd --date=format:%Y-%m-%d)"
-tag="$(git describe --tags --exact-match 2>/dev/null || true)"
-prev_tag="$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)"
+# Release tags only: any other tag in the clone is not a release.
+tag="$(git describe --tags --exact-match --match 'v[0-9]*' 2>/dev/null || true)"
+prev_tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*' HEAD^ 2>/dev/null || true)"
 sbom="sbom.cdx.json"
 
 from=""
@@ -218,7 +219,7 @@ EOF
 if [[ -n "$baseline" ]]; then
   echo "This section spans from **$baseline_label** to the version described"
   echo "in 1.1. Everything listed here is new to a recipient on $baseline."
-  skipped="$(git tag --merged HEAD --no-merged "$baseline" --sort=version:refname 2>/dev/null | grep -vx "$tag" || true)"
+  skipped="$(git tag --list 'v[0-9]*' --merged HEAD --no-merged "$baseline" --sort=version:refname 2>/dev/null | grep -vx "$tag" || true)"
   if [[ -n "$skipped" ]]; then
     echo
     echo "Releases made between the two that were **not** installed at the"

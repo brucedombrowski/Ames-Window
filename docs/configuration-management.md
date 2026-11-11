@@ -103,15 +103,25 @@ sufficient.
 | Every delivery | GitHub Release: executable, SBOM, SVD, `SHA256SUMS`, attestation |
 | Changelog | `CHANGELOG.md`, Keep a Changelog format |
 
-## Release procedure (planned, issue #10)
+## Release procedure
 
-1. Release authority approves the version as a Major change.
-2. Move `CHANGELOG.md` Unreleased items under the new version.
-3. Tag `vX.Y.Z` on `main`.
-4. The release workflow builds the web bundle, regenerates the SBOM, runs
-   `scripts/svd.sh --from <recipient baseline>`, writes `SHA256SUMS`, signs a
-   provenance attestation and attaches everything to the GitHub Release.
-5. After installation at a recipient, update `deployments.toml` (Standard).
+First used for v0.0.1 on 2026-11-11.
+
+1. The repository owner, as release authority, directs the release and its
+   version (a Major change).
+2. On a clean `main`, `scripts/release.sh vX.Y.Z` sets the version, moves
+   the changelog's Unreleased items under it, regenerates the SBOMs and the
+   verification matrix, commits and tags. It does not push.
+3. The commit and the tag are pushed.
+4. The `Release` workflow builds and tests the Windows program on Windows,
+   repeats the tests and drift checks at the tag, builds the web bundle,
+   runs the network check and the malware scan, generates the Software
+   Version Description, writes `SHA256SUMS`, signs a provenance attestation
+   and publishes the GitHub Release with all of it.
+5. The SVD is filed under `docs/releases/` by a pull request from the branch
+   the workflow pushes (Standard).
+6. After installation at a recipient, update `deployments.toml` (Standard;
+   planned, issue #10).
 
 ## Standards
 
