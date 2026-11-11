@@ -77,6 +77,14 @@ inside an `.app` folder, and hands that to `simctl`. That is the whole pipeline.
 
 ## Supply chain
 
+This repository is an IT security compliance demonstration for an
+application. The application is deliberately trivial so that the process
+around it is the subject. One rule follows from that and is permanent: **the
+application never has network capability.** No telemetry, analytics, crash
+reporting or update checks, inbound or outbound. The dependency policy rejects
+any component that could provide it, CI rejects socket code in our own source,
+and every Software Version Description states the claim. See issue #8.
+
 `sbom.cdx.json` is a [CycloneDX](https://cyclonedx.org) 1.6 Software Bill of
 Materials listing every crate the binary depends on, for every target, with
 versions, licences and the dependency graph. It is generated from `Cargo.lock`

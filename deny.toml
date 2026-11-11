@@ -63,6 +63,45 @@ wildcards = "deny"
 allow-wildcard-paths = true
 highlight = "all"
 
+# Charter: this application never has network capability (GitHub issue #8).
+# It is an IT security compliance demonstration, and "no network code" is a
+# claim made in every Software Version Description. These are the crates
+# that would make that claim false. A dependency that pulls one in, even
+# transitively, fails CI.
+deny = [
+  { crate = "reqwest", reason = "HTTP client; charter forbids network capability (#8)" },
+  { crate = "hyper", reason = "HTTP; charter forbids network capability (#8)" },
+  { crate = "hyper-util", reason = "HTTP; charter forbids network capability (#8)" },
+  { crate = "ureq", reason = "HTTP client; charter forbids network capability (#8)" },
+  { crate = "attohttpc", reason = "HTTP client; charter forbids network capability (#8)" },
+  { crate = "isahc", reason = "HTTP client; charter forbids network capability (#8)" },
+  { crate = "surf", reason = "HTTP client; charter forbids network capability (#8)" },
+  { crate = "curl", reason = "HTTP client; charter forbids network capability (#8)" },
+  { crate = "curl-sys", reason = "HTTP client; charter forbids network capability (#8)" },
+  { crate = "tungstenite", reason = "WebSocket; charter forbids network capability (#8)" },
+  { crate = "tokio-tungstenite", reason = "WebSocket; charter forbids network capability (#8)" },
+  { crate = "async-tungstenite", reason = "WebSocket; charter forbids network capability (#8)" },
+  { crate = "quinn", reason = "QUIC transport; charter forbids network capability (#8)" },
+  { crate = "rustls", reason = "TLS implies a network peer; charter forbids network capability (#8)" },
+  { crate = "native-tls", reason = "TLS implies a network peer; charter forbids network capability (#8)" },
+  { crate = "openssl", reason = "TLS implies a network peer; charter forbids network capability (#8)" },
+  { crate = "openssl-sys", reason = "TLS implies a network peer; charter forbids network capability (#8)" },
+  { crate = "socket2", reason = "raw sockets; charter forbids network capability (#8)" },
+  { crate = "mio", reason = "socket polling; charter forbids network capability (#8)" },
+  { crate = "hickory-resolver", reason = "DNS; charter forbids network capability (#8)" },
+  { crate = "trust-dns-resolver", reason = "DNS; charter forbids network capability (#8)" },
+]
+
+# Crates we legitimately depend on that have optional networking. The crate
+# is allowed; these features of it are not.
+[[bans.features]]
+crate = "tokio"
+deny = ["net", "full"]
+
+[[bans.features]]
+crate = "web-sys"
+deny = ["Request", "Response", "Headers", "WebSocket", "XmlHttpRequest", "EventSource", "RtcPeerConnection", "RtcDataChannel", "WebTransport"]
+
 [sources]
 # Only crates.io. A dependency pulled from an arbitrary git URL or a second
 # registry is exactly the kind of thing a security review wants to see.

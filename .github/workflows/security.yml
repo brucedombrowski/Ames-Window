@@ -44,3 +44,17 @@ jobs:
         with:
           command: check
           arguments: --all-features
+
+  no-network:
+    name: No network code in our source
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Charter check (issue 8)
+        # deny.toml covers third-party crates. This covers our own code.
+        run: |
+          if grep -rnE 'std::net|TcpStream|TcpListener|UdpSocket|\.fetch\(|XmlHttpRequest|WebSocket' crates/; then
+            echo "::error::Network code found. The charter forbids it; see issue #8." >&2
+            exit 1
+          fi
+          echo "No network code in crates/."
