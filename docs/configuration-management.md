@@ -107,8 +107,8 @@ sufficient.
 
 First used for v0.0.1 on 2026-11-11.
 
-1. The Human, as release authority, directs the release and its version (a
-   Major change).
+1. The repository owner, as release authority, directs the release and its
+   version (a Major change).
 2. On a clean `main`, `scripts/release.sh vX.Y.Z` sets the version, moves
    the changelog's Unreleased items under it, regenerates the SBOMs and the
    verification matrix, commits and tags. It does not push.

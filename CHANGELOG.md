@@ -16,9 +16,10 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Fixed
 - `scripts/release.sh` left a stale `[Unreleased]` link reference from the
   second release on; it now rebuilds the references. It prints how to
-  recover if a step fails before the commit.
-- `scripts/svd.sh` took any tag for a release; only `v*` tags count now
-  (#37).
+  recover if a step fails before the commit, and a dry run in which a step
+  fails now fails, instead of reporting that nothing changed.
+- `scripts/svd.sh` took any tag for a release, as its baseline and in its
+  list of skipped releases; only `v*` tags count now (#37).
 
 ## [0.0.1] - 2026-11-11
 

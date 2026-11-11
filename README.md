@@ -396,8 +396,8 @@ takes the tag or commit the recipient has; the skipped releases are listed.
 The first release, v0.0.1, was cut on 2026‑11‑11. The procedure, from
 [`docs/configuration-management.md`](docs/configuration-management.md):
 
-1. The Human, who is the release authority, directs the release and its
-   version (a Major change).
+1. The repository owner, who holds the Human role and is the release
+   authority, directs the release and its version (a Major change).
 2. On a clean `main`: `scripts/release.sh vX.Y.Z` bumps `Cargo.toml`,
    `Cargo.lock` and `ios/Info.plist`, turns the changelog's Unreleased
    section into the version's section, regenerates the SBOMs and the

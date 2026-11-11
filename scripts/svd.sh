@@ -219,7 +219,7 @@ EOF
 if [[ -n "$baseline" ]]; then
   echo "This section spans from **$baseline_label** to the version described"
   echo "in 1.1. Everything listed here is new to a recipient on $baseline."
-  skipped="$(git tag --merged HEAD --no-merged "$baseline" --sort=version:refname 2>/dev/null | grep -vx "$tag" || true)"
+  skipped="$(git tag --list 'v[0-9]*' --merged HEAD --no-merged "$baseline" --sort=version:refname 2>/dev/null | grep -vx "$tag" || true)"
   if [[ -n "$skipped" ]]; then
     echo
     echo "Releases made between the two that were **not** installed at the"
