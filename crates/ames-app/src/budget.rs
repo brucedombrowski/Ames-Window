@@ -20,6 +20,10 @@ const SAMPLE: u16 = 30;
 /// Frames ignored at the start, while the browser is still compiling the
 /// module and the first frames are not representative.
 const WARM_UP: u16 = 20;
+/// No one frame counts for more than this many times the target. A single
+/// stall, from a garbage collection or a busy machine, is not a reason to
+/// lower the resolution for good.
+const LONGEST_SAMPLE: f32 = 4.0;
 /// No single decision shrinks the edge by more than this factor, so one bad
 /// second cannot take the picture straight to the minimum.
 const LARGEST_CUT: f32 = 0.6;
@@ -66,7 +70,7 @@ impl Budget {
             self.warm_up -= 1;
             return;
         }
-        self.spent += seconds;
+        self.spent += seconds.min(TARGET * LONGEST_SAMPLE);
         self.frames += 1;
         if self.frames < SAMPLE {
             return;
@@ -126,6 +130,16 @@ mod tests {
         for _ in 0..SAMPLE {
             budget.record(0.004, START_EDGE);
         }
+        assert_eq!(budget.edge(), START_EDGE);
+    }
+
+    #[test]
+    fn one_stalled_frame_changes_nothing() {
+        let mut budget = Budget::default();
+        for _ in 0..WARM_UP + SAMPLE - 1 {
+            budget.record(0.004, START_EDGE);
+        }
+        budget.record(2.0, START_EDGE);
         assert_eq!(budget.edge(), START_EDGE);
     }
 

@@ -133,11 +133,11 @@ impl App {
         else {
             return;
         };
-        if !self
+        let resized = !self
             .canvas
             .as_ref()
-            .is_some_and(|c| c.is(width.get(), height.get()))
-        {
+            .is_some_and(|c| c.is(width.get(), height.get()));
+        if resized {
             self.canvas = Canvas::new(width.get(), height.get());
         }
         let Some(canvas) = self.canvas.as_mut() else {
@@ -165,8 +165,10 @@ impl App {
                 | u32::from(src.blue());
         }
         let _ = buffer.present();
-        // The splash is a different, heavier picture; time only the window.
-        if splash_opacity <= 0.0 {
+        // Time only ordinary frames of the window. The splash is a different,
+        // heavier picture, and a frame that repainted the backdrop did work
+        // the next one will not.
+        if splash_opacity <= 0.0 && !resized {
             self.budget
                 .record(started.elapsed().as_secs_f32(), width.max(height).get());
         }

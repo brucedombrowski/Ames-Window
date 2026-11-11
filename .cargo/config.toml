@@ -1,6 +1,7 @@
 # The browser build rasterises every frame on the CPU. With 128-bit SIMD
 # switched on, tiny-skia uses its vector code paths instead of scalar ones.
-# Every browser that can run this page has supported it since 2021
-# (Chrome and Edge 91, Firefox 89, Safari 16.4).
+# Supported by Chrome and Edge 91 and Firefox 89 (2021) and Safari 16.4
+# (2023). An older browser cannot load the module; web/index.html says so.
+# Note that a RUSTFLAGS environment variable replaces these flags entirely.
 [target.wasm32-unknown-unknown]
 rustflags = ["-C", "target-feature=+simd128"]

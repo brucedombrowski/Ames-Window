@@ -85,7 +85,7 @@ The keys need a keyboard, so in practice they are desktop and browser only.
 ## Build
 
 ```sh
-cargo test --workspace                 # 23 core tests, 21 app tests, 1 doctest
+cargo test --workspace                 # 23 core tests, 22 app tests, 1 doctest
 cargo run -p ames-app                  # desktop window; needs a display
 cargo run -p ames-app --example snapshot -- out
 ```
@@ -115,7 +115,7 @@ Every frame is rasterised on the CPU, so the browser build is tuned to stay
 smooth on slow machines:
 
 - It is compiled with 128‑bit WebAssembly SIMD (`.cargo/config.toml`), which
-  every current browser supports. Measured in headless Chrome on an M2 Max at
+  current browsers support (Safari from 16.4). Measured in headless Chrome on an M2 Max at
   1920x1080, that alone took the page from 30 to 60 frames a second.
 - The backdrop is painted once per size and copied in each frame.
 - It draws at most 1440 pixels on the longest edge and lets the browser scale
@@ -125,8 +125,9 @@ smooth on slow machines:
 The page shows its measured frame rate in the bottom right corner beside a
 **Report feedback** link. The link opens GitHub's new‑issue form filled in
 with the frame rate, sizes, browser and build commit. It is an ordinary link
-in `web/index.html`: the app sends nothing, and nothing leaves the browser
-unless the viewer submits the form.
+in `web/index.html`. Those measurements are in the link's address, so they go
+to GitHub when the viewer follows it, and become public only if the viewer
+submits the form. Until the link is followed the page sends nothing.
 
 Known gaps in the web build are tracked in issue #4: the wasm is about 1 MB
 unoptimised, and touch on a real phone browser has not been confirmed.
@@ -212,9 +213,12 @@ dependency policy rejects any component that could provide it, the
 Software Version Description states the claim. See issue #8.
 
 The web page carries one outbound link, **Report feedback**, which opens a
-pre‑filled GitHub issue form in a new tab. That is navigation the viewer
-chooses and can read before submitting, not a capability of the application:
-no request is made by the page or the wasm module.
+pre‑filled GitHub issue form in a new tab, carrying the page's measurements
+in its address. That is navigation the viewer chooses, not a capability of
+the application: the page and the wasm module make no request of their own,
+and the `Supply chain` workflow greps `web/` as well as `crates/` to keep it
+so. The owner asked for the link; it is not telemetry, because nothing is
+sent without the viewer acting.
 
 `sbom.cdx.json` is a [CycloneDX](https://cyclonedx.org) 1.6 Software Bill of
 Materials listing every crate the binary depends on, for every target, with

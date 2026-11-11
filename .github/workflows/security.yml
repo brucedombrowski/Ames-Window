@@ -55,8 +55,8 @@ jobs:
       - name: Charter check (issue 8)
         # deny.toml covers third-party crates. This covers our own code.
         run: |
-          if grep -rnE 'std::net|TcpStream|TcpListener|UdpSocket|\.fetch\(|XmlHttpRequest|WebSocket' crates/; then
+          if grep -rnE 'std::net|TcpStream|TcpListener|UdpSocket|\.fetch\(|XmlHttpRequest|WebSocket' crates/ web/; then
             echo "::error::Network code found. The charter forbids it; see issue #8." >&2
             exit 1
           fi
-          echo "No network code in crates/."
+          echo "No network code in crates/ or web/."
