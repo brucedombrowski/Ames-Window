@@ -1305,36 +1305,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#softbuffer@0.4.8",
-      "name": "softbuffer",
-      "version": "0.4.8",
-      "description": "Cross-platform software buffer",
-      "scope": "required",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "aac18da81ebbf05109ab275b157c22a653bb3c12cf884450179942f81bcbf6c3"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "MIT OR Apache-2.0"
-        }
-      ],
-      "purl": "pkg:cargo/softbuffer@0.4.8",
-      "externalReferences": [
-        {
-          "type": "documentation",
-          "url": "https://docs.rs/softbuffer"
-        },
-        {
-          "type": "vcs",
-          "url": "https://github.com/rust-windowing/softbuffer"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#strict-num@0.1.1",
       "name": "strict-num",
       "version": "0.1.1",
@@ -1965,7 +1935,6 @@
       "dependsOn": [
         "path+file:///src/crates/ames-core#0.0.1",
         "registry+https://github.com/rust-lang/crates.io-index#console_error_panic_hook@0.1.7",
-        "registry+https://github.com/rust-lang/crates.io-index#softbuffer@0.4.8",
         "registry+https://github.com/rust-lang/crates.io-index#tiny-skia@0.12.0",
         "registry+https://github.com/rust-lang/crates.io-index#wasm-bindgen@0.2.130",
         "registry+https://github.com/rust-lang/crates.io-index#web-sys@0.3.107",
@@ -2148,16 +2117,6 @@
       "ref": "registry+https://github.com/rust-lang/crates.io-index#smol_str@0.2.2",
       "dependsOn": [
         "registry+https://github.com/rust-lang/crates.io-index#serde@1.0.229"
-      ]
-    },
-    {
-      "ref": "registry+https://github.com/rust-lang/crates.io-index#softbuffer@0.4.8",
-      "dependsOn": [
-        "registry+https://github.com/rust-lang/crates.io-index#js-sys@0.3.107",
-        "registry+https://github.com/rust-lang/crates.io-index#raw-window-handle@0.6.2",
-        "registry+https://github.com/rust-lang/crates.io-index#tracing@0.1.44",
-        "registry+https://github.com/rust-lang/crates.io-index#wasm-bindgen@0.2.130",
-        "registry+https://github.com/rust-lang/crates.io-index#web-sys@0.3.107"
       ]
     },
     {

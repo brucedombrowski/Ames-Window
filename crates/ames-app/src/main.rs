@@ -22,6 +22,7 @@ mod gesture;
 mod ios_scene;
 mod paint;
 mod palette;
+mod present;
 
 use winit::error::EventLoopError;
 use winit::event_loop::{ControlFlow, EventLoop};

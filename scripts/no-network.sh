@@ -97,7 +97,7 @@ PY
 
 if [[ -n "$bundle" ]]; then
   pages=()
-  while IFS= read -r f; do pages+=("$f"); done < <(find "$bundle" -type f \( -name '*.js' -o -name '*.html' \) | sort)
+  while IFS= read -r f; do pages+=("$f"); done < <(find "$bundle" -type f \( -name '*.js' -o -name '*.html' -o -name '*.svg' \) | sort)
   if grep -nE 'XMLHttpRequest|WebSocket|sendBeacon|EventSource|RTCPeerConnection|WebTransport|importScripts' "${pages[@]}"; then
     echo "Network API in the bundle's JavaScript or HTML." >&2
     exit 1
@@ -121,7 +121,7 @@ if [[ -n "$bundle" ]]; then
 import sys
 from html.parser import HTMLParser
 
-EXPECTED = "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; connect-src 'self'; worker-src blob:; base-uri 'none'; form-action 'none'"
+EXPECTED = "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; connect-src 'self'; img-src 'self'; worker-src blob:; base-uri 'none'; form-action 'none'"
 VOID = {"meta", "link", "br", "img", "input", "hr", "base", "area", "col", "embed", "source", "track", "wbr"}
 
 class Page(HTMLParser):
@@ -197,5 +197,5 @@ else:
 if problem:
     sys.exit(f"{sys.argv[1]}: {problem}.\nExpected, as the only policy and first in <head>:\n  {EXPECTED}")
 PY
-  echo "${#pages[@]} JavaScript and HTML files: one fetch, the module loader; the page carries the expected Content-Security-Policy, first in <head>."
+  echo "${#pages[@]} JavaScript, HTML and SVG files: one fetch, the module loader; the page carries the expected Content-Security-Policy, first in <head>."
 fi

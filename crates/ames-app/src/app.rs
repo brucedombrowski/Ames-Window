@@ -10,7 +10,6 @@ use std::time::Instant;
 use web_time::Instant;
 
 use ames_core::{Angle, Camera, Rod, Scene, Window};
-use softbuffer::{Context, Surface};
 use tiny_skia::Pixmap;
 use winit::application::ApplicationHandler;
 use winit::dpi::{PhysicalPosition, PhysicalSize};
@@ -22,6 +21,7 @@ use winit::window::WindowId;
 use crate::budget::Budget;
 use crate::gesture::{Gesture, Pointer};
 use crate::paint::{Viewport, backdrop, paint_scene, splash};
+use crate::present::Presenter;
 
 /// How long the greeting stays fully opaque.
 const SPLASH_HOLD: Duration = Duration::from_millis(1800);
@@ -38,7 +38,7 @@ const MAX_STEP: f32 = 0.25;
 /// separate from the state that must survive, like the scene.
 struct Graphics {
     window: Rc<winit::window::Window>,
-    surface: Surface<Rc<winit::window::Window>, Rc<winit::window::Window>>,
+    presenter: Presenter,
 }
 
 /// The picture being drawn, kept between frames so that nothing is allocated
@@ -72,11 +72,65 @@ impl Canvas {
     }
 }
 
+/// How many frames each published mean covers: one second at 60 a second.
+const TIMING_FRAMES: u32 = 60;
+
+/// Where a frame's time goes, averaged, so a feedback report can say whether
+/// the app is slow or something around it is.
+///
+/// A frame has two halves. Painting is this app computing pixels, which is
+/// what slows down when the browser runs WebAssembly without compiling it.
+/// Presenting is copying those pixels to the browser, which is what slows
+/// down when the browser's canvas is.
+#[derive(Debug, Default)]
+struct Timing {
+    frames: u32,
+    painting: Duration,
+    presenting: Duration,
+}
+
+/// Mean milliseconds per frame spent painting and presenting.
+type Means = (f32, f32);
+
+impl Timing {
+    /// Adds one frame. Every [`TIMING_FRAMES`] frames, yields the means and
+    /// starts again.
+    fn record(&mut self, painting: Duration, presenting: Duration) -> Option<Means> {
+        self.frames += 1;
+        self.painting += painting;
+        self.presenting += presenting;
+        if self.frames < TIMING_FRAMES {
+            return None;
+        }
+        #[allow(clippy::cast_precision_loss)]
+        let mean = |total: Duration| total.as_secs_f32() * 1000.0 / self.frames as f32;
+        let means = (mean(self.painting), mean(self.presenting));
+        *self = Self::default();
+        Some(means)
+    }
+}
+
+/// Leaves the means on the canvas element, where the page's script can read
+/// them for a feedback report. Nothing is sent anywhere.
+#[cfg(target_arch = "wasm32")]
+fn publish(window: &winit::window::Window, (painting, presenting): Means) {
+    use winit::platform::web::WindowExtWebSys;
+    if let Some(canvas) = window.canvas() {
+        let _ = canvas.set_attribute("data-paint-ms", &format!("{painting:.1}"));
+        let _ = canvas.set_attribute("data-present-ms", &format!("{presenting:.1}"));
+    }
+}
+
+/// Only the browser build has a page to tell.
+#[cfg(not(target_arch = "wasm32"))]
+fn publish(_window: &winit::window::Window, _means: Means) {}
+
 /// The application.
 pub struct App {
     graphics: Option<Graphics>,
     canvas: Option<Canvas>,
     budget: Budget,
+    timing: Timing,
     scene: Scene,
     pointer: Pointer,
     /// Whether the dial that gives the game away is showing.
@@ -94,6 +148,7 @@ impl Default for App {
             graphics: None,
             canvas: None,
             budget: Budget::default(),
+            timing: Timing::default(),
             scene,
             pointer: Pointer::default(),
             reveal: false,
@@ -151,26 +206,22 @@ impl App {
         let splash_opacity = Self::splash_opacity(since_launch);
         splash(pixmap, splash_opacity, cursor_on);
 
-        if graphics.surface.resize(width, height).is_err() {
+        let painted = started.elapsed();
+
+        if !graphics.presenter.present(pixmap) {
             return;
         }
-        let Ok(mut buffer) = graphics.surface.buffer_mut() else {
-            return;
-        };
-        for (dst, src) in buffer.iter_mut().zip(pixmap.pixels()) {
-            // softbuffer wants 0RGB; the backdrop is opaque so premultiplied
-            // RGBA is already straight RGB.
-            *dst = (u32::from(src.red()) << 16)
-                | (u32::from(src.green()) << 8)
-                | u32::from(src.blue());
-        }
-        let _ = buffer.present();
         // Time only ordinary frames of the window. The splash is a different,
         // heavier picture, and a frame that repainted the backdrop did work
         // the next one will not.
         if splash_opacity <= 0.0 && !resized {
+            let total = started.elapsed();
             self.budget
-                .record(started.elapsed().as_secs_f32(), width.max(height).get());
+                .record(total.as_secs_f32(), width.max(height).get());
+            let presenting = total.saturating_sub(painted);
+            if let Some(means) = self.timing.record(painted, presenting) {
+                publish(&graphics.window, means);
+            }
         }
         graphics.window.request_redraw();
     }
@@ -279,16 +330,12 @@ impl ApplicationHandler for App {
             return;
         };
         let window = Rc::new(window);
-        let Ok(context) = Context::new(window.clone()) else {
-            event_loop.exit();
-            return;
-        };
-        let Ok(surface) = Surface::new(&context, window.clone()) else {
+        let Some(presenter) = Presenter::new(&window) else {
             event_loop.exit();
             return;
         };
         self.last_tick = Instant::now();
-        self.graphics = Some(Graphics { window, surface });
+        self.graphics = Some(Graphics { window, presenter });
 
         // winit hands us a window that belongs to no scene, which on iOS means
         // it is never displayed. Give it one, or we render into the void.
@@ -368,7 +415,7 @@ impl ApplicationHandler for App {
 
 #[cfg(test)]
 mod tests {
-    use super::{PhysicalSize, capped};
+    use super::{Duration, PhysicalSize, TIMING_FRAMES, Timing, capped};
 
     #[test]
     fn a_small_surface_is_left_alone() {
@@ -412,5 +459,18 @@ mod tests {
     fn a_degenerate_surface_does_not_panic() {
         assert_eq!(capped(PhysicalSize::new(0, 0), Some(1440)).width, 0);
         assert!(capped(PhysicalSize::new(4000, 1), Some(1440)).height >= 1);
+    }
+
+    #[test]
+    fn timing_yields_means_once_a_batch_and_starts_again() {
+        let mut timing = Timing::default();
+        let (paint, present) = (Duration::from_millis(4), Duration::from_millis(2));
+        for _ in 0..TIMING_FRAMES - 1 {
+            assert!(timing.record(paint, present).is_none());
+        }
+        let (painting, presenting) = timing.record(paint, present).unwrap();
+        assert!((painting - 4.0).abs() < 1e-3, "{painting}");
+        assert!((presenting - 2.0).abs() < 1e-3, "{presenting}");
+        assert!(timing.record(paint, present).is_none());
     }
 }
