@@ -9,6 +9,7 @@ No version has been released yet; everything is under Unreleased.
 ## [Unreleased]
 
 ### Added
+- README: a link to the YouTube short that inspired the project (#30).
 - A Windows program. `ames-window-windows-x64.zip` holds a single
   `ames-window.exe` that needs nothing installed, a README, its SBOM
   (`sbom-windows.cdx.json`, 42 components) and the licences. It is built and

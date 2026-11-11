@@ -2,6 +2,9 @@
 
 **Try it in the browser:** https://brucedombrowski.github.io/Ames-Window/
 
+**The inspiration:** [this YouTube short](https://www.youtube.com/shorts/LdZxRlyM30o)
+of the demonstration, which the app sets out to reproduce.
+
 A pure‑Rust app that performs the **Ames window illusion**: a flat trapezoid,
 painted like a six‑pane window in perspective, that spins full circle but
 appears to swing back and forth. A blue pen through its centre seems to bend
