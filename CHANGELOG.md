@@ -77,6 +77,12 @@ No version has been released yet; everything is under Unreleased.
   claims a test fails when the column count changes, because none does.
 
 ### Fixed
+- `ames_core::perceived_angle` modelled the wrong reversal. It was honest
+  within a quarter turn of face-on and otherwise mirrored the window left to
+  right, which neither keeps the picture the same nor keeps the tall edge in
+  front. It now reverses depth exactly when the tall edge is the farther one,
+  so the believed window swings through half a turn with its tall edge always
+  toward the viewer. The dial marks the believed tall end with a dot.
 - The top-down dial did not draw the pen, and drew the bar for what the eye
   believes in the pen's blue, so the pen appeared to swing free of the
   window. The dial now draws the pen through the true window at the angle

@@ -205,6 +205,12 @@ fn dial(pixmap: &mut Pixmap, viewport: &Viewport, scene: &Scene) {
     if let Some(path) = segment(plan(tall_edge, believed), plan(short_edge, believed)) {
         stroke(pixmap, &path, palette::PERCEIVED, 7.0);
     }
+    // Its tall end is marked too. This dot never leaves the viewer's side of
+    // the dial, while the true one below goes all the way round.
+    let believed_tall = plan(tall_edge, believed);
+    if let Some(dot) = PathBuilder::from_circle(believed_tall.x, believed_tall.y, 6.5) {
+        fill(pixmap, &dot, palette::PERCEIVED);
+    }
     // The window as it truly is, with a dot on its tall end.
     if let Some(path) = segment(plan(tall_edge, actual), plan(short_edge, actual)) {
         stroke(pixmap, &path, palette::ACTUAL, 3.0);
