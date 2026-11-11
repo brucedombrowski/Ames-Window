@@ -41,7 +41,7 @@ What it does and does not do
 ----------------------------
 
 It opens one window and draws in it. It has no network code and makes no
-connections. It reads no files and writes none of its own: no settings, no
+connections. It reads no files and writes none: no settings, no
 logs, no registry entries. To remove it, delete this folder.
 
 
