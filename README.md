@@ -88,11 +88,19 @@ licences outside the permissive allowlist, wildcard versions, or crates from
 anywhere other than crates.io. The same workflow runs it on every push and
 weekly, so new advisories surface without a code change.
 
+`scripts/svd.sh` writes a Software Version Description to `target/svd/`,
+following MIL-STD-498 (DI-IPSC-81442) section by section: materials released,
+every source file and third-party component with checksums, changes since the
+last release, installation steps and known problems. It is generated entirely
+from the repository at the current commit, so it is never written by hand and
+never out of date. CI attaches it beside the SBOM on every run.
+
 ```sh
 cargo install cargo-cyclonedx --version 0.5.10 --locked
 cargo install cargo-deny --locked
 scripts/sbom.sh           # regenerate after changing dependencies
 cargo deny check          # vulnerabilities, licences, bans, sources
+scripts/svd.sh            # Software Version Description for this commit
 ```
 
 ## Why it works

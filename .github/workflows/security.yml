@@ -26,10 +26,14 @@ jobs:
         run: cargo install cargo-cyclonedx --version 0.5.10 --locked
       - name: Regenerate and compare
         run: scripts/sbom.sh --check
+      - name: Generate the Software Version Description
+        run: scripts/svd.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: sbom
-          path: sbom.cdx.json
+          name: sbom-and-svd
+          path: |
+            sbom.cdx.json
+            target/svd/*.md
 
   deny:
     name: cargo deny
