@@ -10,6 +10,7 @@
     sent to, anywhere but this site: no outside scripts, images, frames or
     connections, no inline script, no eval. `connect-src 'self'` is what lets
     the loader fetch the app's own .wasm; `wasm-unsafe-eval` lets it compile;
+    `img-src 'self'` is the tab icon, icon.svg, and nothing else;
     `worker-src blob:` is the timer worker winit starts, which inherits this
     policy. Two things it cannot stop: navigation, whether a link the
     viewer follows or one made by script, and WebRTC peer connections, which
@@ -19,9 +20,10 @@
     else there, even one stray character, makes a browser leave <head> and
     ignore the policy.
   -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; connect-src 'self'; worker-src blob:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; connect-src 'self'; img-src 'self'; worker-src blob:; base-uri 'none'; form-action 'none'">
   <!-- scripts/web.sh replaces the content with the commit the page was built from. -->
   <meta name="build" content="dev">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
   <style>
     html, body { margin: 0; height: 100%; background: #161b24; overflow: hidden; }
     canvas { display: block; width: 100vw; height: 100vh; touch-action: none; outline: none; }

@@ -35,7 +35,7 @@ order that introduces one idea at a time.
 | Path | What it is |
 |---|---|
 | `crates/ames-core` | The geometry. No dependencies, no pixels. Trapezoid, painted reveals, pen, camera, rotation, projection, and the perceived‑angle model. Every module has unit tests. |
-| `crates/ames-app` | The application, binary name `ames-window`. `winit` for the window and input, `tiny-skia` to rasterise on the CPU, `softbuffer` to present. One source tree for every platform; the only platform‑specific code is the entry point and the clock on wasm, and `ios_scene.rs` on iOS. |
+| `crates/ames-app` | The application, binary name `ames-window`. `winit` for the window and input, `tiny-skia` to rasterise on the CPU, `softbuffer` to present it, except in the browser, where the picture goes straight to the canvas (`present.rs`). One source tree for every platform; platform‑specific code is confined to the entry point and the clock on wasm, `present.rs` (how the picture reaches the screen), `ios_scene.rs` on iOS, and the frame timings the browser build leaves for its page. |
 | `crates/ames-app/examples/snapshot.rs` | Renders frames to PNG without opening a window. |
 | `web/index.html`, `web/app.js`, `scripts/web.sh` | The browser shell with its Content-Security-Policy, the page's script, and the build script that produces `web/dist`. |
 | `ios/Info.plist`, `scripts/ios.sh` | The iOS bundle metadata and the build‑sign‑install script. |
@@ -97,7 +97,7 @@ The keys need a keyboard, so in practice they are desktop and browser only.
 ## Build
 
 ```sh
-cargo test --workspace                 # 24 core tests, 23 app tests, 1 doctest
+cargo test --workspace                 # 24 core tests, 24 app tests, 1 doctest
 cargo run -p ames-app                  # desktop window; needs a display
 cargo run -p ames-app --example snapshot -- out
 ```
@@ -130,6 +130,14 @@ smooth on slow machines:
   current browsers support (Safari from 16.4). Measured in headless Chrome on an M2 Max at
   1920x1080, that alone took the page from 30 to 60 frames a second.
 - The backdrop is painted once per size and copied in each frame.
+- The finished picture is handed to the canvas as it is. Going through
+  `softbuffer` meant two loops over every pixel inside WebAssembly, which
+  cost 7.6 ms a frame against 1 ms to draw the picture; handing it over
+  directly costs 0.2 ms. Same machine and harness as above. With Chrome's
+  optimising compiler for WebAssembly switched off and the processor
+  throttled twentyfold, a reviewer measured 7 to 17 frames a second before
+  and about 50 after. No browser that interprets WebAssembly was available
+  to test, so the case in issue #27 is still unconfirmed.
 - It draws at most 1440 pixels on the longest edge and lets the browser scale
   the canvas up. `budget.rs` times each frame, and when frames take longer
   than 11 ms it lowers that limit step by step, down to 480 pixels.
@@ -140,6 +148,8 @@ with the frame rate, sizes, browser and build commit. It is an ordinary link
 in `web/index.html`. Those measurements are in the link's address, so they go
 to GitHub when the viewer follows it, and become public only if the viewer
 submits the form. Until the link is followed the page sends nothing.
+The report also says how long the app itself spent on each frame, painting
+and presenting, so it can be told apart from slowness around it.
 
 Known gaps in the web build are tracked in issue #4: the wasm is about 1 MB
 unoptimised, and touch on a real phone browser has not been confirmed.
@@ -261,7 +271,7 @@ dependency graph:
 
 | File | Covers | Components |
 |---|---|---|
-| [`sbom-web.cdx.json`](sbom-web.cdx.json) | The browser build, which is what a release ships. **This is the release SBOM.** See below for its exact scope. | 54 |
+| [`sbom-web.cdx.json`](sbom-web.cdx.json) | The browser build, which is what a release ships. **This is the release SBOM.** See below for its exact scope. | 53 |
 | [`sbom-windows.cdx.json`](sbom-windows.cdx.json) | The Windows program, which a release also ships, on the same terms: what Cargo resolves for that target. | 42 |
 | [`sbom.cdx.json`](sbom.cdx.json) | Every target the source builds for at once: browser, iOS, macOS, Windows, Linux, Android. An audit view; no single build contains all of it. | 215 |
 
@@ -270,8 +280,8 @@ target, which is a little more than what is delivered.
 
 | | Browser | Windows |
 |---|---|---|
-| Components listed | 54 | 42 |
-| Compiled for the target, so can be in the program | 40 | 33 |
+| Components listed | 53 | 42 |
+| Compiled for the target, so can be in the program | 39 | 33 |
 | Tools that run only while building (procedural macros, build scripts) | 10 | 1 |
 | Optional, not compiled at all | 4 | 8 |
 
@@ -279,7 +289,7 @@ Nothing compiled into either program is missing from its file. Some things
 in or behind each are not Cargo components and so are in none of the three
 files: the Rust standard library and compiler for both; for the browser, the
 JavaScript glue generated by `wasm-bindgen-cli` (a build tool pinned to
-0.2.130) and the page with its script; for Windows, Microsoft's C runtime, which is
+0.2.130) and the page with its script and icon; for Windows, Microsoft's C runtime, which is
 linked into the program from the build machine's Visual Studio tools. The
 Software Version Description names them. Checksums are recorded for every
 component but our own `ames-core`.

@@ -7,7 +7,19 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+- A browser tab icon, `web/icon.svg` (#14). The page's policy gains
+  `img-src 'self'` for it and nothing else.
+- The feedback report says how long the app spent on each frame, painting
+  and presenting (#27).
+
 ### Changed
+- In the browser the finished picture goes straight to the canvas instead of
+  through `softbuffer`, which repacked every pixel twice inside WebAssembly.
+  Measured in headless Chrome on an M2 Max at 1366x681: presenting went from
+  7.6 ms a frame to 0.2 ms, and the app's whole frame from 8.6 ms to 1.1 ms.
+  `softbuffer` is no longer part of the browser build; its SBOM lists 53
+  components, down from 54.
 - After the first release: the README links the latest release for download
   and describes the release procedure as it ran; REQ-4.5 (releases built by
   automation, with checksums and provenance) now carries evidence instead of

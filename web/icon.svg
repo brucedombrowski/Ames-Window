@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- The Ames window: a trapezoid painted as a six-pane window, with the pen through it. -->
+  <rect width="32" height="32" rx="6" fill="#2a1416"/>
+  <g fill="none" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M5 6.5 L27 10 L27 22 L5 25.5 Z" stroke="#d84426" stroke-width="3.6"/>
+    <path d="M5 6.5 L27 10 L27 22 L5 25.5 Z M12.3 7.7 V24.3 M19.7 8.8 V23.2 M5 16 H27" stroke="#f1eadc" stroke-width="2"/>
+    <path d="M9 19.5 L24 13.5" stroke="#3d7ce6" stroke-width="2.4"/>
+  </g>
+</svg>
