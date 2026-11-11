@@ -26,6 +26,8 @@ jobs:
         run: cargo install cargo-cyclonedx --version 0.5.10 --locked
       - name: Regenerate and compare
         run: scripts/sbom.sh --check
+      - name: Verification matrix matches the code
+        run: scripts/ver.sh --check
       - name: Generate the Software Version Description
         run: scripts/svd.sh
       - uses: actions/upload-artifact@v4
