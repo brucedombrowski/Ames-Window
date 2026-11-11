@@ -24,8 +24,8 @@
   },
   "risks": {
     "document": "RISK-2026-001",
-    "total": 6,
-    "open": 5,
-    "accepted": 2
+    "total": 9,
+    "open": 8,
+    "accepted": 4
   }
 }

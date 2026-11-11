@@ -1,7 +1,7 @@
 {
   "document_id": "RISK-2026-001",
   "title": "Ames Window Risk Register",
-  "version": "1.0",
+  "version": "1.1",
   "date": "2026-11-11",
   "method": "NIST SP 800-30 Rev. 1. Each risk is a threat event stated as condition and consequence, rated for likelihood and impact on the SP 800-30 qualitative scale (Very Low, Low, Moderate, High, Very High), reduced by controls that are requirements in REQ-2026-001, leaving a residual that someone owns. Response is one of accept, mitigate, transfer, avoid (SP 800-39 §3.4).",
   "scale": "Very Low | Low | Moderate | High | Very High, per NIST SP 800-30 Rev. 1 Appendix G (likelihood) and Appendix H (impact)",
@@ -13,7 +13,11 @@
       "source": "DM-2026-001 Consequences",
       "likelihood": "Low",
       "impact": "Moderate",
-      "controls": ["REQ-2.1", "REQ-2.2", "REQ-3.2"],
+      "controls": [
+        "REQ-2.1",
+        "REQ-2.2",
+        "REQ-3.2"
+      ],
       "control_note": "deny.toml catches every third-party path. The CI grep catches the obvious standard-library forms. Second-person review is the control for the rest, which is why Standard changes still require a reviewer.",
       "residual_likelihood": "Very Low",
       "residual_impact": "Moderate",
@@ -21,7 +25,10 @@
       "owner": "Technical lead",
       "status": "open",
       "review": "When REQ-3.2 is enforced (issue #9) or when the grep is extended",
-      "references": ["#8", "docs/DM-2026-001.md"]
+      "references": [
+        "#8",
+        "docs/DM-2026-001.md"
+      ]
     },
     {
       "id": "RISK-2",
@@ -30,7 +37,10 @@
       "source": "RUSTSEC-2026-0192, ttf-parser via winit's Wayland title decorations",
       "likelihood": "Low",
       "impact": "Low",
-      "controls": ["REQ-1.7", "REQ-1.8"],
+      "controls": [
+        "REQ-1.7",
+        "REQ-1.8"
+      ],
       "control_note": "Weekly advisory scan surfaces the condition. Resolved by DM-2026-006: the winit feature that pulled the font parser was replaced, removing the component.",
       "residual_likelihood": "Very Low",
       "residual_impact": "Low",
@@ -38,7 +48,10 @@
       "owner": "Technical lead",
       "status": "closed",
       "review": "Re-opens automatically if cargo deny reports a new unmaintained advisory",
-      "references": ["#6", "docs/DM-2026-006.md"]
+      "references": [
+        "#6",
+        "docs/DM-2026-006.md"
+      ]
     },
     {
       "id": "RISK-3",
@@ -47,7 +60,12 @@
       "source": "Discussion of supply chain threat model, 2026-11-11",
       "likelihood": "Low",
       "impact": "High",
-      "controls": ["REQ-1.5", "REQ-1.6", "REQ-1.7", "REQ-3.2"],
+      "controls": [
+        "REQ-1.5",
+        "REQ-1.6",
+        "REQ-1.7",
+        "REQ-3.2"
+      ],
       "control_note": "Checksums protect pinned versions. A malicious new version only enters on an update, which is a Normal change with review. Advisory scanning catches it after disclosure, not before. Vendoring (cargo vendor) or recorded audits (cargo vet) would prevent it and were considered in DM-2026-005.",
       "residual_likelihood": "Very Low",
       "residual_impact": "High",
@@ -55,7 +73,10 @@
       "owner": "Repository owner",
       "status": "open",
       "review": "At each release, or if the project is adopted for a real deployment, when DM-2026-005 is revisited",
-      "references": ["docs/DM-2026-005.md", "docs/DM-2026-002.md"]
+      "references": [
+        "docs/DM-2026-005.md",
+        "docs/DM-2026-002.md"
+      ]
     },
     {
       "id": "RISK-4",
@@ -72,7 +93,9 @@
       "owner": "Repository owner",
       "status": "open",
       "review": "Closes when issue #9 is done and REQ-3.2 and REQ-3.4 carry evidence",
-      "references": ["#9"]
+      "references": [
+        "#9"
+      ]
     },
     {
       "id": "RISK-5",
@@ -81,7 +104,10 @@
       "source": "Deck and README numbers were hand-typed before facts.json existed",
       "likelihood": "High",
       "impact": "Low",
-      "controls": ["REQ-1.4", "REQ-4.2"],
+      "controls": [
+        "REQ-1.4",
+        "REQ-4.2"
+      ],
       "control_note": "sbom.cdx.json, VER-2026-001.md, RISK-2026-001.md and facts.json are generated and drift-checked in CI. The SVD is generated per commit. Prose that quotes a number cites facts.json and the commit it was taken from.",
       "residual_likelihood": "Low",
       "residual_impact": "Low",
@@ -89,7 +115,10 @@
       "owner": "Technical lead",
       "status": "open",
       "review": "When the deck is next regenerated",
-      "references": ["docs/facts.json", "scripts/facts.sh"]
+      "references": [
+        "docs/facts.json",
+        "scripts/facts.sh"
+      ]
     },
     {
       "id": "RISK-6",
@@ -98,7 +127,11 @@
       "source": "SBOM review, 2026-11-11",
       "likelihood": "Moderate",
       "impact": "Moderate",
-      "controls": ["REQ-1.1", "REQ-1.7", "REQ-1.9"],
+      "controls": [
+        "REQ-1.1",
+        "REQ-1.7",
+        "REQ-1.9"
+      ],
       "control_note": "Inventory and scanning make the surface visible. DM-2026-006 removed the font-parsing subtree. Further reduction means dropping platform features the project does not ship, a Normal change per platform.",
       "residual_likelihood": "Moderate",
       "residual_impact": "Low",
@@ -106,7 +139,76 @@
       "owner": "Technical lead",
       "status": "open",
       "review": "At each winit or softbuffer update",
-      "references": ["docs/DM-2026-006.md", "sbom.cdx.json"]
+      "references": [
+        "docs/DM-2026-006.md",
+        "sbom.cdx.json"
+      ]
+    },
+    {
+      "id": "RISK-7",
+      "title": "Public repository exposes the process in full",
+      "statement": "If the repository is public, then every requirement, decision, accepted risk and open item is visible to anyone, including which controls are not yet enforced.",
+      "source": "Charter: the repository is a compliance demonstration",
+      "likelihood": "Very High",
+      "impact": "Very Low",
+      "controls": [
+        "REQ-3.1"
+      ],
+      "control_note": "Carrying this risk is the better choice. The visibility is the purpose: the method is meant to be lifted into other projects. Mitigating by going private would remove the value entirely, and a half measure (hiding only the open items) would make the record dishonest. The real exposure is bounded by the CM plan boundary: anything that would be CUI for a real deployment, such as named people, devices, destinations or system boundaries, is kept out of this repository by rule. Cost of mitigation: the project. Cost of carrying: none beyond keeping that boundary.",
+      "residual_likelihood": "Very High",
+      "residual_impact": "Very Low",
+      "response": "accept",
+      "owner": "Repository owner",
+      "status": "open",
+      "review": "If the repository is ever used as the instance for a real deployment rather than the method",
+      "references": [
+        "docs/configuration-management.md"
+      ]
+    },
+    {
+      "id": "RISK-8",
+      "title": "Single hosting platform for code, issues, releases and CI",
+      "statement": "If GitHub is unavailable, changes policy, or the account is lost, then the issue trail, release assets and CI history are unreachable until restored, and no change can be merged under the process in the meantime.",
+      "source": "Architecture review, 2026-11-11",
+      "likelihood": "Low",
+      "impact": "Moderate",
+      "controls": [
+        "REQ-4.2",
+        "REQ-1.3"
+      ],
+      "control_note": "Carrying this risk is the better choice. Git is distributed: every clone holds the full history, the SBOM, the requirements, the register and the generators, so every document except the issue thread is reproducible from any clone with no platform at all. Mitigating with a second platform and a mirror adds a synchronisation process and a second place for records to diverge, which is itself a configuration-management risk. The residual, loss of the issue thread, is reduced by referencing issue conclusions in the decision memoranda, which are in the tree. Cost of mitigation: a mirror, a sync, and a second audit log. Cost of carrying: an outage delays merges and loses nothing permanent that is in the tree.",
+      "residual_likelihood": "Low",
+      "residual_impact": "Low",
+      "response": "accept",
+      "owner": "Repository owner",
+      "status": "open",
+      "review": "Annually, or if the repository becomes the system of record for a real deployment",
+      "references": [
+        "docs/DM-2026-003.md"
+      ]
+    },
+    {
+      "id": "RISK-9",
+      "title": "Duplicate versions of the same component in the tree",
+      "statement": "If several versions of one component are compiled in because different dependencies pin different ranges, then the executable carries redundant code, each copy is a separate place for a vulnerability to appear, and advisory scanning may flag a version that a newer sibling has already fixed.",
+      "source": "cargo deny bans: warning[duplicate] on about a dozen components at 2026-11-11",
+      "likelihood": "Moderate",
+      "impact": "Low",
+      "controls": [
+        "REQ-1.7",
+        "REQ-1.9"
+      ],
+      "control_note": "Scanning covers every copy, so nothing is missed, but the surface is larger than it needs to be. Planned mitigation: a reviewed cargo update as a Normal change, reconciling versions where the dependency graph allows, with a decision memorandum recording what could not be reconciled and why. This risk is carried deliberately into the first release so that the next release can show a risk opened, fixed, closed and every submittal regenerated.",
+      "residual_likelihood": "Moderate",
+      "residual_impact": "Low",
+      "response": "mitigate",
+      "owner": "Technical lead",
+      "status": "open",
+      "review": "At the first release after v0.1.0",
+      "references": [
+        "deny.toml [bans] multiple-versions",
+        "sbom.cdx.json"
+      ]
     }
   ]
 }
