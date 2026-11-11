@@ -15,8 +15,9 @@
     viewer follows or one made by script, and WebRTC peer connections, which
     `connect-src` does not cover and for which Chrome has no working
     directive. scripts/no-network.sh fails the build unless this exact policy
-    is the one in force: in <head>, ahead of everything but <meta> and
-    <title>.
+    comes first in <head>, after nothing but <meta> and <title>: anything
+    else there, even one stray character, makes a browser leave <head> and
+    ignore the policy.
   -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; connect-src 'self'; worker-src blob:; base-uri 'none'; form-action 'none'">
   <!-- scripts/web.sh replaces the content with the commit the page was built from. -->

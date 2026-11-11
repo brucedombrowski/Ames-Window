@@ -261,10 +261,14 @@ What these do not show.
   connections, no inline script, no `eval`. Checked in headless Chrome by an
   independent reviewer: some thirty routes, from `fetch` and WebSocket to an
   image `src`, a style `url()` and a worker, were each refused, and the app
-  ran at full speed under the policy. The build parses the page and fails
-  unless this exact policy is the only one, directly in `<head>`, ahead of
-  everything but `<meta>` and `<title>`; a copy of the line in a comment or
-  in `<body>` does not count.
+  ran at full speed under the policy. The build reads the page and fails
+  unless it opens with the doctype, `<html>` and `<head>` and this exact
+  policy comes next, after nothing but `<meta>` and `<title>`. That refuses
+  the ordinary ways a policy ends up ignored: commented out, loosened,
+  moved, or pushed out of `<head>` by a stray character. It is a check of
+  the page's text, not a browser, and does not prove the policy is applied;
+  loading the built page in a browser in CI would, and is tracked in
+  issue #33.
 - "Its own site" is the whole host the page is served from, not only this
   project's path on it.
 - Two things a policy does not stop. **Navigation:** the Report feedback

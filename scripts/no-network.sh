@@ -108,12 +108,15 @@ if [[ -n "$bundle" ]]; then
     echo "Expected exactly one fetch in the bundle, the module loader; found $fetches." >&2
     exit 1
   fi
-  # The policy must be the one in force, not merely present as text. A line
-  # inside a comment, a <template>, a <noscript> or <body> is text; so is one
-  # that follows anything which ends <head> early. So the page is parsed, and
-  # the policy must be the single such <meta>, directly in <head>, with
-  # nothing before it there but <meta> and <title>. Changing the policy means
-  # changing it here too, in review.
+  # The policy must be where a browser will apply it, not merely present as
+  # text. A copy inside a comment, a <template> or <body> is text; so is one
+  # that follows anything which makes a browser leave <head> early, down to a
+  # single stray character. So the page is read tag by tag, and it must run:
+  # doctype, <html>, <head>, then nothing but <meta> and <title> before the
+  # one expected policy. This refuses the ordinary ways a policy ends up
+  # inert. It is not a browser and does not prove the policy is applied;
+  # loading the built page in one would. Changing the policy means changing
+  # it here too, in review.
   python3 - "$bundle/index.html" <<'PY'
 import sys
 from html.parser import HTMLParser
@@ -122,22 +125,37 @@ EXPECTED = "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 
 VOID = {"meta", "link", "br", "img", "input", "hr", "base", "area", "col", "embed", "source", "track", "wbr"}
 
 class Page(HTMLParser):
+    """Records what comes before the first policy <meta>, and where it sits."""
     def __init__(self):
         super().__init__(convert_charrefs=True)
-        self.stack, self.before, self.policies = [], [], []
+        self.stack, self.policies = [], []
+        self.seen = []      # ("decl"|"start"|"end"|"selfclosed"|"text", what) up to the policy
+        self.done = False   # set once the first policy has been seen
+    def note(self, kind, what):
+        if not self.done:
+            self.seen.append((kind, what))
+    def handle_decl(self, decl):
+        self.note("decl", decl.lower())
+    def handle_data(self, data):
+        # HTML's own whitespace only: a non-breaking space is text to a browser.
+        if data.strip(" \t\n\r\f"):
+            self.note("text", data.strip(" \t\n\r\f")[:20])
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
-        if tag == "meta" and (a.get("http-equiv") or "").lower() == "content-security-policy":
-            self.policies.append((list(self.stack), list(self.before), a.get("content")))
-        if self.stack == ["html", "head"]:
-            self.before.append(tag)
+        if tag == "meta" and any((v or "").lower() == "content-security-policy" for k, v in attrs if k == "http-equiv"):
+            names = [k for k, _ in attrs]
+            self.policies.append((list(self.stack), list(self.seen), [v for k, v in attrs if k == "content"], len(names) != len(set(names))))
+            self.done = True
+        self.note("start", tag)
         if tag not in VOID:
             self.stack.append(tag)
     def handle_startendtag(self, tag, attrs):
+        self.note("selfclosed", tag)
         self.handle_starttag(tag, attrs)
         if tag not in VOID and self.stack and self.stack[-1] == tag:
             self.stack.pop()
     def handle_endtag(self, tag):
+        self.note("end", tag)
         if tag in self.stack:
             while self.stack.pop() != tag:
                 pass
@@ -147,17 +165,37 @@ page.feed(open(sys.argv[1]).read())
 page.close()
 problem = None
 if len(page.policies) != 1:
-    problem = f"expected one Content-Security-Policy <meta> in force, found {len(page.policies)}"
+    problem = f"expected one Content-Security-Policy <meta>, found {len(page.policies)}"
 else:
-    stack, before, content = page.policies[0]
-    if content != EXPECTED:
+    stack, seen, contents, repeated = page.policies[0]
+    opening = [(k, w) for k, w in seen[:3]]
+    rest = seen[3:]
+    title_open = False
+    stray = None
+    for kind, what in rest:
+        if kind == "start" and what == "meta":
+            continue
+        if kind == "start" and what == "title" and not title_open:
+            title_open = True
+        elif kind == "text" and title_open:
+            continue
+        elif kind == "end" and what == "title" and title_open:
+            title_open = False
+        else:
+            stray = f"{kind} {what!r}"
+            break
+    if repeated or len(contents) != 1:
+        problem = "the policy tag repeats an attribute; a browser keeps the first"
+    elif contents[0] != EXPECTED:
         problem = "the policy is not the expected one"
-    elif stack != ["html", "head"]:
+    elif opening != [("decl", "doctype html"), ("start", "html"), ("start", "head")]:
+        problem = "the page does not open with <!doctype html>, <html>, <head> and nothing else"
+    elif stack != ["html", "head"] or title_open:
         problem = "the policy is not directly inside <head> (it is in " + ("<" + "><".join(stack) + ">" if stack else "no element") + ")"
-    elif set(before) - {"meta", "title"}:
-        problem = "something other than <meta> or <title> comes before the policy in <head>: " + ", ".join(sorted(set(before) - {"meta", "title"}))
+    elif stray:
+        problem = f"something other than <meta> or <title> comes before the policy in <head>: {stray}"
 if problem:
     sys.exit(f"{sys.argv[1]}: {problem}.\nExpected, as the only policy and first in <head>:\n  {EXPECTED}")
 PY
-  echo "${#pages[@]} JavaScript and HTML files: one fetch, the module loader; the page carries the expected Content-Security-Policy."
+  echo "${#pages[@]} JavaScript and HTML files: one fetch, the module loader; the page carries the expected Content-Security-Policy, first in <head>."
 fi
