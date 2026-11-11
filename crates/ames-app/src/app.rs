@@ -13,7 +13,7 @@ use ames_core::{Angle, Camera, Rod, Scene, Window};
 use softbuffer::{Context, Surface};
 use tiny_skia::Pixmap;
 use winit::application::ApplicationHandler;
-use winit::dpi::PhysicalPosition;
+use winit::dpi::{PhysicalPosition, PhysicalSize};
 use winit::event::{ElementState, KeyEvent, MouseButton, TouchPhase, WindowEvent};
 use winit::event_loop::ActiveEventLoop;
 use winit::keyboard::{Key, NamedKey};
@@ -28,6 +28,8 @@ const SPLASH_HOLD: Duration = Duration::from_millis(1800);
 const SPLASH_FADE: Duration = Duration::from_millis(700);
 /// Cursor blink period.
 const BLINK: Duration = Duration::from_millis(530);
+/// The longest step the simulation will take in one frame. See `tick`.
+const MAX_STEP: f32 = 0.25;
 
 /// Everything that only exists while we have a window to draw into.
 ///
@@ -74,7 +76,11 @@ impl App {
         self.last_tick = now;
         // While a finger is down the user is in charge of the angle.
         if !self.pointer.is_down() {
-            self.scene.advance(elapsed.min(0.1));
+            // The clamp stops the window lurching after the tab has been in the
+            // background. It must stay well above a plausible frame time: a
+            // frame slower than the clamp advances the scene by less than the
+            // time that really passed, and the window visibly spins slow.
+            self.scene.advance(elapsed.min(MAX_STEP));
         }
     }
 
@@ -84,7 +90,7 @@ impl App {
         let Some(graphics) = self.graphics.as_mut() else {
             return;
         };
-        let size = graphics.window.inner_size();
+        let size = render_size(graphics.window.inner_size());
         let (Some(width), Some(height)) =
             (NonZeroU32::new(size.width), NonZeroU32::new(size.height))
         else {
@@ -159,6 +165,46 @@ impl App {
     }
 }
 
+/// The longest edge rasterised in the browser. `None` elsewhere: native
+/// rasterisation keeps up with any window a person can open.
+#[cfg(target_arch = "wasm32")]
+const MAX_EDGE: Option<u32> = Some(1440);
+#[cfg(not(target_arch = "wasm32"))]
+const MAX_EDGE: Option<u32> = None;
+
+/// How many pixels to rasterise for a surface of `size`.
+///
+/// Frames are drawn on the CPU, so the cost of one is linear in its area. A
+/// laptop canvas at a high device-pixel ratio is several megapixels, which is
+/// more than WebAssembly rasterises in a frame — and once a frame takes longer
+/// than `MAX_STEP` the window appears to spin slowly as well as stutter.
+/// Drawing fewer pixels and letting the browser scale the canvas up costs
+/// little here, because the picture is flat colour on flat colour.
+fn render_size(size: PhysicalSize<u32>) -> PhysicalSize<u32> {
+    capped(size, MAX_EDGE)
+}
+
+/// `size` with its longest edge brought down to `max_edge`, aspect preserved.
+///
+/// Idempotent, which matters: the surface is resized to whatever this returns,
+/// and the next frame measures the surface again.
+fn capped(size: PhysicalSize<u32>, max_edge: Option<u32>) -> PhysicalSize<u32> {
+    let Some(max_edge) = max_edge else {
+        return size;
+    };
+    let longest = size.width.max(size.height);
+    if longest <= max_edge || longest == 0 {
+        return size;
+    }
+    // `u64` so the multiplication cannot overflow on a very wide surface.
+    let scaled = |n: u32| {
+        u32::try_from(u64::from(n) * u64::from(max_edge) / u64::from(longest))
+            .unwrap_or(max_edge)
+            .max(1)
+    };
+    PhysicalSize::new(scaled(size.width), scaled(size.height))
+}
+
 /// A titled window on the desktop; a canvas appended to the page on the web.
 #[cfg(not(target_arch = "wasm32"))]
 fn window_attributes() -> winit::window::WindowAttributes {
@@ -192,6 +238,13 @@ impl ApplicationHandler for App {
         };
         self.last_tick = Instant::now();
         self.graphics = Some(Graphics { window, surface });
+
+        // winit hands us a window that belongs to no scene, which on iOS means
+        // it is never displayed. Give it one, or we render into the void.
+        #[cfg(target_os = "ios")]
+        if let Some(g) = &self.graphics {
+            crate::ios_scene::adopt(&g.window);
+        }
     }
 
     fn suspended(&mut self, _event_loop: &ActiveEventLoop) {
@@ -258,5 +311,54 @@ impl ApplicationHandler for App {
         if let Some(g) = &self.graphics {
             g.window.request_redraw();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{PhysicalSize, capped};
+
+    #[test]
+    fn a_small_surface_is_left_alone() {
+        let size = PhysicalSize::new(800, 600);
+        assert_eq!(capped(size, Some(1440)), size);
+    }
+
+    #[test]
+    fn no_limit_means_every_pixel() {
+        let size = PhysicalSize::new(3840, 2160);
+        assert_eq!(capped(size, None), size);
+    }
+
+    #[test]
+    fn the_longest_edge_lands_on_the_limit() {
+        assert_eq!(
+            capped(PhysicalSize::new(3840, 2160), Some(1440)).width,
+            1440
+        );
+        assert_eq!(
+            capped(PhysicalSize::new(1200, 3600), Some(1440)).height,
+            1440
+        );
+    }
+
+    #[test]
+    fn the_aspect_ratio_survives() {
+        let before = PhysicalSize::new(3840u32, 2160u32);
+        let after = capped(before, Some(1440));
+        let ratio = |s: PhysicalSize<u32>| f64::from(s.width) / f64::from(s.height);
+        assert!((ratio(before) - ratio(after)).abs() < 0.01);
+    }
+
+    #[test]
+    fn capping_twice_changes_nothing() {
+        let once = capped(PhysicalSize::new(3840, 2160), Some(1440));
+        assert_eq!(capped(once, Some(1440)), once);
+    }
+
+    #[test]
+    fn a_degenerate_surface_does_not_panic() {
+        assert_eq!(capped(PhysicalSize::new(0, 0), Some(1440)).width, 0);
+        assert!(capped(PhysicalSize::new(4000, 1), Some(1440)).height >= 1);
     }
 }

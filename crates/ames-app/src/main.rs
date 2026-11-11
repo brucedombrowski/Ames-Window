@@ -6,11 +6,15 @@
 //! The only platform‑specific lines are the handful below that hand the
 //! event loop to the browser instead of blocking on it.
 
-#![forbid(unsafe_code)]
+// `deny` rather than `forbid`: every module but `ios_scene` is unsafe-free,
+// and that one needs `objc2`'s UIKit setters to put the window on screen.
+#![deny(unsafe_code)]
 
 mod app;
 mod font;
 mod gesture;
+#[cfg(target_os = "ios")]
+mod ios_scene;
 mod paint;
 mod palette;
 

@@ -9,7 +9,8 @@ No version has been released yet; everything is under Unreleased.
 ## [Unreleased]
 
 ### Added
-- `scripts/release.sh`: cuts a release in one command and stops before the
+- `scripts/release.sh`: cuts a release in one command, setting the version
+  in `Cargo.toml`, `Cargo.lock` and the iOS bundle, and stops before the
   push. `.github/workflows/release.yml`: rebuilds from the tag, re-verifies
   every generated document, publishes the web bundle, SBOM, SVD, `SHA256SUMS`
   and a signed provenance attestation. REQ-4.5 now has evidence (#10).
@@ -36,14 +37,6 @@ No version has been released yet; everything is under Unreleased.
 - `docs/DM-2026-005.md` (dependencies not vendored; registry compromise
   accepted as RISK-3) and `docs/DM-2026-006.md` (Wayland decorations
   without a font parser).
-- `.github/workflows/release.yml`: on a `v*` tag, tests, checks the SBOM and
-  verification matrix, builds `ames-window-web.zip`, generates the SVD at the
-  tagged commit, writes `SHA256SUMS`, signs a build-provenance attestation,
-  creates the GitHub Release with all of them, and opens a pull request
-  filing the SVD under `docs/releases/` (#10).
-- `scripts/release.sh vX.Y.Z`: bumps `Cargo.toml`, `Cargo.lock` and the iOS
-  bundle version, closes the changelog section, commits and tags.
-  `--dry-run` previews the diff.
 - `rust-version = "1.87"` declared in the workspace; 1.86 fails to compile.
 - `docs/standards.md`: register of governing standards, all openly
   published, with what each is used for and which do not apply and why.
@@ -68,16 +61,28 @@ No version has been released yet; everything is under Unreleased.
   no wildcard versions; `Supply chain` workflow on push, pull request and
   weekly (#7).
 - `ames-app` marked `publish = false`.
+- `crates/ames-app/src/ios_scene.rs` and a `UIApplicationSceneManifest` in
+  `ios/Info.plist`: the window is handed to a `UIWindowScene`, which iOS 13
+  and later require before showing it.
+- `scripts/ios.sh` accepts `PROVISIONING_PROFILE` to name the profile to
+  embed, and `.gitignore` refuses signing material.
+- `.github/workflows/ci.yml`: formatting, clippy and the tests on every pull
+  request, plus a check that the wasm and Windows targets compile.
 
 ### Changed
 - `winit` declared with `default-features = false` and
   `wayland-csd-adwaita-notitle` in place of `wayland-csd-adwaita`. Same
   window frame on Wayland, no title text, three components fewer (#6,
   DM-2026-006).
-
-### Removed
-- The `ignore` entry for RUSTSEC-2026-0192 in `deny.toml`; the component
-  is no longer in the tree.
+- Review may be done by an AI agent holding a named role, not only by a
+  person, so no Standard or Normal change waits on the owner
+  (`docs/DM-2026-007.md`, the CM plan, REQ-3.2).
+- The browser build rasterises at most 1440 pixels on its longest edge and
+  lets the browser scale the canvas up.
+- `ames-app` is `#![deny(unsafe_code)]` rather than `forbid`, with the one
+  exception confined to `ios_scene.rs`.
+- `scripts/ios.sh` no longer rewrites the binary's SDK version with `vtool`;
+  the scene manifest makes that workaround unnecessary.
 - README rewritten from verified facts only: a Status table per platform,
   what `scripts/ios.sh` really does, exact requirements.
 - The `Pages` workflow triggers on `main` only; a leftover development
@@ -85,7 +90,19 @@ No version has been released yet; everything is under Unreleased.
 - `docs/tour.md` exercise updated for the three-column window; it no longer
   claims a test fails when the column count changes, because none does.
 
+### Removed
+- The `ignore` entry for RUSTSEC-2026-0192 in `deny.toml`; the component
+  is no longer in the tree.
+
 ### Fixed
+- The window spun slowly in the browser on large or high-density displays
+  (reported from Edge on a Windows laptop): a frame slower than the 100 ms
+  step clamp advanced the scene by less time than had passed. The clamp is
+  now 250 ms and frames are cheaper (see Changed).
+- `scripts/ios.sh sim` no longer aborts when `open -a Simulator` finds no
+  Simulator.app.
+- `scripts/sbom.sh` and `scripts/release.sh` used GNU-only `sed -i` forms and
+  failed on macOS.
 - `scripts/sbom.sh` rewrites the absolute workspace path that
   `cargo-cyclonedx` puts in the workspace crates' `bom-ref`s to a fixed
   `path+file:///src/` prefix, so the SBOM is the same on every machine. The

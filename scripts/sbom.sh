@@ -51,7 +51,8 @@ SOURCE_DATE_EPOCH=0 cargo cyclonedx \
 # differs between machines and would make the file depend on where the
 # repository was cloned. Rewrite that prefix to a fixed one so the output is
 # the same everywhere.
-sed -i "s#path+file://$root/#path+file:///src/#g" "$tmp.json"
+# (perl, not `sed -i`: GNU and BSD sed disagree on that flag's argument.)
+ROOT="$root" perl -pi -e 's#path\+file://\Q$ENV{ROOT}\E/#path+file:///src/#g' "$tmp.json"
 
 if [[ "${1:-}" == "--check" ]]; then
   if cmp -s "$tmp.json" "$out"; then

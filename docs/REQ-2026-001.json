@@ -352,7 +352,7 @@
           "id": "REQ-3.2",
           "standard": "NIST SP 800-53 Rev. 5",
           "section": "CM-3 Configuration Change Control; AC-5 Separation of Duties",
-          "text": "Every change SHALL be reviewed and approved by a person other than its author before it joins the main line, and the repository SHALL be configured so that this cannot be bypassed.",
+          "text": "Every change SHALL be reviewed and approved by a reviewer other than its author (a person, or an agent holding a named role under DM-2026-007) before it joins the main line, and the repository SHALL be configured so that this cannot be bypassed.",
           "priority": "mandatory",
           "verification": "inspection",
           "status": "open",

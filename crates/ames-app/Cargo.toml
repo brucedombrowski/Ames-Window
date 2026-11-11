@@ -22,6 +22,20 @@ tiny-skia = "0.12"
 # Wayland. The -notitle variant draws the same decorations without text.
 winit = { version = "0.30", default-features = false, features = ["rwh_06", "x11", "wayland", "wayland-dlopen", "wayland-csd-adwaita-notitle"] }
 
+# iOS only: putting winit's window onto a UIScene. Pinned to the same objc2
+# versions winit 0.30 links, so there is one UIKit binding in the graph.
+[target.'cfg(target_os = "ios")'.dependencies]
+objc2 = "0.5.3"
+objc2-foundation = { version = "0.2.2", features = ["NSArray", "NSEnumerator", "NSSet"] }
+objc2-ui-kit = { version = "0.2.2", features = [
+    "UIApplication",
+    "UIResponder",
+    "UIScene",
+    "UIView",
+    "UIWindow",
+    "UIWindowScene",
+] }
+
 [lints]
 workspace = true
 
