@@ -51,9 +51,17 @@ Misclassifying a change is itself a finding, recorded as an issue.
 
 | Role | Holder |
 |---|---|
-| Technical lead (Normal changes) | [name] |
-| Control board (Major changes) | Generic Software Control Board (GSCB), or its delegate [name] for urgent items |
-| Reviewer pool (Standard changes) | Any committer other than the author, named in `CODEOWNERS` (issue #9) |
+| Technical lead (Normal changes) | [name], or an agent assigned the title Technical Lead |
+| Control board (Major changes) | Generic Software Control Board (GSCB), or its delegate [name] for urgent items. In this repository, the owner. |
+| Reviewer pool (Standard changes) | Any committer other than the author, named in `CODEOWNERS` (issue #9), or an agent assigned the title Reviewer |
+
+A role may be held by a person or by an AI agent assigned that job title
+(DM-2026-007). An agent's review counts when it is a separate session from
+the author's, it starts from the diff, and it records its title, the class it
+confirms, what it checked and its verdict as a comment on the pull request.
+The owner observes and directs; no Standard or Normal change waits on them.
+A Major change needs the owner's direction, and a recorded direction is
+sufficient.
 
 ## The change process
 
@@ -61,8 +69,9 @@ Misclassifying a change is itself a finding, recorded as an issue.
    `main`, labelled with its class.
 2. **Machine checks.** Unit tests, `cargo deny check`, `scripts/sbom.sh
    --check` and `scripts/ver.sh --check` run. All must pass.
-3. **Human review.** A second person reads the change, confirms the class and
-   approves. The author cannot approve their own work (AC-5).
+3. **Independent review.** A reviewer who is not the author, a person or an
+   agent holding a role, reads the change, confirms the class and approves.
+   The author cannot approve their own work (AC-5).
 4. **Merge.** The change joins `main`. History is permanent.
 5. **Release.** A Major change: the release authority tags a version, and
    automation builds and seals the release package (issue #10).
@@ -75,8 +84,8 @@ Misclassifying a change is itself a finding, recorded as an issue.
 | Inventory matches the lockfile | `scripts/sbom.sh --check` | REQ-1.4 |
 | Verification matrix matches the code | `scripts/ver.sh --check` | Phase 4 quality criteria |
 | No network capability | `deny.toml` bans and feature denials; CI grep | REQ-2.1, REQ-2.2 |
-| Second-person review; no force-push | Branch ruleset and `CODEOWNERS`, **not yet enabled** | REQ-3.2, REQ-3.4, issue #9 |
-| Who may approve each class | This plan and the board's minutes | Procedural |
+| Independent review; no force-push | Branch ruleset and `CODEOWNERS`, **not yet enabled** | REQ-3.2, REQ-3.4, issue #9 |
+| Who may approve each class | This plan, DM-2026-007 and the board's minutes | Procedural |
 | When to cut a release | Release authority | Procedural |
 | Whether to accept a known weakness | Board, recorded in `deny.toml` with reason and issue | REQ-1.8 |
 | Incident response when an advisory is published | Procedural: search the SBOM, open an issue, classify the fix | REQ-1.7 |

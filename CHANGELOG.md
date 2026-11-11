@@ -51,6 +51,9 @@ No version has been released yet; everything is under Unreleased.
   request, plus a check that the wasm and Windows targets compile.
 
 ### Changed
+- Review may be done by an AI agent holding a named role, not only by a
+  person, so no Standard or Normal change waits on the owner
+  (`docs/DM-2026-007.md`, the CM plan, REQ-3.2).
 - The browser build rasterises at most 1440 pixels on its longest edge and
   lets the browser scale the canvas up.
 - `ames-app` is `#![deny(unsafe_code)]` rather than `forbid`, with the one
