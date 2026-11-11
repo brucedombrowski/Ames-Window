@@ -1,7 +1,7 @@
 {
   "document_id": "REQ-2026-001",
   "title": "Ames Window Requirements Specification: IT Security Compliance Demonstration",
-  "version": "1.0",
+  "version": "1.1",
   "date": "2026-11-11",
   "keyword_convention": "BCP 14 (RFC 2119 + RFC 8174): keywords normative only in ALL CAPS",
   "scope": "Ames Window is a deliberately trivial application used to demonstrate a complete IT security compliance posture. These requirements govern how the software is built, inventoried, changed, documented and delivered. They do not govern what the application does, beyond the charter that it has no network capability. Only openly published standards are cited; see docs/standards.md.",
@@ -310,9 +310,14 @@
           "text": "Releases SHALL be built by automation from a tagged commit and SHALL carry the executable, the SBOM, the SVD, a SHA-256 checksum file and a signed provenance attestation naming the commit and build.",
           "priority": "mandatory",
           "verification": "test",
-          "status": "open",
-          "tracking": "#10",
-          "note": "No release workflow exists yet. The SBOM and SVD are produced on every CI run as artifacts."
+          "evidence": [
+            {"file": ".github/workflows/release.yml", "pattern": "tags: [\"v*\"]"},
+            {"file": ".github/workflows/release.yml", "pattern": "scripts/svd.sh \"dist/SVD-"},
+            {"file": ".github/workflows/release.yml", "pattern": "sha256sum -- * > SHA256SUMS"},
+            {"file": ".github/workflows/release.yml", "pattern": "actions/attest-build-provenance"},
+            {"file": ".github/workflows/release.yml", "pattern": "gh release create"}
+          ],
+          "note": "Satisfied by inspection of the workflow; the test is the first tagged release (#10)."
         },
         {
           "id": "REQ-4.6",
@@ -321,9 +326,10 @@
           "text": "The project SHOULD maintain a record of which version is installed at each recipient, so that a Software Version Description can be cut against the correct baseline.",
           "priority": "recommended",
           "verification": "inspection",
-          "status": "open",
-          "tracking": "#10",
-          "note": "Proposed as a deployments record read by scripts/svd.sh --site."
+          "evidence": [
+            {"file": "deployments.toml", "pattern": "installed = "},
+            {"file": "scripts/svd.sh", "pattern": "--site) site="}
+          ]
         }
       ]
     }

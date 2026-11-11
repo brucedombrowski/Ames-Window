@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # svd.sh --check rebuilds released SVDs from their tags
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Install cargo-cyclonedx
@@ -30,6 +32,8 @@ jobs:
         run: scripts/ver.sh --check
       - name: Generate the Software Version Description
         run: scripts/svd.sh
+      - name: Released SVDs reproduce from their tags
+        run: scripts/svd.sh --check
       - uses: actions/upload-artifact@v4
         with:
           name: sbom-and-svd

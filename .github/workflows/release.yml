@@ -1,0 +1,113 @@
+name: Release
+
+# Runs when the release authority pushes a tag vX.Y.Z, a Major change under
+# docs/configuration-management.md. Everything on the GitHub Release is
+# built here from the tagged commit; nothing is uploaded by hand (REQ-4.5).
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write      # publish the Release; record the SVD on main
+  id-token: write      # sign the provenance attestation
+  attestations: write
+
+jobs:
+  release:
+    name: Build, verify, attest, publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # svd.sh reads the history and the previous tag
+
+      - name: Tag, Cargo.toml and CHANGELOG.md name the same version
+        id: version
+        run: |
+          tag="$GITHUB_REF_NAME"
+          version="${tag#v}"
+          manifest="$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)"
+          if [[ "$version" != "$manifest" ]]; then
+            echo "::error::tag is $tag but Cargo.toml says $manifest" >&2; exit 1
+          fi
+          if ! grep -q "^## \[$version\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no section '## [$version]'" >&2; exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - name: Install pinned tools
+        run: |
+          cargo install wasm-bindgen-cli --version 0.2.130 --locked
+          cargo install cargo-cyclonedx --version 0.5.10 --locked
+
+      - name: Test
+        run: cargo test --workspace --locked
+      - name: Dependency policy
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+          arguments: --all-features
+      - name: SBOM and verification matrix are current
+        run: |
+          scripts/sbom.sh --check
+          scripts/ver.sh --check
+      - name: No network code in our source
+        run: |
+          if grep -rnE 'std::net|TcpStream|TcpListener|UdpSocket|\.fetch\(|XmlHttpRequest|WebSocket' crates/; then
+            echo "::error::Network code found. The charter forbids it; see issue #8." >&2
+            exit 1
+          fi
+
+      - name: Build the web bundle
+        run: |
+          scripts/web.sh
+          mkdir -p dist
+          (cd web/dist && zip -r -X ../../dist/ames-window-web.zip .)
+      - name: Software Version Description
+        run: scripts/svd.sh "dist/SVD-${{ steps.version.outputs.tag }}.md"
+      - name: Checksums (FIPS 180-4)
+        run: |
+          cp sbom.cdx.json dist/
+          (cd dist && sha256sum -- * > SHA256SUMS && cat SHA256SUMS)
+
+      - name: Sign the provenance attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/ames-window-web.zip
+            dist/sbom.cdx.json
+            dist/SVD-*.md
+            dist/SHA256SUMS
+
+      - name: Publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # The release notes are that version's section of CHANGELOG.md.
+          awk -v v="$VERSION" '/^## \[/ { p = ($0 ~ "^## \\[" v "\\]") } p' CHANGELOG.md > notes.md
+          gh release create "$TAG" dist/* --verify-tag \
+            --title "Ames Window $TAG" --notes-file notes.md
+
+      - name: Record the SVD in docs/releases on main
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          # The SVD describes the tagged commit, so it is committed after it
+          # (DM-2026-003). scripts/svd.sh --check reproduces it in CI.
+          git fetch origin main
+          git switch -c record origin/main
+          mkdir -p docs/releases
+          cp "dist/SVD-$TAG.md" docs/releases/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/releases
+          git commit -m "Release $TAG: record the Software Version Description"
+          git push origin HEAD:main

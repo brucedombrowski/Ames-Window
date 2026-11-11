@@ -5,12 +5,20 @@
 #   scripts/svd.sh --from v1.0.0         # changes since the version the
 #                                        # recipient has installed
 #   scripts/svd.sh --from v1.0.0 out.md  # to a given path
+#   scripts/svd.sh --site example-lab    # baseline from deployments.toml
+#   scripts/svd.sh --check               # every docs/releases/SVD-v*.md
+#                                        # reproduces from its tag
 #
 # We may release more often than a given site installs. An SVD is written
 # for a recipient, so "changes installed" (section 3.3) must span from the
 # version THEY have to the version THEY are receiving, not from our last
-# tag. Pass --from with the tag or commit of their installed version;
+# tag. Pass --from with the tag or commit of their installed version, or
+# --site with a name from deployments.toml to read it from the record;
 # releases in between that they never installed are listed as skipped.
+#
+# The Release workflow commits each release's SVD to docs/releases/. --check
+# rebuilds every one of them from its own tag, with the svd.sh of that tag,
+# and fails if any byte differs (DM-2026-003, issue #10).
 #
 # The document follows MIL-STD-498, Data Item Description DI-IPSC-81442
 # (Software Version Description), section for section. Everything in it is
@@ -24,6 +32,35 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
 
+repo_url="https://github.com/brucedombrowski/Ames-Window"
+releases_dir="docs/releases"
+
+# --check: each committed release SVD must reproduce from its tag.
+check_releases() {
+  local status=0 f tag tmp
+  shopt -s nullglob
+  local files=("$releases_dir"/SVD-v*.md)
+  if [[ ${#files[@]} -eq 0 ]]; then
+    echo "No released SVDs in $releases_dir."; return 0
+  fi
+  for f in "${files[@]}"; do
+    tag="$(basename "$f" .md)"; tag="${tag#SVD-}"
+    if ! git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+      echo "$f: no tag $tag in this clone (fetch tags first)" >&2; status=1; continue
+    fi
+    tmp="$(mktemp -d)"
+    git worktree add --detach --quiet "$tmp" "$tag"
+    if (cd "$tmp" && scripts/svd.sh "$tmp/SVD-$tag.md" >/dev/null)        && cmp -s "$tmp/SVD-$tag.md" "$f"; then
+      echo "$f reproduces from $tag."
+    else
+      diff -u "$f" "$tmp/SVD-$tag.md" | head -40 || true
+      echo "$f does not match a fresh run at $tag." >&2; status=1
+    fi
+    git worktree remove --force "$tmp"
+  done
+  return $status
+}
+
 name="Ames Window"
 version="$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)"
 commit="$(git rev-parse HEAD)"
@@ -36,14 +73,28 @@ prev_tag="$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)"
 sbom="sbom.cdx.json"
 
 from=""
+site=""
 out=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --from) from="$2"; shift 2 ;;
-    -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
+    --site) site="$2"; shift 2 ;;
+    --check) check_releases; exit $? ;;
+    -h|--help) sed -n '2,24p' "$0"; exit 0 ;;
     *) out="$1"; shift ;;
   esac
 done
+if [[ -n "$site" ]]; then
+  if [[ -n "$from" ]]; then echo "--site and --from exclude each other" >&2; exit 1; fi
+  block="$(awk -v s="[sites.$site]" '$0 == s {f=1; next} /^\[/ {f=0} f' deployments.toml)"
+  if [[ -z "$block" ]]; then
+    echo "--site: '$site' is not in deployments.toml" >&2; exit 1
+  fi
+  from="$(sed -n 's/^installed = "\(.*\)"$/\1/p' <<<"$block")"
+  if [[ -z "$from" ]]; then
+    echo "--site: nothing is installed at '$site'. This is a first delivery; run without --site." >&2; exit 1
+  fi
+fi
 if [[ -n "$from" ]]; then
   if ! git rev-parse --verify --quiet "$from^{commit}" >/dev/null; then
     echo "--from: '$from' is not a known tag or commit" >&2; exit 1
@@ -52,7 +103,7 @@ if [[ -n "$from" ]]; then
     echo "--from: '$from' is not an ancestor of HEAD" >&2; exit 1
   fi
   baseline="$from"
-  baseline_label="$from (installed at the recipient)"
+  baseline_label="$from (installed at ${site:-the recipient})"
   from_slug="$(echo "$from" | tr -c 'A-Za-z0-9.\n' '-')"
   default_out="target/svd/SVD-${from_slug}-to-${version}-${short}.md"
 else
@@ -122,7 +173,8 @@ reproducible from the commit identified in 1.1.
 | Dependency policy | \`deny.toml\` in the repository at the build commit |
 | Project README (build and installation) | \`README.md\` |
 | Source code tour | \`docs/tour.md\` |
-| Repository | https://github.com/brucedombrowski/Ames-Window |
+| Repository | $repo_url |
+| Deployments record | \`deployments.toml\` in the repository at the build commit |
 
 ## 3. Version description
 
@@ -194,10 +246,11 @@ if [[ -n "$baseline" ]]; then
     echo "Releases made between the two that were **not** installed at the"
     echo "recipient, whose changes are therefore included below:"
     echo
-    echo "| Skipped release | Date |"
-    echo "|---|---|"
+    echo "| Skipped release | Date | Its own SVD |"
+    echo "|---|---|---|"
     for t in $skipped; do
-      printf '| %s | %s |\n' "$t" "$(git log -1 --format=%cd --date=format:%Y-%m-%d "$t")"
+      printf '| %s | %s | [SVD-%s.md](%s/blob/main/%s/SVD-%s.md) |\n' "$t" \
+        "$(git log -1 --format=%cd --date=format:%Y-%m-%d "$t")" "$t" "$repo_url" "$releases_dir" "$t"
     done
   fi
   range="$baseline..HEAD"

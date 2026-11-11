@@ -1,0 +1,18 @@
+# Deployments record (NIST SP 800-53 Rev. 5 CM-8; REQ-4.6).
+#
+# One table per recipient site. `delivered` is the last release sent to the
+# site; `installed` is the release the site reports running. They differ
+# while a delivery sits uninstalled. Both are empty for a site that has not
+# received anything yet. Values are release tags (vX.Y.Z).
+#
+# `scripts/svd.sh --site <name>` reads `installed` as the baseline for a
+# spanning Software Version Description. Updating this file after an
+# installation is a Standard change under docs/configuration-management.md.
+#
+# Site names here are placeholders. Real site identities do not belong in
+# this public repository; a filled-in copy lives with the recipient.
+
+[sites.example-lab]
+description = "Placeholder site. Nothing delivered or installed."
+delivered = ""
+installed = ""
