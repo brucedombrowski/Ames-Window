@@ -13,7 +13,13 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
 
-cargo build --release --locked -p ames-app --target wasm32-unknown-unknown
+# The compiler records the paths of source files in the program, for panic
+# messages. Left alone, a bundle built on someone's own machine carries their
+# home directory, and so their account name, dozens of times. Rewrite the two
+# prefixes that vary by machine to fixed ones. (--config adds to the flags in
+# .cargo/config.toml; a RUSTFLAGS variable would replace them.)
+cargo build --release --locked -p ames-app --target wasm32-unknown-unknown \
+  --config "target.wasm32-unknown-unknown.rustflags=['--remap-path-prefix=$root=/src', '--remap-path-prefix=$HOME=/home/builder']"
 
 dist="web/dist"
 rm -rf "$dist"

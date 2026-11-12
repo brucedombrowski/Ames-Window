@@ -97,6 +97,19 @@ jobs:
         run: cmp sbom-windows.cdx.json ames-window-windows-x64/sbom-windows.cdx.json
       - name: The Windows package holds no known malware
         run: scripts/malware.sh ames-window-windows-x64
+      # What is about to be published is read for anything that should not be
+      # (REQ-3.8): the source at the tag, and both packages, including the text
+      # inside the Windows program. The report goes on the run's summary page.
+      - name: Nothing published names an address, a machine or a credential
+        run: |
+          {
+            echo "### Sensitive-content scan for $TAG"
+            echo
+            echo '```'
+            scripts/sensitive.sh
+            scripts/sensitive.sh web/dist ames-window-windows-x64
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Zip the Windows package
         run: zip -r -X ames-window-windows-x64.zip ames-window-windows-x64
 

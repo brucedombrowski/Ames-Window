@@ -85,6 +85,7 @@ sufficient.
 | Tests, dependency policy, inventory and verification checks on every change | CI (`ci.yml`, `pages.yml`, `security.yml`) | REQ-1.4, REQ-1.7, REQ-3.3 |
 | Inventory matches the lockfile | `scripts/sbom.sh --check` | REQ-1.4 |
 | Verification matrix matches the code | `scripts/ver.sh --check` | Phase 4 quality criteria |
+| Nothing published names an address, a machine, a home directory or a credential | `scripts/sensitive.sh` in `security.yml` (files and history) and `release.yml` (source and packages); exceptions in `.sensitive-allow` | REQ-3.8 |
 | No network capability | `deny.toml` bans and feature denials; CI grep; `scripts/no-network.sh` on the built bundle; the page's Content-Security-Policy in the browser | REQ-2.1, REQ-2.2 |
 | No known malware in source, components or the published bundle | `scripts/malware.sh` (ClamAV) in `security.yml`, `pages.yml` and `release.yml` | REQ-1.10 |
 | Independent review; no force-push | Branch ruleset and `CODEOWNERS`, **not yet enabled** | REQ-3.2, REQ-3.4, issue #9 |

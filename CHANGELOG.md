@@ -12,6 +12,12 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `img-src 'self'` for it and nothing else.
 - The feedback report says how long the app spent on each frame, painting
   and presenting (#27).
+- `scripts/sensitive.sh` and REQ-3.8 (NIST SP 800-53 AC-22): scans the
+  files, a range of commits, the whole history or a release package for
+  network and hardware addresses, email addresses, named home directories,
+  internal host names and credentials, and reads the text inside binaries.
+  Exceptions live in `.sensitive-allow`, each with its reason. It runs on
+  every pull request, on pushes to `main`, weekly, and before each release.
 - `docs/RISK-2026-001.json` and its rendering `docs/RISK-2026-001.md`
   (`scripts/risk.sh`): nine risks in NIST SP 800-30 terms, each with
   controls traced to requirements, a residual rating, an owner and a review
@@ -25,6 +31,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   compromise of the registry is an accepted risk.
 
 ### Changed
+- `scripts/web.sh` rewrites the source paths the compiler records in the
+  browser module. A bundle built on a developer's machine carried that
+  machine's home directory, and so an account name, dozens of times; the
+  scanner found it. Bundles built by CI, including v0.0.1, were not
+  affected.
 - Every build and test in the workflows and `scripts/web.sh` uses
   `--locked`, so none can quietly resolve a component version that is not in
   `Cargo.lock`.
