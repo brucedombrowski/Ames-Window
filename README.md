@@ -2,6 +2,13 @@
 
 **Try it in the browser:** https://brucedombrowski.github.io/Ames-Window/
 
+**Download:** the [latest release](https://github.com/brucedombrowski/Ames-Window/releases/latest)
+has a Windows program (`ames-window-windows-x64.zip`: unzip and run, nothing
+to install) and the web bundle, with their SBOMs and checksums.
+
+**The inspiration:** [this YouTube short](https://www.youtube.com/shorts/LdZxRlyM30o)
+of the demonstration, which the app sets out to reproduce.
+
 A pure‑Rust app that performs the **Ames window illusion**: a flat trapezoid,
 painted like a six‑pane window in perspective, that spins full circle but
 appears to swing back and forth. A blue pen through its centre seems to bend
@@ -28,7 +35,7 @@ order that introduces one idea at a time.
 | Path | What it is |
 |---|---|
 | `crates/ames-core` | The geometry. No dependencies, no pixels. Trapezoid, painted reveals, pen, camera, rotation, projection, and the perceived‑angle model. Every module has unit tests. |
-| `crates/ames-app` | The application, binary name `ames-window`. `winit` for the window and input, `tiny-skia` to rasterise on the CPU, `softbuffer` to present. One source tree for every platform; the only platform‑specific code is the entry point and the clock on wasm, and `ios_scene.rs` on iOS. |
+| `crates/ames-app` | The application, binary name `ames-window`. `winit` for the window and input, `tiny-skia` to rasterise on the CPU, `softbuffer` to present it, except in the browser, where the picture goes straight to the canvas (`present.rs`). One source tree for every platform; platform‑specific code is confined to the entry point and the clock on wasm, `present.rs` (how the picture reaches the screen), `ios_scene.rs` on iOS, and the frame timings the browser build leaves for its page. |
 | `crates/ames-app/examples/snapshot.rs` | Renders frames to PNG without opening a window. |
 | `web/index.html`, `web/app.js`, `scripts/web.sh` | The browser shell with its Content-Security-Policy, the page's script, and the build script that produces `web/dist`. |
 | `ios/Info.plist`, `scripts/ios.sh` | The iOS bundle metadata and the build‑sign‑install script. |
@@ -39,7 +46,7 @@ order that introduces one idea at a time.
 | `deny.toml`, `sbom-web.cdx.json`, `sbom-windows.cdx.json`, `sbom.cdx.json` | Dependency policy, and the committed CycloneDX bills of materials for the browser build, the Windows program, and every target. See [Supply chain](#supply-chain). |
 | `packaging/windows/README.txt`, `.github/workflows/windows.yml`, `scripts/windows-imports.sh` | The Windows package: its README, the workflow that builds and tests it on Windows, and the check that the program imports no networking library. |
 | `scripts/no-network.sh`, `scripts/malware.sh` | Fail the build if the bundle names a network API; scan files for known malware with ClamAV. |
-| `scripts/sbom.sh`, `scripts/svd.sh`, `scripts/ver.sh` | Regenerate the SBOM, write a Software Version Description, regenerate the verification matrix. |
+| `scripts/sbom.sh`, `scripts/svd.sh`, `scripts/ver.sh`, `scripts/risk.sh` | Regenerate the SBOMs, write a Software Version Description, regenerate the verification matrix, render the risk register. |
 | `scripts/release.sh` | Bump the version, close the changelog, commit and tag. |
 | `CHANGELOG.md` | Keep a Changelog format. |
 | `docs/` | Preview images, the tour, and the compliance documents listed below. |
@@ -48,7 +55,9 @@ There is no Swift, no Objective‑C, no Xcode project and no GPU code. `ames-cor
 `#![forbid(unsafe_code)]`; `ames-app` is `#![deny(unsafe_code)]` with one
 exception, `ios_scene.rs`, which calls UIKit to put the window on screen. On
 Apple platforms the Objective‑C runtime is reached through the `objc2`
-bindings that `winit` and `softbuffer` depend on.
+bindings that `winit` and `softbuffer` depend on. On Wayland the window
+frame is drawn without a title string, which keeps a font parser out of the
+dependency tree.
 
 The app has no network capability of any kind and never will. See
 [Supply chain](#supply-chain).
@@ -90,7 +99,7 @@ The keys need a keyboard, so in practice they are desktop and browser only.
 ## Build
 
 ```sh
-cargo test --workspace                 # 24 core tests, 23 app tests, 1 doctest
+cargo test --workspace                 # 24 core tests, 24 app tests, 1 doctest
 cargo run -p ames-app                  # desktop window; needs a display
 cargo run -p ames-app --example snapshot -- out
 ```
@@ -123,6 +132,14 @@ smooth on slow machines:
   current browsers support (Safari from 16.4). Measured in headless Chrome on an M2 Max at
   1920x1080, that alone took the page from 30 to 60 frames a second.
 - The backdrop is painted once per size and copied in each frame.
+- The finished picture is handed to the canvas as it is. Going through
+  `softbuffer` meant two loops over every pixel inside WebAssembly, which
+  cost 7.6 ms a frame against 1 ms to draw the picture; handing it over
+  directly costs 0.2 ms. Same machine and harness as above. With Chrome's
+  optimising compiler for WebAssembly switched off and the processor
+  throttled twentyfold, a reviewer measured 7 to 17 frames a second before
+  and about 50 after. No browser that interprets WebAssembly was available
+  to test, so the case in issue #27 is still unconfirmed.
 - It draws at most 1440 pixels on the longest edge and lets the browser scale
   the canvas up. `budget.rs` times each frame, and when frames take longer
   than 11 ms it lowers that limit step by step, down to 480 pixels.
@@ -133,6 +150,8 @@ with the frame rate, sizes, browser and build commit. It is an ordinary link
 in `web/index.html`. Those measurements are in the link's address, so they go
 to GitHub when the viewer follows it, and become public only if the viewer
 submits the form. Until the link is followed the page sends nothing.
+The report also says how long the app itself spent on each frame, painting
+and presenting, so it can be told apart from slowness around it.
 
 Known gaps in the web build are tracked in issue #4: the wasm is about 1 MB
 unoptimised, and touch on a real phone browser has not been confirmed.
@@ -210,7 +229,7 @@ What has been verified, as of 2026‑11‑11 (details in issues #2 and #4):
 | macOS | `cargo test --workspace` passed on a Mac. The windowed app has not been reported run. |
 | iOS simulator | The app used to install, launch, then crash at once under iOS 27. It now declares a scene manifest and adopts the scene (`ios_scene.rs`); commit `64595f7` records it running on an iPhone 18 Pro simulator: splash, then the window and pen, animating. |
 | iPhone | Install previously failed for want of a provisioning profile. Not yet run. |
-| Windows | Built and tested on Windows in CI on every pull request (`windows.yml`), and packaged as a single `ames-window.exe` that needs nothing installed. Whether anyone has yet run the program on a Windows desktop is not recorded here; the browser build is what a Windows machine has been seen to run. |
+| Windows | Built and tested on Windows in CI on every pull request (`windows.yml`), where the program is also started and seen to stay up, and released in v0.0.1 as a single `ames-window.exe` that needs nothing installed. Nobody has yet reported what it looks like on a Windows desktop. |
 
 ## Compliance documentation
 
@@ -222,8 +241,9 @@ separately, and cites only openly published standards.
 | [`docs/standards.md`](docs/standards.md) | Governing standards register: NIST, FIPS, NTIA, ECMA, MIL-STD-498, BCP 14. What applies, what does not, and why. |
 | [`docs/REQ-2026-001.json`](docs/REQ-2026-001.json) | Requirements, BCP 14 keywords, each citing a standard and section, with evidence anchors. |
 | [`docs/VER-2026-001.md`](docs/VER-2026-001.md) | Verification matrix, generated by `scripts/ver.sh` from those anchors. CI fails if it drifts from the code. |
+| [`docs/RISK-2026-001.md`](docs/RISK-2026-001.md) | Risk register in NIST SP 800-30 terms, rendered by `scripts/risk.sh` from [`docs/RISK-2026-001.json`](docs/RISK-2026-001.json): nine risks, each with controls traced to requirements, a residual rating, an owner and a review trigger. Four are accepted, each by the owner's recorded decision on an issue. |
 | [`docs/configuration-management.md`](docs/configuration-management.md) | CM plan: baselines, change classes, roles, process, what tools enforce versus what people own. |
-| Decision memoranda | Options considered, decision, rationale with standard references: [DM-2026-001](docs/DM-2026-001.md), no network capability, permanently; [DM-2026-002](docs/DM-2026-002.md), SBOM format; [DM-2026-003](docs/DM-2026-003.md), generated documents are build outputs; [DM-2026-004](docs/DM-2026-004.md), Markdown and JSON, not LaTeX; [DM-2026-007](docs/DM-2026-007.md), an agent holding a named role may review; [DM-2026-008](docs/DM-2026-008.md), Human is a named role; how a Major decision is made. |
+| Decision memoranda | Options considered, decision, rationale with standard references: [DM-2026-001](docs/DM-2026-001.md), no network capability, permanently; [DM-2026-002](docs/DM-2026-002.md), SBOM format; [DM-2026-003](docs/DM-2026-003.md), generated documents are build outputs; [DM-2026-004](docs/DM-2026-004.md), Markdown and JSON, not LaTeX; [DM-2026-005](docs/DM-2026-005.md), dependencies are not vendored; [DM-2026-006](docs/DM-2026-006.md), Wayland decorations without a font parser; [DM-2026-007](docs/DM-2026-007.md), an agent holding a named role may review; [DM-2026-008](docs/DM-2026-008.md), Human is a named role; how a Major decision is made. |
 | [`CHANGELOG.md`](CHANGELOG.md) | Keep a Changelog format, Semantic Versioning. |
 
 ## Supply chain
@@ -254,17 +274,17 @@ dependency graph:
 
 | File | Covers | Components |
 |---|---|---|
-| [`sbom-web.cdx.json`](sbom-web.cdx.json) | The browser build, which is what a release ships. **This is the release SBOM.** See below for its exact scope. | 54 |
+| [`sbom-web.cdx.json`](sbom-web.cdx.json) | The browser build, which is what a release ships. **This is the release SBOM.** See below for its exact scope. | 53 |
 | [`sbom-windows.cdx.json`](sbom-windows.cdx.json) | The Windows program, which a release also ships, on the same terms: what Cargo resolves for that target. | 42 |
-| [`sbom.cdx.json`](sbom.cdx.json) | Every target the source builds for at once: browser, iOS, macOS, Windows, Linux, Android. An audit view; no single build contains all of it. | 215 |
+| [`sbom.cdx.json`](sbom.cdx.json) | Every target the source builds for at once: browser, iOS, macOS, Windows, Linux, Android. An audit view; no single build contains all of it. | 211 |
 
 What the two build files are, exactly: everything Cargo resolves for that
 target, which is a little more than what is delivered.
 
 | | Browser | Windows |
 |---|---|---|
-| Components listed | 54 | 42 |
-| Compiled for the target, so can be in the program | 40 | 33 |
+| Components listed | 53 | 42 |
+| Compiled for the target, so can be in the program | 39 | 33 |
 | Tools that run only while building (procedural macros, build scripts) | 10 | 1 |
 | Optional, not compiled at all | 4 | 8 |
 
@@ -272,7 +292,7 @@ Nothing compiled into either program is missing from its file. Some things
 in or behind each are not Cargo components and so are in none of the three
 files: the Rust standard library and compiler for both; for the browser, the
 JavaScript glue generated by `wasm-bindgen-cli` (a build tool pinned to
-0.2.130) and the page itself; for Windows, Microsoft's C runtime, which is
+0.2.130) and the page with its script and icon; for Windows, Microsoft's C runtime, which is
 linked into the program from the build machine's Visual Studio tools. The
 Software Version Description names them. Checksums are recorded for every
 component but our own `ames-core`.
@@ -340,9 +360,10 @@ What these do not show.
 
 `deny.toml` is the policy: `cargo deny check` fails on known vulnerabilities,
 licences outside the permissive allowlist, wildcard versions, or crates from
-anywhere other than crates.io. One advisory is explicitly ignored with a
-reason in the file: RUSTSEC‑2026‑0192, `ttf-parser` unmaintained, reached only
-through `winit` (issue #6). The same workflow runs the check on every push to
+anywhere other than crates.io. No advisory is ignored. The one that was,
+RUSTSEC‑2026‑0192 (`ttf-parser` unmaintained, reached only through `winit`'s
+Wayland window title), went away when the component was removed from the
+tree ([DM-2026-006](docs/DM-2026-006.md), issue #6). The same workflow runs the check on every push to
 `main` and weekly, so new advisories surface without a code change. The
 workflow's latest result is on the Actions tab; it was first merged to `main`
 on 2026‑11‑11.
@@ -372,38 +393,46 @@ takes the tag or commit the recipient has; the skipped releases are listed.
 
 | Looking for | It is here |
 |---|---|
-| The Windows program | `ames-window-windows-x64.zip` on a GitHub Release (none cut yet). Its SBOM is [`sbom-windows.cdx.json`](sbom-windows.cdx.json), and the same file, byte for byte, is inside the zip. An unscanned build of any pull request is the `ames-window-windows-x64` artifact of its `CI` run. |
-| The release SBOM | [`sbom-web.cdx.json`](sbom-web.cdx.json): the browser build, which is what a release ships. Will be attached to each GitHub Release; none has been cut yet. |
+| The Windows program | `ames-window-windows-x64.zip` on the [latest release](https://github.com/brucedombrowski/Ames-Window/releases/latest). Its SBOM is [`sbom-windows.cdx.json`](sbom-windows.cdx.json), and the same file, byte for byte, is inside the zip. An unscanned build of any pull request is the `ames-window-windows-x64` artifact of its `CI` run. |
+| The release SBOMs | [`sbom-web.cdx.json`](sbom-web.cdx.json) for the web bundle and [`sbom-windows.cdx.json`](sbom-windows.cdx.json) for the Windows program. Both are attached to each GitHub Release and listed in its `SHA256SUMS`. |
 | The SBOM for every platform | [`sbom.cdx.json`](sbom.cdx.json). An audit view; no single build contains all of it. |
 | Vulnerability scan results | The `Supply chain` workflow on the [Actions tab](https://github.com/brucedombrowski/Ames-Window/actions/workflows/security.yml), job `cargo deny`. Policy in [`deny.toml`](deny.toml). GitHub's own alerts are under Security, Dependabot, visible to maintainers only. |
 | Licence check results | The same `cargo deny` job; the allowlist is in [`deny.toml`](deny.toml). |
-| The Software Version Description | Generated on every `Supply chain` run and downloadable from that run as the `sbom-and-svd` artifact (needs a signed-in GitHub account; artifacts expire). Will be attached to each GitHub Release. |
-| Releases | The [Releases page](https://github.com/brucedombrowski/Ames-Window/releases). **No release has been cut yet.** When one is, it carries the web bundle, both SBOMs, the SVD and `SHA256SUMS`, and GitHub holds a signed provenance attestation tying them to a commit and a build, checked with `gh attestation verify`. |
+| The Software Version Description | Generated on every `Supply chain` run and downloadable from that run as the `sbom-and-svd` artifact (needs a signed-in GitHub account; artifacts expire). Attached to each GitHub Release as `SVD-vX.Y.Z.md`. |
+| Releases | The [Releases page](https://github.com/brucedombrowski/Ames-Window/releases). A release carries the web bundle, the Windows package, three SBOMs, the SVD and `SHA256SUMS`, and GitHub holds a signed provenance attestation tying them to a commit and a build, checked with `gh attestation verify`. The first, v0.0.1, was cut on 2026‑11‑11. |
 | Requirements and their evidence | [`docs/REQ-2026-001.json`](docs/REQ-2026-001.json) and [`docs/VER-2026-001.md`](docs/VER-2026-001.md). |
-| Decisions and why | The decision memoranda, DM-2026-[001](docs/DM-2026-001.md), [002](docs/DM-2026-002.md), [003](docs/DM-2026-003.md), [004](docs/DM-2026-004.md), [007](docs/DM-2026-007.md), [008](docs/DM-2026-008.md). |
+| Risks, and which are accepted and by whom | [`docs/RISK-2026-001.md`](docs/RISK-2026-001.md). |
+| Decisions and why | The decision memoranda, DM-2026-[001](docs/DM-2026-001.md), [002](docs/DM-2026-002.md), [003](docs/DM-2026-003.md), [004](docs/DM-2026-004.md), [005](docs/DM-2026-005.md), [006](docs/DM-2026-006.md), [007](docs/DM-2026-007.md), [008](docs/DM-2026-008.md). |
 | Why the SBOM timestamp says 1970 | Deliberate: a fixed timestamp makes the file reproducible byte for byte, so CI can prove it matches `Cargo.lock`. When it was really generated is the commit date, and for a release the attestation ([`docs/DM-2026-002.md`](docs/DM-2026-002.md), Consequences). |
 | How to report a problem with the web page | The **Report feedback** link in the page's bottom right corner. |
 
 ## Releasing
 
-No version has been released yet. The procedure, from
+The first release, v0.0.1, was cut on 2026‑11‑11. The procedure, from
 [`docs/configuration-management.md`](docs/configuration-management.md):
 
-1. The release authority approves the version (a Major change).
+1. The repository owner, who holds the Human role and is the release
+   authority, directs the release and its version (a Major change).
 2. On a clean `main`: `scripts/release.sh vX.Y.Z` bumps `Cargo.toml`,
    `Cargo.lock` and `ios/Info.plist`, turns the changelog's Unreleased
-   section into the version's section, commits and tags. Add `--dry-run` to
-   see the diff first.
+   section into the version's section, regenerates the SBOMs and the
+   verification matrix, commits and tags. Add `--dry-run` to see the diff
+   first.
 3. `git push origin main vX.Y.Z`.
-4. The `Release` workflow tests, checks the SBOM and verification matrix,
-   builds `ames-window-web.zip`, generates the Software Version Description
-   at the tagged commit, writes `SHA256SUMS`, signs a build‑provenance
-   attestation, and creates the GitHub Release carrying all of them. It then
-   opens a pull request that files the SVD under `docs/releases/`.
-5. After a delivery or installation, update `deployments.toml` (issue #10).
+4. The `Release` workflow builds and tests the Windows program on Windows;
+   tests, checks the SBOMs and verification matrix, builds the web bundle;
+   runs the network check on the bundle and the malware scan on both
+   packages; generates the Software Version Description at the tagged
+   commit; writes `SHA256SUMS`; signs a build‑provenance attestation; and
+   creates the GitHub Release carrying all of them.
+5. Its last step pushes a branch, `release/svd-vX.Y.Z`, that files the SVD
+   under `docs/releases/`. This repository does not let Actions open pull
+   requests, so the pull request for that branch is opened by hand.
+6. After a delivery or installation, update `deployments.toml` (issue #10).
 
-The workflow has not run yet, because there is no tag; the dry run of the
-script has.
+Checked after v0.0.1 was published, from a fresh download: every file
+matched `SHA256SUMS`, the attestations verified, and ClamAV had found nothing
+in either package.
 
 ## Why it works
 

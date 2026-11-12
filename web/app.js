@@ -66,6 +66,10 @@ function report() {
     `| Frame rate | ${m ? m.fps.toFixed(1) + " fps" : "not measured"} |`,
     `| Slowest frame | ${m ? m.slowest.toFixed(0) + " ms" : "not measured"} |`,
     `| Rasterised size | ${canvas ? canvas.width + " x " + canvas.height : "no canvas"} |`,
+    // What the app itself spent on each frame, which it leaves on its canvas.
+    // Painting is the app computing pixels; presenting is handing them to
+    // the browser. Together with the frame rate they say where time goes.
+    `| App time per frame | ${canvas?.dataset.paintMs ? canvas.dataset.paintMs + " ms painting, " + canvas.dataset.presentMs + " ms presenting" : "not measured yet"} |`,
     `| Page size | ${innerWidth} x ${innerHeight} at ${devicePixelRatio}x |`,
     `| Processor threads | ${navigator.hardwareConcurrency ?? "unknown"} |`,
     `| Build | ${document.querySelector('meta[name="build"]').content} |`,

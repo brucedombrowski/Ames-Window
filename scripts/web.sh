@@ -13,7 +13,7 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
 
-cargo build --release -p ames-app --target wasm32-unknown-unknown
+cargo build --release --locked -p ames-app --target wasm32-unknown-unknown
 
 dist="web/dist"
 rm -rf "$dist"
@@ -26,7 +26,7 @@ build="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
 git diff --quiet HEAD 2>/dev/null || build="$build+local"
 sed "s/<meta name=\"build\" content=\"dev\">/<meta name=\"build\" content=\"$build\">/" \
   web/index.html > "$dist/index.html"
-cp web/app.js "$dist/"
+cp web/app.js web/icon.svg "$dist/"
 # GitHub Pages must not run Jekyll over this folder.
 touch "$dist/.nojekyll"
 

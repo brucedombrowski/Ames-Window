@@ -93,6 +93,14 @@ or input, the test at the bottom can render a frame and count coloured pixels.
 for every touch, key and redraw. `let Some(x) = ... else { return; }` is an
 early exit when something we need is missing.
 
+## 9a. `crates/ames-app/src/present.rs` — one job, two platforms
+
+Putting the finished picture on screen is done one way in the browser and
+another everywhere else. Each way lives in its own inner module, and
+`#[cfg(...)]` picks which one is compiled, so the rest of the app calls
+`Presenter::present` without knowing or caring. This is how Rust keeps
+platform differences in one place instead of scattered `if`s.
+
 ## 10. `crates/ames-app/src/ios_scene.rs` — the one file with `unsafe`
 
 Every other file is safe Rust, and `main.rs` says `#![deny(unsafe_code)]` to

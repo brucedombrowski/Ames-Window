@@ -4,11 +4,62 @@ All notable changes to this project are recorded here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-No version has been released yet; everything is under Unreleased.
 
 ## [Unreleased]
 
 ### Added
+- A browser tab icon, `web/icon.svg` (#14). The page's policy gains
+  `img-src 'self'` for it and nothing else.
+- The feedback report says how long the app spent on each frame, painting
+  and presenting (#27).
+- `docs/RISK-2026-001.json` and its rendering `docs/RISK-2026-001.md`
+  (`scripts/risk.sh`): nine risks in NIST SP 800-30 terms, each with
+  controls traced to requirements, a residual rating, an owner and a review
+  trigger. Four are accepted, each recording the owner's decision from its
+  issue (#17 to #20) in the owner's words. Where the Technical Lead's later
+  advice changed how a risk is rated, the register says so, and says what
+  was concurred with.
+  CI fails if the rendering drifts, if a control is not a requirement, or if
+  a risk is accepted with no decision recorded.
+- [DM-2026-005](docs/DM-2026-005.md): dependencies are not vendored;
+  compromise of the registry is an accepted risk.
+
+### Changed
+- Every build and test in the workflows and `scripts/web.sh` uses
+  `--locked`, so none can quietly resolve a component version that is not in
+  `Cargo.lock`.
+- `winit` is declared with `default-features = false` and
+  `wayland-csd-adwaita-notitle` in place of `wayland-csd-adwaita`: the same
+  window frame on Wayland, without a title, and without the font parser that
+  drew it ([DM-2026-006](docs/DM-2026-006.md), #6). The every-target SBOM
+  goes from 215 components to 211.
+- In the browser the finished picture goes straight to the canvas instead of
+  through `softbuffer`, which repacked every pixel twice inside WebAssembly.
+  Measured in headless Chrome on an M2 Max at 1366x681: presenting went from
+  7.6 ms a frame to 0.2 ms, and the app's whole frame from 8.6 ms to 1.1 ms.
+  `softbuffer` is no longer part of the browser build; its SBOM lists 53
+  components, down from 54.
+- After the first release: the README links the latest release for download
+  and describes the release procedure as it ran; REQ-4.5 (releases built by
+  automation, with checksums and provenance) now carries evidence instead of
+  an open status; the CM plan's release procedure is no longer "planned".
+
+### Removed
+- The `ignore` entry for RUSTSEC-2026-0192 in `deny.toml`. The policy now
+  accepts no advisory.
+
+### Fixed
+- `scripts/release.sh` left a stale `[Unreleased]` link reference from the
+  second release on; it now rebuilds the references. It prints how to
+  recover if a step fails before the commit, and a dry run in which a step
+  fails now fails, instead of reporting that nothing changed.
+- `scripts/svd.sh` took any tag for a release, as its baseline and in its
+  list of skipped releases; only `v*` tags count now (#37).
+
+## [0.0.1] - 2026-11-11
+
+### Added
+- README: a link to the YouTube short that inspired the project (#30).
 - A Windows program. `ames-window-windows-x64.zip` holds a single
   `ames-window.exe` that needs nothing installed, a README, its SBOM
   (`sbom-windows.cdx.json`, 42 components) and the licences. It is built and
@@ -121,6 +172,9 @@ No version has been released yet; everything is under Unreleased.
   claims a test fails when the column count changes, because none does.
 
 ### Fixed
+- The Software Version Description names Microsoft's C runtime among the
+  things linked into the Windows program that no SBOM lists, as the README
+  said it did.
 - `scripts/release.sh` committed a release whose SBOMs and verification
   matrix were stale, because both change with the version and the changelog,
   and the release workflow would then have failed its own drift checks at the
@@ -156,4 +210,5 @@ No version has been released yet; everything is under Unreleased.
 - RUSTSEC-2026-0192 (`ttf-parser` unmaintained, transitive via winit)
   accepted with a recorded reason; tracked in #6.
 
-[Unreleased]: https://github.com/brucedombrowski/Ames-Window/commits/main
+[Unreleased]: https://github.com/brucedombrowski/Ames-Window/compare/v0.0.1...HEAD
+[0.0.1]: https://github.com/brucedombrowski/Ames-Window/releases/tag/v0.0.1

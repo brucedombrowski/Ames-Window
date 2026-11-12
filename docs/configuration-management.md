@@ -32,6 +32,7 @@ recipient's document system, generated from the same templates.
 | Requirements | `docs/REQ-2026-001.json` | Reviewed like code; a change is a Normal change |
 | Decisions | `docs/DM-*.md` and GitHub issues | Append-only in practice; a reversal is a new memorandum |
 | Verification | `docs/VER-2026-001.md` | Generated from REQ anchors; CI fails on drift |
+| Risks | `docs/RISK-2026-001.json`, rendered as `docs/RISK-2026-001.md` | `scripts/risk.sh`; CI fails if the rendering drifts, if a risk names a control that is not a requirement, or if a risk is accepted with no decision recorded |
 | Release | Git tag `vX.Y.Z` and its GitHub Release | Built by automation (issue #10) |
 | Installed instances | `deployments.toml` (planned, issue #10) | Updated after each installation as a Standard change |
 
@@ -116,7 +117,7 @@ above.
 | Who may approve each class | This plan, [DM-2026-007](DM-2026-007.md), [DM-2026-008](DM-2026-008.md) and the board's minutes | Procedural |
 | Telling the Human's comments from an agent's | Convention only: agents act through the Human's account and sign their comments | [DM-2026-008](DM-2026-008.md) |
 | When to cut a release | Release authority | Procedural |
-| Whether to accept a known weakness | Board, recorded in `deny.toml` with reason and issue | REQ-1.8 |
+| Whether to accept a known weakness | Board, recorded in the risk register with the issue carrying the Human's decision; for a component advisory, also in `deny.toml` with reason and issue | REQ-1.8 |
 | Incident response when an advisory is published | Procedural: search the SBOM, open an issue, classify the fix | REQ-1.7 |
 | Record retention | GitHub history and issues; releases hold the delivered SBOM and SVD | Procedural |
 
@@ -126,19 +127,29 @@ above.
 |---|---|
 | Every change | Git history on `main`, with the pull request and review |
 | Every decision | `docs/DM-*.md`, linked to a GitHub issue |
-| Every accepted risk | The issue carrying the Human's decision; for a component advisory, also the `deny.toml` `ignore` entry with reason and issue |
+| Every accepted risk | The risk register, with the issue carrying the Human's decision; for a component advisory, also the `deny.toml` `ignore` entry with reason and issue |
 | Every delivery | GitHub Release: executable, SBOM, SVD, `SHA256SUMS`, attestation |
 | Changelog | `CHANGELOG.md`, Keep a Changelog format |
 
-## Release procedure (planned, issue #10)
+## Release procedure
 
-1. Release authority approves the version as a Major change.
-2. Move `CHANGELOG.md` Unreleased items under the new version.
-3. Tag `vX.Y.Z` on `main`.
-4. The release workflow builds the web bundle, regenerates the SBOM, runs
-   `scripts/svd.sh --from <recipient baseline>`, writes `SHA256SUMS`, signs a
-   provenance attestation and attaches everything to the GitHub Release.
-5. After installation at a recipient, update `deployments.toml` (Standard).
+First used for v0.0.1 on 2026-11-11.
+
+1. The repository owner, as release authority, directs the release and its
+   version (a Major change).
+2. On a clean `main`, `scripts/release.sh vX.Y.Z` sets the version, moves
+   the changelog's Unreleased items under it, regenerates the SBOMs and the
+   verification matrix, commits and tags. It does not push.
+3. The commit and the tag are pushed.
+4. The `Release` workflow builds and tests the Windows program on Windows,
+   repeats the tests and drift checks at the tag, builds the web bundle,
+   runs the network check and the malware scan, generates the Software
+   Version Description, writes `SHA256SUMS`, signs a provenance attestation
+   and publishes the GitHub Release with all of it.
+5. The SVD is filed under `docs/releases/` by a pull request from the branch
+   the workflow pushes (Standard).
+6. After installation at a recipient, update `deployments.toml` (Standard;
+   planned, issue #10).
 
 ## Standards
 

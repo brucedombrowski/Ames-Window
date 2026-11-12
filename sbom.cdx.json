@@ -13,9 +13,9 @@
     ],
     "component": {
       "type": "application",
-      "bom-ref": "path+file:///src/crates/ames-app#0.1.0",
+      "bom-ref": "path+file:///src/crates/ames-app#0.0.1",
       "name": "ames-app",
-      "version": "0.1.0",
+      "version": "0.0.1",
       "description": "The Ames window illusion as a pure-Rust application for the browser, iOS and the desktop.",
       "scope": "required",
       "licenses": [
@@ -23,7 +23,7 @@
           "expression": "MIT OR Apache-2.0"
         }
       ],
-      "purl": "pkg:cargo/ames-app@0.1.0?download_url=file://.",
+      "purl": "pkg:cargo/ames-app@0.0.1?download_url=file://.",
       "externalReferences": [
         {
           "type": "vcs",
@@ -33,15 +33,15 @@
       "components": [
         {
           "type": "application",
-          "bom-ref": "path+file:///src/crates/ames-app#0.1.0 bin-target-0",
+          "bom-ref": "path+file:///src/crates/ames-app#0.0.1 bin-target-0",
           "name": "ames-window",
-          "version": "0.1.0",
+          "version": "0.0.1",
           "licenses": [
             {
               "expression": "MIT OR Apache-2.0"
             }
           ],
-          "purl": "pkg:cargo/ames-app@0.1.0?download_url=file://.#src/main.rs"
+          "purl": "pkg:cargo/ames-app@0.0.1?download_url=file://.#src/main.rs"
         }
       ]
     },
@@ -55,9 +55,9 @@
   "components": [
     {
       "type": "library",
-      "bom-ref": "path+file:///src/crates/ames-core#0.1.0",
+      "bom-ref": "path+file:///src/crates/ames-core#0.0.1",
       "name": "ames-core",
-      "version": "0.1.0",
+      "version": "0.0.1",
       "description": "Geometry of the Ames window illusion: a trapezoid that spins but seems to swing.",
       "scope": "required",
       "licenses": [
@@ -65,75 +65,11 @@
           "expression": "MIT OR Apache-2.0"
         }
       ],
-      "purl": "pkg:cargo/ames-core@0.1.0?download_url=file://../ames-core",
+      "purl": "pkg:cargo/ames-core@0.0.1?download_url=file://../ames-core",
       "externalReferences": [
         {
           "type": "vcs",
           "url": "https://github.com/brucedombrowski/Ames-Window"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#ab_glyph@0.2.32",
-      "name": "ab_glyph",
-      "version": "0.2.32",
-      "description": "API for loading, scaling, positioning and rasterizing OpenType font glyphs.",
-      "scope": "required",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "01c0457472c38ea5bd1c3b5ada5e368271cb550be7a4ca4a0b4634e9913f6cc2"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "Apache-2.0"
-        }
-      ],
-      "purl": "pkg:cargo/ab_glyph@0.2.32",
-      "externalReferences": [
-        {
-          "type": "vcs",
-          "url": "https://github.com/alexheretic/ab-glyph"
-        }
-      ],
-      "authors": [
-        {
-          "name": "Alex Butler",
-          "email": "alexheretic@gmail.com"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#ab_glyph_rasterizer@0.1.10",
-      "name": "ab_glyph_rasterizer",
-      "version": "0.1.10",
-      "description": "Coverage rasterization for lines, quadratic & cubic beziers",
-      "scope": "required",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "366ffbaa4442f4684d91e2cd7c5ea7c4ed8add41959a31447066e279e432b618"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "Apache-2.0"
-        }
-      ],
-      "purl": "pkg:cargo/ab_glyph_rasterizer@0.1.10",
-      "externalReferences": [
-        {
-          "type": "vcs",
-          "url": "https://github.com/alexheretic/ab-glyph"
-        }
-      ],
-      "authors": [
-        {
-          "name": "Alex Butler",
-          "email": "alexheretic@gmail.com"
         }
       ]
     },
@@ -3719,38 +3655,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#owned_ttf_parser@0.25.1",
-      "name": "owned_ttf_parser",
-      "version": "0.25.1",
-      "description": "ttf-parser plus support for owned data",
-      "scope": "required",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "36820e9051aca1014ddc75770aab4d68bc1e9e632f0f5627c4086bc216fb583b"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "Apache-2.0"
-        }
-      ],
-      "purl": "pkg:cargo/owned_ttf_parser@0.25.1",
-      "externalReferences": [
-        {
-          "type": "vcs",
-          "url": "https://github.com/alexheretic/owned-ttf-parser"
-        }
-      ],
-      "authors": [
-        {
-          "name": "Alex Butler",
-          "email": "alexheretic@gmail.com"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#percent-encoding@2.3.2",
       "name": "percent-encoding",
       "version": "2.3.2",
@@ -5729,54 +5633,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#ttf-parser@0.25.1",
-      "name": "ttf-parser",
-      "version": "0.25.1",
-      "description": "A high-level, safe, zero-allocation font parser for TrueType, OpenType, and AAT.",
-      "scope": "required",
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "d2df906b07856748fa3f6e0ad0cbaa047052d4a7dd609e231c4f72cee8c36f31"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "MIT OR Apache-2.0"
-        }
-      ],
-      "purl": "pkg:cargo/ttf-parser@0.25.1",
-      "externalReferences": [
-        {
-          "type": "documentation",
-          "url": "https://docs.rs/ttf-parser/"
-        },
-        {
-          "type": "vcs",
-          "url": "https://github.com/harfbuzz/ttf-parser"
-        }
-      ],
-      "authors": [
-        {
-          "name": "Caleb Maclennan",
-          "email": "caleb@alerque.com"
-        },
-        {
-          "name": "Laurenz Stampfl",
-          "email": "laurenz.stampfl@gmail.com"
-        },
-        {
-          "name": "Yevhenii Reizner",
-          "email": "razrfalcon@gmail.com"
-        },
-        {
-          "name": "خالد حسني (Khaled Hosny)",
-          "email": "khaled@aliftype.com"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.27",
       "name": "unicode-ident",
       "version": "1.0.27",
@@ -7387,9 +7243,9 @@
   ],
   "dependencies": [
     {
-      "ref": "path+file:///src/crates/ames-app#0.1.0",
+      "ref": "path+file:///src/crates/ames-app#0.0.1",
       "dependsOn": [
-        "path+file:///src/crates/ames-core#0.1.0",
+        "path+file:///src/crates/ames-core#0.0.1",
         "registry+https://github.com/rust-lang/crates.io-index#console_error_panic_hook@0.1.7",
         "registry+https://github.com/rust-lang/crates.io-index#objc2@0.5.3",
         "registry+https://github.com/rust-lang/crates.io-index#objc2-foundation@0.2.2",
@@ -7403,17 +7259,7 @@
       ]
     },
     {
-      "ref": "path+file:///src/crates/ames-core#0.1.0"
-    },
-    {
-      "ref": "registry+https://github.com/rust-lang/crates.io-index#ab_glyph@0.2.32",
-      "dependsOn": [
-        "registry+https://github.com/rust-lang/crates.io-index#ab_glyph_rasterizer@0.1.10",
-        "registry+https://github.com/rust-lang/crates.io-index#owned_ttf_parser@0.25.1"
-      ]
-    },
-    {
-      "ref": "registry+https://github.com/rust-lang/crates.io-index#ab_glyph_rasterizer@0.1.10"
+      "ref": "path+file:///src/crates/ames-core#0.0.1"
     },
     {
       "ref": "registry+https://github.com/rust-lang/crates.io-index#adler2@2.0.1"
@@ -8106,12 +7952,6 @@
       ]
     },
     {
-      "ref": "registry+https://github.com/rust-lang/crates.io-index#owned_ttf_parser@0.25.1",
-      "dependsOn": [
-        "registry+https://github.com/rust-lang/crates.io-index#ttf-parser@0.25.1"
-      ]
-    },
-    {
       "ref": "registry+https://github.com/rust-lang/crates.io-index#percent-encoding@2.3.2"
     },
     {
@@ -8250,9 +8090,7 @@
     {
       "ref": "registry+https://github.com/rust-lang/crates.io-index#sctk-adwaita@0.10.1",
       "dependsOn": [
-        "registry+https://github.com/rust-lang/crates.io-index#ab_glyph@0.2.32",
         "registry+https://github.com/rust-lang/crates.io-index#log@0.4.35",
-        "registry+https://github.com/rust-lang/crates.io-index#memmap2@0.9.12",
         "registry+https://github.com/rust-lang/crates.io-index#smithay-client-toolkit@0.19.2",
         "registry+https://github.com/rust-lang/crates.io-index#tiny-skia@0.11.4"
       ]
@@ -8491,9 +8329,6 @@
         "registry+https://github.com/rust-lang/crates.io-index#pin-project-lite@0.2.17",
         "registry+https://github.com/rust-lang/crates.io-index#tracing-core@0.1.36"
       ]
-    },
-    {
-      "ref": "registry+https://github.com/rust-lang/crates.io-index#ttf-parser@0.25.1"
     },
     {
       "ref": "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.27"

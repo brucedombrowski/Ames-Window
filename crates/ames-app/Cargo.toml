@@ -15,9 +15,11 @@ path = "src/main.rs"
 
 [dependencies]
 ames-core = { path = "../ames-core" }
-softbuffer = "0.4"
 tiny-skia = "0.12"
-winit = "0.30"
+# Default features minus wayland-csd-adwaita, which pulls a font parser
+# (ab_glyph -> ttf-parser, RUSTSEC-2026-0192) only to draw the window title on
+# Wayland. The -notitle variant draws the same decorations without text.
+winit = { version = "0.30", default-features = false, features = ["rwh_06", "x11", "wayland", "wayland-dlopen", "wayland-csd-adwaita-notitle"] }
 
 # iOS only: putting winit's window onto a UIScene. Pinned to the same objc2
 # versions winit 0.30 links, so there is one UIKit binding in the graph.
@@ -33,6 +35,11 @@ objc2-ui-kit = { version = "0.2.2", features = [
     "UIWindowScene",
 ] }
 
+# Everywhere but the browser, softbuffer puts the pixels on screen. In the
+# browser the canvas takes them directly; see src/present.rs.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+softbuffer = "0.4"
+
 [lints]
 workspace = true
 
@@ -41,5 +48,12 @@ workspace = true
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1"
 wasm-bindgen = "=0.2.130"
-web-sys = { version = "0.3", features = ["Document", "Element", "HtmlCanvasElement", "Window"] }
+web-sys = { version = "0.3", features = [
+    "CanvasRenderingContext2d",
+    "Document",
+    "Element",
+    "HtmlCanvasElement",
+    "ImageData",
+    "Window",
+] }
 web-time = "1"

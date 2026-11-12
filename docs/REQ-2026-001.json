@@ -108,8 +108,9 @@
           "priority": "mandatory",
           "verification": "inspection",
           "evidence": [
-            {"file": "deny.toml", "pattern": "reason = \"transitive via winit/sctk-adwaita"},
-            {"file": "deny.toml", "pattern": "Tracked in GitHub issue #6"}
+            {"file": "deny.toml", "pattern": "Each entry: { id = \"RUSTSEC-YYYY-NNNN\", reason = \"...\" }"},
+            {"file": "deny.toml", "pattern": "ignore = []"},
+            {"file": "docs/DM-2026-006.md", "pattern": "The `ignore` entry for RUSTSEC-2026-0192 is removed"}
           ]
         },
         {
@@ -158,7 +159,7 @@
             {"file": "scripts/no-network.sh", "pattern": "Network API imported by the module"},
             {"file": ".github/workflows/ci.yml", "pattern": "scripts/no-network.sh web/dist"},
             {"file": ".github/workflows/pages.yml", "pattern": "scripts/no-network.sh web/dist"},
-            {"file": "web/index.html", "pattern": "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; connect-src 'self'; worker-src blob:; base-uri 'none'; form-action 'none'\">"},
+            {"file": "web/index.html", "pattern": "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; connect-src 'self'; img-src 'self'; worker-src blob:; base-uri 'none'; form-action 'none'\">"},
             {"file": ".github/workflows/release.yml", "pattern": "scripts/no-network.sh web/dist"},
             {"file": ".github/workflows/windows.yml", "pattern": "scripts/windows-imports.sh target/release/ames-window.exe"}
           ]
@@ -336,9 +337,17 @@
           "text": "Releases SHALL be built by automation from a tagged commit and SHALL carry the executable, the SBOM, the SVD, a SHA-256 checksum file and a signed provenance attestation naming the commit and build.",
           "priority": "mandatory",
           "verification": "test",
-          "status": "open",
-          "tracking": "#10",
-          "note": "No release workflow exists yet. The SBOM and SVD are produced on every CI run as artifacts."
+          "evidence": [
+            {"file": ".github/workflows/release.yml", "pattern": "tags: [\"v*\"]"},
+            {"file": ".github/workflows/release.yml", "pattern": "> SHA256SUMS"},
+            {"file": ".github/workflows/release.yml", "pattern": "uses: actions/attest-build-provenance"},
+            {"file": ".github/workflows/release.yml", "pattern": "gh release create \"$TAG\""},
+            {"file": "scripts/release.sh", "pattern": "git tag -a \"$tag\""},
+            {"file": ".github/workflows/release.yml", "pattern": "uses: ./.github/workflows/windows.yml"},
+            {"file": ".github/workflows/release.yml", "pattern": "ames-window-web.zip ames-window-windows-x64.zip"},
+            {"file": ".github/workflows/release.yml", "pattern": "scripts/svd.sh \"SVD-$TAG.md\""},
+            {"file": "docs/releases/SVD-v0.0.1.md", "pattern": "| Software | Ames Window, workspace version 0.0.1 |"}
+          ]
         },
         {
           "id": "REQ-4.6",
