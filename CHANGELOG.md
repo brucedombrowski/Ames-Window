@@ -113,7 +113,9 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   framework's Phase 1 schema, BCP 14 keywords, each with evidence anchors.
 - `docs/VER-2026-001.md`: verification matrix generated from those anchors
   by `scripts/ver.sh`; CI fails when it drifts from the code.
-- `docs/DM-2026-001` to `004`: decision memoranda for the no-network charter,
+- [DM-2026-001](docs/DM-2026-001.md), [002](docs/DM-2026-002.md),
+  [003](docs/DM-2026-003.md) and [004](docs/DM-2026-004.md): decision
+  memoranda for the no-network charter,
   the SBOM format, generated-versus-committed documents, and Markdown over
   LaTeX for process artifacts.
 - `docs/configuration-management.md`: the CM plan (NIST SP 800-53 CM-9) with
@@ -146,6 +148,12 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   take longer than 11 ms.
 
 ### Changed
+- Every mention of a decision memorandum in the README, the changelog and
+  the documents is a link to the memorandum.
+- Human is a named role, held by the repository owner and the one role an
+  agent cannot hold. A Major decision is made on an issue: the question, a
+  response from the AI Technical Lead, the Human's decision, then the record
+  updated ([`docs/DM-2026-008.md`](docs/DM-2026-008.md), the CM plan).
 - `ames-app`'s package description names the browser as well as iOS and the
   desktop; it appears as the root component of both SBOMs (#21).
 - README: a "Where is..." table for the things a reviewer looks for (#26),
@@ -160,7 +168,7 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   M2 Max at 1920x1080 the page went from 30 to 60 frames a second.
 - Review may be done by an AI agent holding a named role, not only by a
   person, so no Standard or Normal change waits on the owner
-  (`docs/DM-2026-007.md`, the CM plan, REQ-3.2).
+  ([`docs/DM-2026-007.md`](docs/DM-2026-007.md), the CM plan, REQ-3.2).
 - The browser build rasterises at most 1440 pixels on its longest edge and
   lets the browser scale the canvas up.
 - `ames-app` is `#![deny(unsafe_code)]` rather than `forbid`, with the one

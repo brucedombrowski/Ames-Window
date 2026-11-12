@@ -12,7 +12,7 @@ Ames Window is an IT security compliance demonstration for an application.
 The application is kept deliberately trivial, yet sufficiently complex to be
 a fair test, so that the process is the
 subject. One charter item is permanent and outside every change class: **the
-application never has network capability** (DM-2026-001, issue #8).
+application never has network capability** ([DM-2026-001](DM-2026-001.md), issue #8).
 
 This repository is public and open-licensed. It carries the method:
 generic process, policy, templates and generators. Anything that identifies
@@ -53,17 +53,43 @@ Misclassifying a change is itself a finding, recorded as an issue.
 
 | Role | Holder |
 |---|---|
-| Technical lead (Normal changes) | [name], or an agent assigned the title Technical Lead |
-| Control board (Major changes) | Generic Software Control Board (GSCB), or its delegate [name] for urgent items. In this repository, the owner. |
+| Human (Major decisions; release authority; observes and directs) | The repository owner. The one role an AI agent cannot hold ([DM-2026-008](DM-2026-008.md)). |
+| Technical lead (Normal changes; advises the Human on Major decisions) | [name], or an agent assigned the title Technical Lead |
+| Control board (Major changes) | Generic Software Control Board (GSCB), or its delegate [name] for urgent items. In this repository, the Human, and so not an agent. |
 | Reviewer pool (Standard changes) | Any committer other than the author, named in `CODEOWNERS` (issue #9), or an agent assigned the title Reviewer |
 
-A role may be held by a person or by an AI agent assigned that job title
-(DM-2026-007). An agent's review counts when it is a separate session from
-the author's, it starts from the diff, and it records its title, the class it
-confirms, what it checked and its verdict as a comment on the pull request.
-The owner observes and directs; no Standard or Normal change waits on them.
-A Major change needs the owner's direction, and a recorded direction is
-sufficient.
+Every role but Human may be held by a person or by an AI agent assigned that
+job title ([DM-2026-007](DM-2026-007.md)). An agent's review counts when it is a separate
+session from the author's, it starts from the diff, and it records its title,
+the class it confirms, what it checked and its verdict as a comment on the
+pull request. The Human observes and directs; no Standard or Normal change
+waits on them.
+
+### Major decisions
+
+A Major decision is the Human's, and is made on an issue ([DM-2026-008](DM-2026-008.md)):
+
+1. **Question.** Any role may open the issue. It states what is asked and
+   what is needed to decide it. For a risk: the statement, the ratings before
+   and after controls, the controls relied on, why it is carried, and the
+   review trigger.
+2. **Technical Lead response.** An agent holding the title Technical Lead,
+   and not the agent that wrote the issue, replies with its own assessment
+   and a recommendation, having checked the question's claims against the
+   repository. It is advice; the Human may decide against it.
+3. **Decision.** The Human replies in their own words.
+4. **Record.** An agent brings the affected document into line with the
+   decision, whichever way it went, citing the issue. The issue is closed
+   once response, decision and record all exist.
+
+Steps 2 and 3 may come in either order; the Human never waits on an agent.
+If the response comes second and finds something new, the Human may let the
+decision stand or change it on the same issue.
+
+A direction the Human gives in a working session is sufficient for a Major
+change other than accepting a risk or a known weakness, and is recorded in
+the change that carries it out. Accepting a risk always takes the form
+above.
 
 ## The change process
 
@@ -89,9 +115,10 @@ sufficient.
 | No network capability | `deny.toml` bans and feature denials; CI grep; `scripts/no-network.sh` on the built bundle; the page's Content-Security-Policy in the browser | REQ-2.1, REQ-2.2 |
 | No known malware in source, components or the published bundle | `scripts/malware.sh` (ClamAV) in `security.yml`, `pages.yml` and `release.yml` | REQ-1.10 |
 | Independent review; no force-push | Branch ruleset and `CODEOWNERS`, **not yet enabled** | REQ-3.2, REQ-3.4, issue #9 |
-| Who may approve each class | This plan, DM-2026-007 and the board's minutes | Procedural |
+| Who may approve each class | This plan, [DM-2026-007](DM-2026-007.md), [DM-2026-008](DM-2026-008.md) and the board's minutes | Procedural |
+| Telling the Human's comments from an agent's | Convention only: agents act through the Human's account and sign their comments | [DM-2026-008](DM-2026-008.md) |
 | When to cut a release | Release authority | Procedural |
-| Whether to accept a known weakness | Board, recorded in the risk register with the issue carrying the decision; for a component advisory, also in `deny.toml` with reason and issue | REQ-1.8 |
+| Whether to accept a known weakness | Board, recorded in the risk register with the issue carrying the Human's decision; for a component advisory, also in `deny.toml` with reason and issue | REQ-1.8 |
 | Incident response when an advisory is published | Procedural: search the SBOM, open an issue, classify the fix | REQ-1.7 |
 | Record retention | GitHub history and issues; releases hold the delivered SBOM and SVD | Procedural |
 
@@ -101,7 +128,7 @@ sufficient.
 |---|---|
 | Every change | Git history on `main`, with the pull request and review |
 | Every decision | `docs/DM-*.md`, linked to a GitHub issue |
-| Every accepted risk | The risk register, with the issue carrying the owner's decision; for a component advisory, also the `deny.toml` `ignore` entry with reason and issue |
+| Every accepted risk | The risk register, with the issue carrying the Human's decision; for a component advisory, also the `deny.toml` `ignore` entry with reason and issue |
 | Every delivery | GitHub Release: executable, SBOM, SVD, `SHA256SUMS`, attestation |
 | Changelog | `CHANGELOG.md`, Keep a Changelog format |
 
