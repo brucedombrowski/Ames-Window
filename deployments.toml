@@ -1,0 +1,21 @@
+# Deployments record: what has been delivered to and installed at each
+# recipient site. NIST SP 800-53 Rev. 5 CM-8 (installed instances).
+#
+# A release is not a delivery and a delivery is not an installation; the
+# three are recorded separately. Releases are git tags. Deliveries and
+# installations are recorded here, per site, by scripts/deliver.sh:
+#
+#   scripts/deliver.sh --to example-lab --version v0.2.0   # sets delivered, delivered_on
+#   scripts/deliver.sh --installed example-lab v0.2.0      # sets installed, installed_on
+#   scripts/svd.sh --from <installed tag>                  # SVD against the installed version
+#                                                          # (reading it from here, --site, is proposed in #10)
+#
+# Each update is a Standard change under docs/configuration-management.md.
+# "none" means nothing has happened yet.
+
+[sites.example-lab]
+description = "Placeholder recipient used to exercise the delivery path. Replace or remove when a real site exists."
+delivered = "none"
+delivered_on = "none"
+installed = "none"
+installed_on = "none"
