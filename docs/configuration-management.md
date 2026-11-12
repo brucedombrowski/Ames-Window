@@ -32,6 +32,7 @@ recipient's document system, generated from the same templates.
 | Requirements | `docs/REQ-2026-001.json` | Reviewed like code; a change is a Normal change |
 | Decisions | `docs/DM-*.md` and GitHub issues | Append-only in practice; a reversal is a new memorandum |
 | Verification | `docs/VER-2026-001.md` | Generated from REQ anchors; CI fails on drift |
+| Risks | `docs/RISK-2026-001.json`, rendered as `docs/RISK-2026-001.md` | `scripts/risk.sh`; CI fails if the rendering drifts, if a risk names a control that is not a requirement, or if a risk is accepted with no decision recorded |
 | Release | Git tag `vX.Y.Z` and its GitHub Release | Built by automation (issue #10) |
 | Installed instances | `deployments.toml` (planned, issue #10) | Updated after each installation as a Standard change |
 
@@ -90,7 +91,7 @@ sufficient.
 | Independent review; no force-push | Branch ruleset and `CODEOWNERS`, **not yet enabled** | REQ-3.2, REQ-3.4, issue #9 |
 | Who may approve each class | This plan, DM-2026-007 and the board's minutes | Procedural |
 | When to cut a release | Release authority | Procedural |
-| Whether to accept a known weakness | Board, recorded in `deny.toml` with reason and issue | REQ-1.8 |
+| Whether to accept a known weakness | Board, recorded in the risk register with the issue carrying the decision; for a component advisory, also in `deny.toml` with reason and issue | REQ-1.8 |
 | Incident response when an advisory is published | Procedural: search the SBOM, open an issue, classify the fix | REQ-1.7 |
 | Record retention | GitHub history and issues; releases hold the delivered SBOM and SVD | Procedural |
 
@@ -100,7 +101,7 @@ sufficient.
 |---|---|
 | Every change | Git history on `main`, with the pull request and review |
 | Every decision | `docs/DM-*.md`, linked to a GitHub issue |
-| Every accepted risk | `deny.toml` `ignore` entry with reason and issue |
+| Every accepted risk | The risk register, with the issue carrying the owner's decision; for a component advisory, also the `deny.toml` `ignore` entry with reason and issue |
 | Every delivery | GitHub Release: executable, SBOM, SVD, `SHA256SUMS`, attestation |
 | Changelog | `CHANGELOG.md`, Keep a Changelog format |
 

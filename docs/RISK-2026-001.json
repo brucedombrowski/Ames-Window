@@ -1,0 +1,258 @@
+{
+  "document_id": "RISK-2026-001",
+  "title": "Ames Window Risk Register",
+  "version": "1.2",
+  "date": "2026-11-11",
+  "method": "NIST SP 800-30 Rev. 1. Each risk is a threat event stated as condition and consequence, rated for likelihood and impact on the SP 800-30 qualitative scale (Very Low, Low, Moderate, High, Very High), reduced by controls that are requirements in REQ-2026-001, leaving a residual that someone owns. Response is one of accept, mitigate, transfer, avoid (SP 800-39 §3.4).",
+  "scale": "Very Low | Low | Moderate | High | Very High, per NIST SP 800-30 Rev. 1 Appendix G (likelihood) and Appendix H (impact)",
+  "risks": [
+    {
+      "id": "RISK-1",
+      "title": "Network code evades the automated charter checks",
+      "statement": "If an engineer introduces network capability through a path the tooling does not see, for example a renamed import of the standard library's socket types, then the charter claim 'no network capability' stated in every SVD becomes false without CI noticing.",
+      "source": "DM-2026-001 Consequences",
+      "likelihood": "Low",
+      "impact": "Moderate",
+      "controls": [
+        "REQ-2.1",
+        "REQ-2.2"
+      ],
+      "control_note": "deny.toml bans a list of 21 networking crates and denies the network features of two more; it is a list, not a proof, and a networking crate not on it would pass. Two locked components for the Linux desktop build contain socket code: x11rb, for remote X displays, and rustix, built with its net feature. Whether the application can reach either has not been traced (tracked in issue #47). The CI grep catches the ordinary standard-library and browser forms in our own source. For the browser build, scripts/no-network.sh fails the build if the bundle names a network API and the page's Content-Security-Policy refuses outside connections; for the Windows program, scripts/windows-imports.sh fails if it imports a library outside a short list. Those three are tripwires. The README says what the first two cannot see, and the third's limits are in its own header. Independent review (REQ-3.2) is practised but not enforced by the repository, so it is not counted as a control here.",
+      "residual_likelihood": "Low",
+      "residual_impact": "Moderate",
+      "response": "accept",
+      "owner": "Repository owner",
+      "status": "open",
+      "review": "When REQ-3.2 is enforced (issue #9); when the x11rb path is traced; at each release",
+      "references": [
+        "#8",
+        "#17",
+        "docs/DM-2026-001.md"
+      ],
+      "decision": {
+        "by": "Repository owner",
+        "decision": "concur",
+        "words": "Human concurs.",
+        "date": "2026-11-11",
+        "issue": "#17",
+        "residual_concurred_with": "Very Low / Moderate",
+        "advice": "The Technical Lead's response on the same issue was given after the decision",
+        "note": "The owner concurred with a residual of Very Low / Moderate. Applying the Technical Lead's later advice, the register now rates it Low / Moderate and states the risk more fully. The changes were put back to the owner on the issue on 2026-11-11; until the owner answers there, the concurrence stands for the risk as it was first stated, not as it is now rated"
+      }
+    },
+    {
+      "id": "RISK-2",
+      "title": "Unmaintained component in the dependency tree",
+      "statement": "If a component we ship stops receiving fixes, then a vulnerability found in it later has no upstream remedy and must be handled by replacing the component.",
+      "source": "RUSTSEC-2026-0192, ttf-parser via winit's Wayland title decorations",
+      "likelihood": "Low",
+      "impact": "Low",
+      "controls": [
+        "REQ-1.7",
+        "REQ-1.8"
+      ],
+      "control_note": "Weekly advisory scan surfaces the condition. Resolved by DM-2026-006: the winit feature that pulled the font parser was replaced, removing the component.",
+      "residual_likelihood": "Very Low",
+      "residual_impact": "Low",
+      "response": "mitigate",
+      "owner": "Technical lead",
+      "status": "closed",
+      "review": "If cargo deny reports a new unmaintained advisory, which fails CI; this risk is then re-opened by hand",
+      "references": [
+        "#6",
+        "docs/DM-2026-006.md"
+      ]
+    },
+    {
+      "id": "RISK-3",
+      "title": "Compromise of the public component registry",
+      "statement": "If crates.io, a maintainer account, a build tool installed from crates.io (wasm-bindgen-cli, cargo-cyclonedx), the Rust toolchain or a GitHub Action used by the workflows is compromised, then a malicious version could be pulled in: for a component, at the next deliberate update; for a build tool, which is pinned by version but not by checksum, if that version's contents were replaced; for the toolchain and for Actions, which follow a moving channel or tag, at the next run. Versions of components already pinned in Cargo.lock are protected by their checksums.",
+      "source": "Discussion of supply chain threat model, 2026-11-11",
+      "likelihood": "Low",
+      "impact": "High",
+      "controls": [
+        "REQ-1.5",
+        "REQ-1.6",
+        "REQ-1.7"
+      ],
+      "control_note": "Checksums protect pinned component versions, and only crates.io is an allowed source. None of the controls lowers the chance of adopting a malicious new version: a new version enters on an update, which is a Normal change with review; advisory scanning and the malware scan catch what is already known, after disclosure. Build tools are installed from crates.io at a pinned version on each run with no checksum recorded here, and GitHub Actions are pinned by tag, which can be moved, not by commit. The impact is High because build scripts and procedural macros run on the developer's machine and in the release job, which holds the permissions to sign and publish. Vendoring (cargo vendor) or recorded audits (cargo vet) would prevent it and were considered in DM-2026-005. Independent review (REQ-3.2) is not counted, being unenforced.",
+      "residual_likelihood": "Low",
+      "residual_impact": "High",
+      "response": "accept",
+      "owner": "Repository owner",
+      "status": "open",
+      "review": "At each release, or if the project is adopted for a real deployment, when DM-2026-005 is revisited",
+      "references": [
+        "docs/DM-2026-005.md",
+        "docs/DM-2026-002.md",
+        "#18"
+      ],
+      "decision": {
+        "by": "Repository owner",
+        "decision": "concur",
+        "words": "Human concurs",
+        "date": "2026-11-11",
+        "issue": "#18",
+        "residual_concurred_with": "Very Low / High",
+        "advice": "The Technical Lead's response on the same issue was given after the decision",
+        "note": "The owner concurred with a residual of Very Low / High. Applying the Technical Lead's later advice, the register now rates it Low / High and states the risk more fully. The changes were put back to the owner on the issue on 2026-11-11; until the owner answers there, the concurrence stands for the risk as it was first stated, not as it is now rated"
+      }
+    },
+    {
+      "id": "RISK-4",
+      "title": "Second-person review is practised but not enforced",
+      "statement": "If a change is merged to main without review, because nothing in the repository configuration prevents it, then an error or an unwanted change reaches the main line with no independent review and the audit trail shows no approval.",
+      "source": "REQ-3.2 and REQ-3.4 open",
+      "likelihood": "Moderate",
+      "impact": "Moderate",
+      "controls": [],
+      "control_note": "No automated control yet. Independent review is practised on every pull request, by a person or by an agent holding a reviewer's role (DM-2026-007), and recorded as a comment; nothing in the repository's configuration requires it. A CODEOWNERS file and a branch ruleset are both still to do; the ruleset is a setting only the owner can enable.",
+      "residual_likelihood": "Moderate",
+      "residual_impact": "Moderate",
+      "response": "mitigate",
+      "owner": "Repository owner",
+      "status": "open",
+      "review": "Closes when issue #9 is done and REQ-3.2 and REQ-3.4 carry evidence",
+      "references": [
+        "#9"
+      ]
+    },
+    {
+      "id": "RISK-5",
+      "title": "Documentation drifts from the software it describes",
+      "statement": "If counts, versions and status quoted in documents and briefings are typed by hand, then they are wrong soon after they are written and an assessor finds the prose contradicting the artifacts.",
+      "source": "Deck and README numbers were hand-typed before facts.json existed",
+      "likelihood": "High",
+      "impact": "Low",
+      "controls": [
+        "REQ-1.4",
+        "REQ-4.2"
+      ],
+      "control_note": "The three SBOMs, VER-2026-001.md and RISK-2026-001.md are generated and drift-checked in CI. The SVD is generated per commit and per release. Counts quoted in prose, in the README and the changelog, are still typed by hand: a generated table of such facts exists on a branch and is not yet on main, so prose can drift, and reviews have caught it doing so.",
+      "residual_likelihood": "Moderate",
+      "residual_impact": "Low",
+      "response": "mitigate",
+      "owner": "Technical lead",
+      "status": "open",
+      "review": "When a generated source for the numbers quoted in prose reaches main",
+      "references": [
+        "scripts/sbom.sh",
+        "scripts/ver.sh",
+        "scripts/risk.sh",
+        "scripts/svd.sh"
+      ]
+    },
+    {
+      "id": "RISK-6",
+      "title": "Dependency surface is large relative to the application",
+      "statement": "If the executable carries far more third-party code than its function needs, mostly platform windowing support, then the attack surface, licence exposure and advisory noise are all larger than necessary, and each component is a place a future vulnerability can appear.",
+      "source": "SBOM review, 2026-11-11",
+      "likelihood": "Moderate",
+      "impact": "Moderate",
+      "controls": [
+        "REQ-1.1",
+        "REQ-1.7",
+        "REQ-1.9"
+      ],
+      "control_note": "Inventory and scanning make the surface visible. DM-2026-006 removed the font-parsing subtree. Further reduction means dropping platform features the project does not ship, a Normal change per platform.",
+      "residual_likelihood": "Moderate",
+      "residual_impact": "Low",
+      "response": "mitigate",
+      "owner": "Technical lead",
+      "status": "open",
+      "review": "At each winit or softbuffer update",
+      "references": [
+        "docs/DM-2026-006.md",
+        "sbom.cdx.json"
+      ]
+    },
+    {
+      "id": "RISK-7",
+      "title": "Public repository exposes the process in full",
+      "statement": "If the repository is public, then every requirement, decision, accepted risk and open item is visible to anyone, including which controls are not yet enforced.",
+      "source": "Charter: the repository is a compliance demonstration",
+      "likelihood": "Very High",
+      "impact": "Very Low",
+      "controls": [
+        "REQ-3.1"
+      ],
+      "control_note": "Carrying this risk is the better choice. The visibility is the purpose: the method is meant to be lifted into other projects. Mitigating by going private would remove the value entirely, and a half measure (hiding only the open items) would make the record dishonest. The real exposure is bounded by the CM plan boundary: anything that would be CUI for a real deployment, such as named people, devices, destinations or system boundaries, is kept out of this repository by rule. Cost of mitigation: the project. Cost of carrying: none beyond keeping that boundary. The boundary between what may be public and what may not is procedural: nothing scans for a breach of it, and secret scanning is off for the repository.",
+      "residual_likelihood": "Very High",
+      "residual_impact": "Very Low",
+      "response": "accept",
+      "owner": "Repository owner",
+      "status": "open",
+      "review": "If the repository is ever used as the instance for a real deployment rather than the method; or on any breach of the boundary",
+      "references": [
+        "docs/configuration-management.md",
+        "#19"
+      ],
+      "decision": {
+        "by": "Repository owner",
+        "decision": "concur",
+        "words": "Concur.",
+        "date": "2026-11-11",
+        "issue": "#19",
+        "residual_concurred_with": "Very High / Very Low",
+        "advice": "The Technical Lead's response on the same issue was given after the decision",
+        "note": "The rating is the one concurred with. The control note has since been made fuller on the Technical Lead's advice"
+      }
+    },
+    {
+      "id": "RISK-8",
+      "title": "Single hosting platform for code, issues, releases and CI",
+      "statement": "If GitHub is unavailable, changes policy, or the account is lost, then the issue trail, release assets and CI history are unreachable until restored, and no change can be merged under the process in the meantime.",
+      "source": "Architecture review, 2026-11-11",
+      "likelihood": "Low",
+      "impact": "Moderate",
+      "controls": [
+        "REQ-4.2",
+        "REQ-1.3"
+      ],
+      "control_note": "Carrying this risk is the better choice. Git is distributed: every clone holds the full history, the SBOM, the requirements, the register and the generators, so every document in the tree is reproducible from any clone with no platform at all. Mitigating with a second platform and a mirror adds a synchronisation process and a second place for records to diverge, which is itself a configuration-management risk. The residual, loss of what lives only on the platform, is reduced by referencing issue conclusions in the decision memoranda, which are in the tree. Cost of mitigation: a mirror, a sync, and a second audit log. Cost of carrying: an outage delays merges and loses nothing permanent that is in the tree. What lives only on the platform, and in no clone: the issue threads, the pull request reviews that are the record of approval, the Human's concurrences, and the build provenance attestations. The 'every clone is a copy' argument rests today on one owner and no forks.",
+      "residual_likelihood": "Low",
+      "residual_impact": "Low",
+      "response": "accept",
+      "owner": "Repository owner",
+      "status": "open",
+      "review": "Annually, or if the repository becomes the system of record for a real deployment",
+      "references": [
+        "docs/DM-2026-003.md",
+        "#20"
+      ],
+      "decision": {
+        "by": "Repository owner",
+        "decision": "concur",
+        "words": "Concur",
+        "date": "2026-11-11",
+        "issue": "#20",
+        "residual_concurred_with": "Low / Low",
+        "advice": "The Technical Lead's response on the same issue was given after the decision",
+        "note": "The rating is the one concurred with. The control note has since been made fuller on the Technical Lead's advice"
+      }
+    },
+    {
+      "id": "RISK-9",
+      "title": "Duplicate versions of the same component in the tree",
+      "statement": "If several versions of one component are compiled in because different dependencies pin different ranges, then the executable carries redundant code, each copy is a separate place for a vulnerability to appear, and advisory scanning may flag a version that a newer sibling has already fixed.",
+      "source": "cargo deny bans: warning[duplicate] on about a dozen components at 2026-11-11",
+      "likelihood": "Moderate",
+      "impact": "Low",
+      "controls": [
+        "REQ-1.7",
+        "REQ-1.9"
+      ],
+      "control_note": "Scanning covers every copy, so nothing is missed, but the surface is larger than it needs to be. Planned mitigation: a reviewed cargo update as a Normal change, reconciling versions where the dependency graph allows, with a decision memorandum recording what could not be reconciled and why. It was carried deliberately into the first release, v0.0.1, so that a later release can show a risk opened, fixed, closed and every submittal regenerated.",
+      "residual_likelihood": "Moderate",
+      "residual_impact": "Low",
+      "response": "mitigate",
+      "owner": "Technical lead",
+      "status": "open",
+      "review": "At the next release after v0.0.1",
+      "references": [
+        "deny.toml [bans] multiple-versions",
+        "sbom.cdx.json"
+      ]
+    }
+  ]
+}

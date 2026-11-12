@@ -18,7 +18,7 @@ cd "$root"
 # home directory, and so their account name, dozens of times. Rewrite the two
 # prefixes that vary by machine to fixed ones. (--config adds to the flags in
 # .cargo/config.toml; a RUSTFLAGS variable would replace them.)
-cargo build --release -p ames-app --target wasm32-unknown-unknown \
+cargo build --release --locked -p ames-app --target wasm32-unknown-unknown \
   --config "target.wasm32-unknown-unknown.rustflags=['--remap-path-prefix=$root=/src', '--remap-path-prefix=$HOME=/home/builder']"
 
 dist="web/dist"
