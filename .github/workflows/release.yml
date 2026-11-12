@@ -64,12 +64,13 @@ jobs:
           cargo install cargo-cyclonedx --version 0.5.10 --locked
 
       - name: Test
-        run: cargo test --workspace
+        run: cargo test --workspace --locked
 
       - name: Inventory and verification matrix are current
         run: |
           scripts/sbom.sh --check
           scripts/ver.sh --check
+          scripts/risk.sh --check
 
       - name: Build the web bundle
         run: scripts/web.sh

@@ -13,7 +13,7 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
 
-cargo build --release -p ames-app --target wasm32-unknown-unknown
+cargo build --release --locked -p ames-app --target wasm32-unknown-unknown
 
 dist="web/dist"
 rm -rf "$dist"
