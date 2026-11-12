@@ -8,6 +8,12 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Added
+- `scripts/deliver.sh` and `deployments.toml`: a delivery hands one release
+  to one site with an SVD from that site's installed version; deliveries and
+  installations are recorded per site, apart from releases (#10).
+- `scripts/facts.sh` and `docs/facts.json`: the numbers documents quote, read
+  from the repository. CI fails if the file is stale.
+- `docs/start-here.md`: reading order for the compliance documents.
 - A browser tab icon, `web/icon.svg` (#14). The page's policy gains
   `img-src 'self'` for it and nothing else.
 - The feedback report says how long the app spent on each frame, painting

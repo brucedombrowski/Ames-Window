@@ -30,6 +30,8 @@ jobs:
         run: scripts/ver.sh --check
       - name: Risk register is rendered and every acceptance is decided
         run: scripts/risk.sh --check
+      - name: Quoted numbers match the repository
+        run: scripts/facts.sh --check
       - name: Generate the Software Version Description
         run: scripts/svd.sh
       - uses: actions/upload-artifact@v4
