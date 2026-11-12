@@ -18,3 +18,11 @@ home   C:\Users\runneradmin         # the account on GitHub's hosted Windows bui
 home   /Users/runner                # the same, on GitHub's hosted macOS machines
 home   /home/runner                 # the same, on GitHub's hosted Linux machines
 home   /home/builder                # the fixed placeholder scripts/web.sh substitutes for the builder's real home directory
+
+# Example values once in scripts/sensitive.sh's own header comment (commit 5df2f76),
+# since replaced with placeholders the patterns cannot match. Kept only for --history.
+ipv4   192.0.2.10                   # RFC 5737 TEST-NET-1, reserved for documentation; routes nowhere
+mac    00:1b:63:84:45:e6            # the textbook example MAC from Wikipedia; tied to no device here
+home   /Users/name                  # the literal word "name", a placeholder
+home   /home/name                   # the same
+home   C:\Users\name                # the same

@@ -14,11 +14,11 @@
 # allow-list, .sensitive-allow, where every exception carries its reason.
 #
 # What it looks for, by pattern:
-#   ipv4      a dotted address, e.g. 192.0.2.10
+#   ipv4      a dotted address, e.g. 192.0.2.x
 #   ipv6      a full address, or a compressed one with a recognisable prefix
-#   mac       six pairs of hex digits, e.g. 00:1b:63:84:45:e6
+#   mac       six pairs of hex digits, e.g. 00:00:5e:00:53:xx
 #   email     any address
-#   home      a named home directory: /Users/name, /home/name, C:\Users\name
+#   home      a named home directory: /Users/<name>, /home/<name>, C:\Users\<name>
 #   host      a name ending .local, .internal, .corp, .lan or .intranet
 #   key       a private key header, or a token in a well-known format
 #
