@@ -55,7 +55,9 @@ There is no Swift, no Objective‑C, no Xcode project and no GPU code. `ames-cor
 `#![forbid(unsafe_code)]`; `ames-app` is `#![deny(unsafe_code)]` with one
 exception, `ios_scene.rs`, which calls UIKit to put the window on screen. On
 Apple platforms the Objective‑C runtime is reached through the `objc2`
-bindings that `winit` and `softbuffer` depend on.
+bindings that `winit` and `softbuffer` depend on. On Wayland the window
+frame is drawn without a title string, which keeps a font parser out of the
+dependency tree.
 
 The app has no network capability of any kind and never will. See
 [Supply chain](#supply-chain).
@@ -273,7 +275,7 @@ dependency graph:
 |---|---|---|
 | [`sbom-web.cdx.json`](sbom-web.cdx.json) | The browser build, which is what a release ships. **This is the release SBOM.** See below for its exact scope. | 53 |
 | [`sbom-windows.cdx.json`](sbom-windows.cdx.json) | The Windows program, which a release also ships, on the same terms: what Cargo resolves for that target. | 42 |
-| [`sbom.cdx.json`](sbom.cdx.json) | Every target the source builds for at once: browser, iOS, macOS, Windows, Linux, Android. An audit view; no single build contains all of it. | 215 |
+| [`sbom.cdx.json`](sbom.cdx.json) | Every target the source builds for at once: browser, iOS, macOS, Windows, Linux, Android. An audit view; no single build contains all of it. | 211 |
 
 What the two build files are, exactly: everything Cargo resolves for that
 target, which is a little more than what is delivered.
@@ -357,9 +359,10 @@ What these do not show.
 
 `deny.toml` is the policy: `cargo deny check` fails on known vulnerabilities,
 licences outside the permissive allowlist, wildcard versions, or crates from
-anywhere other than crates.io. One advisory is explicitly ignored with a
-reason in the file: RUSTSEC‑2026‑0192, `ttf-parser` unmaintained, reached only
-through `winit` (issue #6). The same workflow runs the check on every push to
+anywhere other than crates.io. No advisory is ignored. The one that was,
+RUSTSEC‑2026‑0192 (`ttf-parser` unmaintained, reached only through `winit`'s
+Wayland window title), went away when the component was removed from the
+tree ([DM-2026-006](docs/DM-2026-006.md), issue #6). The same workflow runs the check on every push to
 `main` and weekly, so new advisories surface without a code change. The
 workflow's latest result is on the Actions tab; it was first merged to `main`
 on 2026‑11‑11.

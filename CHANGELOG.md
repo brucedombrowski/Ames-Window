@@ -14,6 +14,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   and presenting (#27).
 
 ### Changed
+- `winit` is declared with `default-features = false` and
+  `wayland-csd-adwaita-notitle` in place of `wayland-csd-adwaita`: the same
+  window frame on Wayland, without a title, and without the font parser that
+  drew it ([DM-2026-006](docs/DM-2026-006.md), #6). The every-target SBOM
+  goes from 215 components to 211.
 - In the browser the finished picture goes straight to the canvas instead of
   through `softbuffer`, which repacked every pixel twice inside WebAssembly.
   Measured in headless Chrome on an M2 Max at 1366x681: presenting went from
@@ -24,6 +29,10 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   and describes the release procedure as it ran; REQ-4.5 (releases built by
   automation, with checksums and provenance) now carries evidence instead of
   an open status; the CM plan's release procedure is no longer "planned".
+
+### Removed
+- The `ignore` entry for RUSTSEC-2026-0192 in `deny.toml`. The policy now
+  accepts no advisory.
 
 ### Fixed
 - `scripts/release.sh` left a stale `[Unreleased]` link reference from the

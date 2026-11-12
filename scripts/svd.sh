@@ -288,12 +288,22 @@ nothing outside its own installation directory.
 
 ### 3.7 Possible problems and known errors
 
-Accepted advisories, from the \`ignore\` list in \`deny.toml\`:
-
-| Advisory | Reason recorded |
-|---|---|
 EOF
-grep -E '^\s*\{ id = ' deny.toml | sed -E 's/.*id = "([^"]+)".*reason = "([^"]+)".*/| \1 | \2 |/' || true
+accepted="$(grep -E '^[[:space:]]*\{ id = ' deny.toml | sed -E 's/.*id = "([^"]+)".*reason = "([^"]+)".*/| \1 | \2 |/' || true)"
+# Say "none" only when the list is literally empty. An entry written in a
+# form this does not read must stop the document, not be passed over.
+if grep -qxF 'ignore = []' deny.toml; then
+  echo "No advisory is accepted: the \`ignore\` list in \`deny.toml\` is empty."
+elif [[ -n "$accepted" ]]; then
+  echo "Accepted advisories, from the \`ignore\` list in \`deny.toml\`:"
+  echo
+  echo "| Advisory | Reason recorded |"
+  echo "|---|---|"
+  echo "$accepted"
+else
+  echo "scripts/svd.sh: deny.toml's ignore list is not empty and has no entry in the form { id = ..., reason = ... } on its own line." >&2
+  exit 1
+fi
 
 cat <<EOF
 
