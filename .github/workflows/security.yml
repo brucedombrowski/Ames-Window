@@ -78,3 +78,15 @@ jobs:
       - name: Scan our source and the components' source
         # The built bundle is scanned by the Pages workflow before it deploys.
         run: scripts/malware.sh . ~/.cargo/registry/src
+
+  sensitive:
+    name: No addresses, machine names or credentials
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the history scan reads every commit
+      - name: The files as they stand
+        run: scripts/sensitive.sh
+      - name: Every line ever added
+        run: scripts/sensitive.sh --history

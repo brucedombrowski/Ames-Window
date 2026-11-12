@@ -1,0 +1,20 @@
+# Exceptions for scripts/sensitive.sh. One per line:
+#
+#   kind  value  # why it is safe to publish
+#
+# `kind` is one of ipv4, ipv6, mac, email, home, host, key; `value` is the
+# exact text found, where * stands for any run of text. `path` with a glob leaves a
+# whole file out. An entry without a reason is refused.
+
+path   sbom*.cdx.json    # third-party authors' addresses, as each crate publishes them on crates.io
+path   docs/releases/*   # filed copies of released documents; scanned when they were generated, never edited
+
+email  *@users.noreply.github.com   # GitHub's no-reply addresses, which identify an account and nothing else
+email  noreply@github.com           # GitHub's own committer address for merges made on the site
+email  noreply@anthropic.com        # the co-author trailer on commits written with Claude
+
+home   /home/you                    # a placeholder in a comment in scripts/sbom.sh
+home   C:\Users\runneradmin         # the account on GitHub's hosted Windows build machines; names no person
+home   /Users/runner                # the same, on GitHub's hosted macOS machines
+home   /home/runner                 # the same, on GitHub's hosted Linux machines
+home   /home/builder                # the fixed placeholder scripts/web.sh substitutes for the builder's real home directory

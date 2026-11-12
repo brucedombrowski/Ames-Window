@@ -12,8 +12,19 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `img-src 'self'` for it and nothing else.
 - The feedback report says how long the app spent on each frame, painting
   and presenting (#27).
+- `scripts/sensitive.sh` and REQ-3.8 (NIST SP 800-53 AC-22): scans the
+  files, a range of commits, the whole history or a release package for
+  network and hardware addresses, email addresses, named home directories,
+  internal host names and credentials, and reads the text inside binaries.
+  Exceptions live in `.sensitive-allow`, each with its reason. It runs on
+  every pull request, on pushes to `main`, weekly, and before each release.
 
 ### Changed
+- `scripts/web.sh` rewrites the source paths the compiler records in the
+  browser module. A bundle built on a developer's machine carried that
+  machine's home directory, and so an account name, dozens of times; the
+  scanner found it. Bundles built by CI, including v0.0.1, were not
+  affected.
 - `winit` is declared with `default-features = false` and
   `wayland-csd-adwaita-notitle` in place of `wayland-csd-adwaita`: the same
   window frame on Wayland, without a title, and without the font parser that
