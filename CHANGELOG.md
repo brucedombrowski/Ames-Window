@@ -12,6 +12,15 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `img-src 'self'` for it and nothing else.
 - The feedback report says how long the app spent on each frame, painting
   and presenting (#27).
+- `docs/RISK-2026-001.json` and its rendering `docs/RISK-2026-001.md`
+  (`scripts/risk.sh`): nine risks in NIST SP 800-30 terms, each with
+  controls traced to requirements, a residual rating, an owner and a review
+  trigger. Four are accepted, each with the owner's decision recorded from
+  its issue (#17 to #20) and corrected as the Technical Lead advised there.
+  CI fails if the rendering drifts, if a control is not a requirement, or if
+  a risk is accepted with no decision recorded.
+- [DM-2026-005](docs/DM-2026-005.md): dependencies are not vendored;
+  compromise of the registry is an accepted risk.
 
 ### Changed
 - `winit` is declared with `default-features = false` and

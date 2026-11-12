@@ -70,6 +70,7 @@ jobs:
         run: |
           scripts/sbom.sh --check
           scripts/ver.sh --check
+          scripts/risk.sh --check
 
       - name: Build the web bundle
         run: scripts/web.sh
