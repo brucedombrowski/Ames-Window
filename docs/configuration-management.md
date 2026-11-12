@@ -90,7 +90,7 @@ sufficient.
 | Independent review; no force-push | Branch ruleset and `CODEOWNERS`, **not yet enabled** | REQ-3.2, REQ-3.4, issue #9 |
 | Who may approve each class | This plan, DM-2026-007 and the board's minutes | Procedural |
 | When to cut a release | Release authority | Procedural |
-| Whether to accept a known weakness | Board, recorded in `deny.toml` with reason and issue | REQ-1.8 |
+| Whether to accept a known weakness | Board, recorded in the risk register with the issue carrying the decision; for a component advisory, also in `deny.toml` with reason and issue | REQ-1.8 |
 | Incident response when an advisory is published | Procedural: search the SBOM, open an issue, classify the fix | REQ-1.7 |
 | Record retention | GitHub history and issues; releases hold the delivered SBOM and SVD | Procedural |
 

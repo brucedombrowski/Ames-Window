@@ -17,11 +17,11 @@
         "REQ-2.1",
         "REQ-2.2"
       ],
-      "control_note": "deny.toml bans a list of 21 networking crates and denies the network features of two more; it is a list, not a proof, and a networking crate not on it would pass. One locked component for the Linux desktop build, x11rb, contains TCP socket code for remote X displays; whether the application can reach it has not been traced. The CI grep catches the ordinary standard-library and browser forms in our own source. For the browser build, scripts/no-network.sh fails the build if the bundle names a network API and the page's Content-Security-Policy refuses outside connections; for the Windows program, scripts/windows-imports.sh fails if it imports a library outside a short list. Those three are tripwires and the README says what each cannot see. Independent review (REQ-3.2) is practised but not enforced by the repository, so it is not counted as a control here.",
+      "control_note": "deny.toml bans a list of 21 networking crates and denies the network features of two more; it is a list, not a proof, and a networking crate not on it would pass. Two locked components for the Linux desktop build contain socket code: x11rb, for remote X displays, and rustix, built with its net feature. Whether the application can reach either has not been traced (tracked in issue #47). The CI grep catches the ordinary standard-library and browser forms in our own source. For the browser build, scripts/no-network.sh fails the build if the bundle names a network API and the page's Content-Security-Policy refuses outside connections; for the Windows program, scripts/windows-imports.sh fails if it imports a library outside a short list. Those three are tripwires. The README says what the first two cannot see, and the third's limits are in its own header. Independent review (REQ-3.2) is practised but not enforced by the repository, so it is not counted as a control here.",
       "residual_likelihood": "Low",
       "residual_impact": "Moderate",
       "response": "accept",
-      "owner": "Repository owner (Human)",
+      "owner": "Repository owner",
       "status": "open",
       "review": "When REQ-3.2 is enforced (issue #9); when the x11rb path is traced; at each release",
       "references": [
@@ -30,11 +30,14 @@
         "docs/DM-2026-001.md"
       ],
       "decision": {
-        "by": "Repository owner (Human)",
+        "by": "Repository owner",
         "decision": "concur",
+        "words": "Human concurs.",
         "date": "2026-11-11",
         "issue": "#17",
-        "advice": "Technical Lead response on the same issue"
+        "residual_concurred_with": "Very Low / Moderate",
+        "advice": "The Technical Lead's response on the same issue was given after the decision",
+        "note": "The owner concurred with a residual of Very Low / Moderate. Applying the Technical Lead's later advice, the register now rates it Low / Moderate and states the risk more fully. The changes were put back to the owner on the issue on 2026-11-11; until the owner answers there, the concurrence stands for the risk as it was first stated, not as it is now rated"
       }
     },
     {
@@ -54,7 +57,7 @@
       "response": "mitigate",
       "owner": "Technical lead",
       "status": "closed",
-      "review": "Re-opens automatically if cargo deny reports a new unmaintained advisory",
+      "review": "If cargo deny reports a new unmaintained advisory, which fails CI; this risk is then re-opened by hand",
       "references": [
         "#6",
         "docs/DM-2026-006.md"
@@ -63,7 +66,7 @@
     {
       "id": "RISK-3",
       "title": "Compromise of the public component registry",
-      "statement": "If crates.io, a maintainer account, a build tool installed from crates.io (wasm-bindgen-cli, cargo-cyclonedx) or a GitHub Action used by the workflows is compromised and a malicious version is published, then the next deliberate update, or for tools and Actions the next run, could pull it in. Versions of components already pinned in Cargo.lock are protected by their checksums.",
+      "statement": "If crates.io, a maintainer account, a build tool installed from crates.io (wasm-bindgen-cli, cargo-cyclonedx), the Rust toolchain or a GitHub Action used by the workflows is compromised, then a malicious version could be pulled in: for a component, at the next deliberate update; for a build tool, which is pinned by version but not by checksum, if that version's contents were replaced; for the toolchain and for Actions, which follow a moving channel or tag, at the next run. Versions of components already pinned in Cargo.lock are protected by their checksums.",
       "source": "Discussion of supply chain threat model, 2026-11-11",
       "likelihood": "Low",
       "impact": "High",
@@ -76,7 +79,7 @@
       "residual_likelihood": "Low",
       "residual_impact": "High",
       "response": "accept",
-      "owner": "Repository owner (Human)",
+      "owner": "Repository owner",
       "status": "open",
       "review": "At each release, or if the project is adopted for a real deployment, when DM-2026-005 is revisited",
       "references": [
@@ -85,22 +88,25 @@
         "#18"
       ],
       "decision": {
-        "by": "Repository owner (Human)",
+        "by": "Repository owner",
         "decision": "concur",
+        "words": "Human concurs",
         "date": "2026-11-11",
         "issue": "#18",
-        "advice": "Technical Lead response on the same issue"
+        "residual_concurred_with": "Very Low / High",
+        "advice": "The Technical Lead's response on the same issue was given after the decision",
+        "note": "The owner concurred with a residual of Very Low / High. Applying the Technical Lead's later advice, the register now rates it Low / High and states the risk more fully. The changes were put back to the owner on the issue on 2026-11-11; until the owner answers there, the concurrence stands for the risk as it was first stated, not as it is now rated"
       }
     },
     {
       "id": "RISK-4",
       "title": "Second-person review is practised but not enforced",
-      "statement": "If a change is merged to main without review, because nothing in the repository configuration prevents it, then an error or an unwanted change reaches the main line with no second pair of eyes and the audit trail shows no approval.",
+      "statement": "If a change is merged to main without review, because nothing in the repository configuration prevents it, then an error or an unwanted change reaches the main line with no independent review and the audit trail shows no approval.",
       "source": "REQ-3.2 and REQ-3.4 open",
       "likelihood": "Moderate",
       "impact": "Moderate",
       "controls": [],
-      "control_note": "No automated control yet. CODEOWNERS is committed; the branch ruleset is a repository setting only the owner can enable.",
+      "control_note": "No automated control yet. Independent review is practised on every pull request, by a person or by an agent holding a reviewer's role (DM-2026-007), and recorded as a comment; nothing in the repository's configuration requires it. A CODEOWNERS file and a branch ruleset are both still to do; the ruleset is a setting only the owner can enable.",
       "residual_likelihood": "Moderate",
       "residual_impact": "Moderate",
       "response": "mitigate",
@@ -122,16 +128,18 @@
         "REQ-1.4",
         "REQ-4.2"
       ],
-      "control_note": "sbom.cdx.json, VER-2026-001.md, RISK-2026-001.md and facts.json are generated and drift-checked in CI. The SVD is generated per commit. Prose that quotes a number cites facts.json and the commit it was taken from.",
-      "residual_likelihood": "Low",
+      "control_note": "The three SBOMs, VER-2026-001.md and RISK-2026-001.md are generated and drift-checked in CI. The SVD is generated per commit and per release. Counts quoted in prose, in the README and the changelog, are still typed by hand: a generated table of such facts exists on a branch and is not yet on main, so prose can drift, and reviews have caught it doing so.",
+      "residual_likelihood": "Moderate",
       "residual_impact": "Low",
       "response": "mitigate",
       "owner": "Technical lead",
       "status": "open",
-      "review": "When the deck is next regenerated",
+      "review": "When a generated source for the numbers quoted in prose reaches main",
       "references": [
-        "docs/facts.json",
-        "scripts/facts.sh"
+        "scripts/sbom.sh",
+        "scripts/ver.sh",
+        "scripts/risk.sh",
+        "scripts/svd.sh"
       ]
     },
     {
@@ -172,7 +180,7 @@
       "residual_likelihood": "Very High",
       "residual_impact": "Very Low",
       "response": "accept",
-      "owner": "Repository owner (Human)",
+      "owner": "Repository owner",
       "status": "open",
       "review": "If the repository is ever used as the instance for a real deployment rather than the method; or on any breach of the boundary",
       "references": [
@@ -180,11 +188,14 @@
         "#19"
       ],
       "decision": {
-        "by": "Repository owner (Human)",
+        "by": "Repository owner",
         "decision": "concur",
+        "words": "Concur.",
         "date": "2026-11-11",
         "issue": "#19",
-        "advice": "Technical Lead response on the same issue"
+        "residual_concurred_with": "Very High / Very Low",
+        "advice": "The Technical Lead's response on the same issue was given after the decision",
+        "note": "The rating is the one concurred with. The control note has since been made fuller on the Technical Lead's advice"
       }
     },
     {
@@ -198,11 +209,11 @@
         "REQ-4.2",
         "REQ-1.3"
       ],
-      "control_note": "Carrying this risk is the better choice. Git is distributed: every clone holds the full history, the SBOM, the requirements, the register and the generators, so every document except the issue thread is reproducible from any clone with no platform at all. Mitigating with a second platform and a mirror adds a synchronisation process and a second place for records to diverge, which is itself a configuration-management risk. The residual, loss of the issue thread, is reduced by referencing issue conclusions in the decision memoranda, which are in the tree. Cost of mitigation: a mirror, a sync, and a second audit log. Cost of carrying: an outage delays merges and loses nothing permanent that is in the tree. What lives only on the platform, and in no clone: the issue threads, the pull request reviews that are the record of approval, the Human's concurrences, and the build provenance attestations. The 'every clone is a copy' argument rests today on one owner and no forks.",
+      "control_note": "Carrying this risk is the better choice. Git is distributed: every clone holds the full history, the SBOM, the requirements, the register and the generators, so every document in the tree is reproducible from any clone with no platform at all. Mitigating with a second platform and a mirror adds a synchronisation process and a second place for records to diverge, which is itself a configuration-management risk. The residual, loss of what lives only on the platform, is reduced by referencing issue conclusions in the decision memoranda, which are in the tree. Cost of mitigation: a mirror, a sync, and a second audit log. Cost of carrying: an outage delays merges and loses nothing permanent that is in the tree. What lives only on the platform, and in no clone: the issue threads, the pull request reviews that are the record of approval, the Human's concurrences, and the build provenance attestations. The 'every clone is a copy' argument rests today on one owner and no forks.",
       "residual_likelihood": "Low",
       "residual_impact": "Low",
       "response": "accept",
-      "owner": "Repository owner (Human)",
+      "owner": "Repository owner",
       "status": "open",
       "review": "Annually, or if the repository becomes the system of record for a real deployment",
       "references": [
@@ -210,11 +221,14 @@
         "#20"
       ],
       "decision": {
-        "by": "Repository owner (Human)",
+        "by": "Repository owner",
         "decision": "concur",
+        "words": "Concur",
         "date": "2026-11-11",
         "issue": "#20",
-        "advice": "Technical Lead response on the same issue"
+        "residual_concurred_with": "Low / Low",
+        "advice": "The Technical Lead's response on the same issue was given after the decision",
+        "note": "The rating is the one concurred with. The control note has since been made fuller on the Technical Lead's advice"
       }
     },
     {
@@ -228,13 +242,13 @@
         "REQ-1.7",
         "REQ-1.9"
       ],
-      "control_note": "Scanning covers every copy, so nothing is missed, but the surface is larger than it needs to be. Planned mitigation: a reviewed cargo update as a Normal change, reconciling versions where the dependency graph allows, with a decision memorandum recording what could not be reconciled and why. This risk is carried deliberately into the first release so that the next release can show a risk opened, fixed, closed and every submittal regenerated.",
+      "control_note": "Scanning covers every copy, so nothing is missed, but the surface is larger than it needs to be. Planned mitigation: a reviewed cargo update as a Normal change, reconciling versions where the dependency graph allows, with a decision memorandum recording what could not be reconciled and why. It was carried deliberately into the first release, v0.0.1, so that a later release can show a risk opened, fixed, closed and every submittal regenerated.",
       "residual_likelihood": "Moderate",
       "residual_impact": "Low",
       "response": "mitigate",
       "owner": "Technical lead",
       "status": "open",
-      "review": "At the first release after v0.1.0",
+      "review": "At the next release after v0.0.1",
       "references": [
         "deny.toml [bans] multiple-versions",
         "sbom.cdx.json"

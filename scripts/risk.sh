@@ -6,7 +6,9 @@
 #
 # The JSON is the register (NIST SP 800-30 Rev. 1 vocabulary); the Markdown is
 # a readable view of it, generated so the two cannot disagree. It also checks
-# that every control a risk names exists in REQ-2026-001.json.
+# that every control a risk names exists in REQ-2026-001.json, that every
+# response is one of the four words, and that every accepted risk records
+# the repository owner's decision.
 #
 # Requires: jq.
 set -euo pipefail
@@ -26,10 +28,21 @@ bad="$(jq -r --slurpfile r "$req" '
   | .risks[] | .id as $rid | .controls[] | select(. as $c | $ids | index($c) | not) | "\($rid) names unknown control \(.)"' "$reg")"
 if [[ -n "$bad" ]]; then echo "$bad" >&2; exit 1; fi
 
-# Accepting a risk is the Human's decision, made on an issue. An accepted
-# risk with no such decision recorded is not accepted; it is merely written
-# down.
-undecided="$(jq -r '.risks[] | select(.response == "accept" and (.decision.issue // "") == "") | "\(.id) is accepted with no recorded decision"' "$reg")"
+# A response is one of four words, in lower case.
+odd="$(jq -r '.risks[] | select(.response | IN("accept", "mitigate", "transfer", "avoid") | not) | "\(.id) has response \(.response | tojson); expected accept, mitigate, transfer or avoid"' "$reg")"
+if [[ -n "$odd" ]]; then echo "$odd" >&2; exit 1; fi
+
+# Accepting a risk is the repository owner's decision, made on an issue. An
+# accepted risk must record that decision: a concurrence, by the owner, in
+# the owner's words, on a numbered issue. Anything less is a risk written
+# down, not a risk accepted.
+undecided="$(jq -r '.risks[] | select(.response == "accept")
+  | select((.decision.decision // "") != "concur"
+        or (.decision.by // "") != "Repository owner"
+        or ((.decision.issue // "") | test("^#[0-9]+$") | not)
+        or (.decision.words // "") == ""
+        or (.decision.date // "") == "")
+  | "\(.id) is accepted without a complete recorded decision by the repository owner"' "$reg")"
 if [[ -n "$undecided" ]]; then echo "$undecided" >&2; exit 1; fi
 
 {
@@ -61,7 +74,7 @@ jq -r '
   "",
   "**Review.** \(.review)",
   "",
-  (if .decision then "**Decision.** \(.decision.decision | ascii_upcase[0:1])\(.decision.decision[1:]): \(.decision.by), \(.decision.date), on issue \(.decision.issue). \(.decision.advice)." , "" else empty end),
+  (if .decision then "**Decision.** \(.decision.by), \(.decision.date), on issue \(.decision.issue): \"\(.decision.words)\" The residual then stated was \(.decision.residual_concurred_with). \(.decision.advice). \(.decision.note).", "" else empty end),
   "**References.** \(.references | join(", "))",
   ""
 ),
@@ -76,6 +89,8 @@ jq -r '
 ' "$reg"
 } > "$tmp"
 
+case "${1:-}" in ""|--check) ;; *) echo "usage: scripts/risk.sh [--check]" >&2; exit 2 ;; esac
+
 if [[ "${1:-}" == "--check" ]]; then
   if cmp -s "$tmp" "$out"; then
     echo "$out is up to date."
@@ -86,5 +101,6 @@ if [[ "${1:-}" == "--check" ]]; then
   fi
 else
   mv "$tmp" "$out"
+  chmod 644 "$out"
   echo "Wrote $out ($(jq '.risks | length' "$reg") risks)."
 fi

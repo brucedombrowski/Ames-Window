@@ -15,14 +15,19 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `docs/RISK-2026-001.json` and its rendering `docs/RISK-2026-001.md`
   (`scripts/risk.sh`): nine risks in NIST SP 800-30 terms, each with
   controls traced to requirements, a residual rating, an owner and a review
-  trigger. Four are accepted, each with the owner's decision recorded from
-  its issue (#17 to #20) and corrected as the Technical Lead advised there.
+  trigger. Four are accepted, each recording the owner's decision from its
+  issue (#17 to #20) in the owner's words. Where the Technical Lead's later
+  advice changed how a risk is rated, the register says so, and says what
+  was concurred with.
   CI fails if the rendering drifts, if a control is not a requirement, or if
   a risk is accepted with no decision recorded.
 - [DM-2026-005](docs/DM-2026-005.md): dependencies are not vendored;
   compromise of the registry is an accepted risk.
 
 ### Changed
+- Every build and test in the workflows and `scripts/web.sh` uses
+  `--locked`, so none can quietly resolve a component version that is not in
+  `Cargo.lock`.
 - `winit` is declared with `default-features = false` and
   `wayland-csd-adwaita-notitle` in place of `wayland-csd-adwaita`: the same
   window frame on Wayland, without a title, and without the font parser that
