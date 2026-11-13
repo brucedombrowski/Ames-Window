@@ -318,7 +318,7 @@ Three questions a security review asks, and what answers each:
 | Known vulnerabilities | `cargo deny check` against the RustSec advisory database; GitHub Dependabot alerts against the GitHub Advisory Database | Pushes to `main`, every pull request, weekly; Dependabot continuously |
 | Malware | `scripts/malware.sh` (ClamAV, signatures refreshed each run) over our source, every component's source, the built bundle, and the Windows package | Source and components: pushes to `main`, every pull request, weekly. Bundle: before every deploy and every release |
 | Network capability | Crate bans and feature denials in `deny.toml`; a grep of `crates/` and `web/`; `scripts/no-network.sh` on the built bundle; in the browser, the page's Content-Security-Policy; for the Windows program, `scripts/windows-imports.sh`, which fails if it imports a networking library | Pushes to `main` and every pull request; on the built bundle before every deploy and release; the policy, every time the page runs |
-| Addresses, machine names, credentials | `scripts/sensitive.sh`: IPv4, IPv6 and MAC addresses, email addresses, named home directories, internal host names, private keys and tokens. It reads the files, every line ever added to the history, and the release packages, including the text inside the Windows program. Exceptions are in `.sensitive-allow`, each with a reason | Files and history: pushes to `main`, every pull request, weekly. Source and both packages: before every release, with the report on the run's summary page |
+| Addresses, machine names, credentials | `scripts/sensitive.sh`: IPv4, IPv6 and MAC addresses, email addresses, named home directories, internal host names, private keys, tokens and passwords in URLs. It reads the files; every version of every file in the history, every file name and every commit and tag message; and the release packages, opening zip and gzip files and reading the text inside the Windows program. Values are masked in the report unless `--show` is given. Exceptions are in `.sensitive-allow`, each with a reason | Files and history: pushes to `main`, every pull request, weekly. Web bundle: before every deploy. Source, both packages and the SVD: before every release, with the report on the run's summary page; a finding stops the release |
 
 Pushes to branches other than `main` are checked when they become a pull
 request.
@@ -327,10 +327,14 @@ What these do not show.
 
 - `scripts/sensitive.sh` matches patterns in text. It does not know a serial
   number, a person's name, a street address, or a machine name without a
-  telltale ending, and it does not read issues or pull request comments,
-  which are public and outside the repository. GitHub's own secret scanning
-  is a repository setting and is off. The commit history also carries each
-  committer's address; the history scan notes it without printing it.
+  telltale ending; and it misses an address written in words, split across
+  lines, or encoded, and text inside compressed formats other than zip and
+  gzip. It does not read issues or pull request comments, which are public
+  and outside the repository. GitHub's own secret scanning is a repository
+  setting and is off. A Windows or iOS build made on someone's own machine
+  still records that machine's paths; only the browser build rewrites them.
+  The commit history carries each committer's address; the history scan
+  notes it without printing it.
 - A scan finds what is already known. A clean result means no match on that
   date, not that a file is benign or a component free of undisclosed flaws.
 - `scripts/no-network.sh` is a tripwire, not a proof. It fails the build if
@@ -412,7 +416,7 @@ takes the tag or commit the recipient has; the skipped releases are listed.
 | The Software Version Description | Generated on every `Supply chain` run and downloadable from that run as the `sbom-and-svd` artifact (needs a signed-in GitHub account; artifacts expire). Attached to each GitHub Release as `SVD-vX.Y.Z.md`. |
 | Releases | The [Releases page](https://github.com/brucedombrowski/Ames-Window/releases). A release carries the web bundle, the Windows package, three SBOMs, the SVD and `SHA256SUMS`, and GitHub holds a signed provenance attestation tying them to a commit and a build, checked with `gh attestation verify`. The first, v0.0.1, was cut on 2026‑11‑11. |
 | Requirements and their evidence | [`docs/REQ-2026-001.json`](docs/REQ-2026-001.json) and [`docs/VER-2026-001.md`](docs/VER-2026-001.md). |
-| Whether a commit, the history or a release contains an address or a credential | Run `scripts/sensitive.sh`, `scripts/sensitive.sh --range A..B`, `scripts/sensitive.sh --history`, or `scripts/sensitive.sh <unpacked package>`. CI runs the first and third; each release run's summary page carries the report for that release. |
+| Whether a commit, the history or a release contains an address or a credential | Run `scripts/sensitive.sh` (the files), `scripts/sensitive.sh --range A..B` (a range; one commit is `X^!`), `scripts/sensitive.sh --history`, or `scripts/sensitive.sh <downloaded release>` (zip files are opened). Add `--show` to see the values. Exit status 0 is clean, 1 is a finding, 2 means the scan could not be done. CI runs the first two kinds; each release run's summary page carries the report for that release. |
 | Risks, and which are accepted and by whom | [`docs/RISK-2026-001.md`](docs/RISK-2026-001.md). |
 | Decisions and why | The decision memoranda, DM-2026-[001](docs/DM-2026-001.md), [002](docs/DM-2026-002.md), [003](docs/DM-2026-003.md), [004](docs/DM-2026-004.md), [005](docs/DM-2026-005.md), [006](docs/DM-2026-006.md), [007](docs/DM-2026-007.md), [008](docs/DM-2026-008.md). |
 | Why the SBOM timestamp says 1970 | Deliberate: a fixed timestamp makes the file reproducible byte for byte, so CI can prove it matches `Cargo.lock`. When it was really generated is the commit date, and for a release the attestation ([`docs/DM-2026-002.md`](docs/DM-2026-002.md), Consequences). |

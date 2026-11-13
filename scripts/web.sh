@@ -16,10 +16,12 @@ cd "$root"
 # The compiler records the paths of source files in the program, for panic
 # messages. Left alone, a bundle built on someone's own machine carries their
 # home directory, and so their account name, dozens of times. Rewrite the two
-# prefixes that vary by machine to fixed ones. (--config adds to the flags in
-# .cargo/config.toml; a RUSTFLAGS variable would replace them.)
+# prefixes that vary by machine to fixed ones; the repository's own comes
+# last because rustc applies the last that matches, and a clone may sit under
+# the home directory. (--config adds to the flags in .cargo/config.toml; a
+# RUSTFLAGS variable would replace them.)
 cargo build --release --locked -p ames-app --target wasm32-unknown-unknown \
-  --config "target.wasm32-unknown-unknown.rustflags=['--remap-path-prefix=$root=/src', '--remap-path-prefix=$HOME=/home/builder']"
+  --config "target.wasm32-unknown-unknown.rustflags=['--remap-path-prefix=$HOME=/home/builder', '--remap-path-prefix=$root=/src']"
 
 dist="web/dist"
 rm -rf "$dist"

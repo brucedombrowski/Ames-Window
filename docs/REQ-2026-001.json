@@ -281,14 +281,16 @@
           "id": "REQ-3.8",
           "standard": "NIST SP 800-53 Rev. 5",
           "section": "AC-22 Publicly Accessible Content",
-          "text": "The repository's files, every line added to its history, and each release package SHALL be scanned for network addresses, hardware addresses, people's addresses, machine names, named home directories and credentials: on every change, weekly, and before each publication. A finding that is not a recorded exception with a stated reason SHALL fail the check.",
+          "text": "The repository's files; every version of every file, every file name and every commit and tag message in its history; and each release package and Software Version Description SHALL be scanned for network addresses, hardware addresses, people's addresses, machine names, named home directories and credentials: on every pull request and push to the main line, weekly, before each deployment of the web build, and before each release. A finding that is not a recorded exception with a stated reason SHALL fail the check, and a scan that cannot be completed SHALL fail it too.",
           "priority": "mandatory",
           "verification": "test",
           "evidence": [
             {"file": "scripts/sensitive.sh", "pattern": "Remove each, or add it to {allow_file} with the reason it is safe to publish."},
-            {"file": ".sensitive-allow", "pattern": "An entry without a reason is refused."},
+            {"file": "scripts/sensitive.sh", "pattern": "A scan that could not be done never reports \"nothing\"."},
+            {"file": ".sensitive-allow", "pattern": "An entry without a reason, with an unknown"},
             {"file": ".github/workflows/security.yml", "pattern": "run: scripts/sensitive.sh --history"},
-            {"file": ".github/workflows/release.yml", "pattern": "scripts/sensitive.sh web/dist ames-window-windows-x64"}
+            {"file": ".github/workflows/release.yml", "pattern": "scripts/sensitive.sh web/dist ames-window-windows-x64 \"SVD-$TAG.md\" || status=$?"},
+            {"file": ".github/workflows/pages.yml", "pattern": "run: scripts/sensitive.sh web/dist"}
           ]
         }
       ]
