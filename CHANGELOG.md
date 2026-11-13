@@ -81,7 +81,13 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   release's SVD is now scanned before it is published. The web deploy is
   scanned too. Documentation addresses (RFC 5737, RFC 3849, RFC 7042,
   `example.com`), loopback and the unspecified address are allowed by
-  default.
+  default. A second review found more: an address in a
+  `mailto:` link was missed; a file's later names, after a rename or a copy,
+  were not read in history; a corrupt or deeply nested archive, a truncated
+  gzip or an unreadable folder could end in a clean report. Each is fixed,
+  and any failure of the scan itself now exits 2. The SBOM exception names
+  the four real files instead of a pattern, zip contents are scanned exactly
+  as they ship, and history scans refuse a shallow clone.
 - `scripts/release.sh` left a stale `[Unreleased]` link reference from the
   second release on; it now rebuilds the references. It prints how to
   recover if a step fails before the commit, and a dry run in which a step

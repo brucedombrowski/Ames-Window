@@ -287,9 +287,9 @@
           "evidence": [
             {"file": "scripts/sensitive.sh", "pattern": "Remove each, or add it to {allow_file} with the reason it is safe to publish."},
             {"file": "scripts/sensitive.sh", "pattern": "A scan that could not be done never reports \"nothing\"."},
-            {"file": ".sensitive-allow", "pattern": "An entry without a reason, with an unknown"},
+            {"file": ".sensitive-allow", "pattern": "reason, with an unknown kind, or made only of wildcards and punctuation,"},
             {"file": ".github/workflows/security.yml", "pattern": "run: scripts/sensitive.sh --history"},
-            {"file": ".github/workflows/release.yml", "pattern": "scripts/sensitive.sh web/dist ames-window-windows-x64 \"SVD-$TAG.md\" || status=$?"},
+            {"file": ".github/workflows/release.yml", "pattern": "scripts/sensitive.sh ames-window-web.zip ames-window-windows-x64.zip \"SVD-$TAG.md\" || status=$?"},
             {"file": ".github/workflows/pages.yml", "pattern": "run: scripts/sensitive.sh web/dist"}
           ]
         }

@@ -16,9 +16,11 @@
 #                                         # opened; binaries are read for the
 #                                         # text inside them
 #
-#   --show   print what was found in full. Without it, each value is masked to
-#            its first two characters and its length, because CI logs and a
-#            release run's summary page are public.
+#   --show   print what was found in full (a key's first six characters only).
+#            Without it, an address or a key is shown only as its kind and
+#            length, and anything else as its first two characters and length,
+#            wherever it appears in the report, because CI logs and a release
+#            run's summary page are public.
 #
 # Exit status: 0 nothing found; 1 something found that is not an exception in
 # .sensitive-allow; 2 the scan could not be done (bad arguments, a bad ref, an
@@ -28,7 +30,7 @@
 #   ipv4    a dotted address, e.g. 192.0.2.x, including one ending a sentence
 #   ipv6    a full address, or a compressed one with a recognisable prefix
 #   mac     six pairs of hex digits, or Cisco's three groups of four
-#   email   any address
+#   email   any address, including in a mailto: link
 #   home    a named home directory: /Users/<name>, /home/<name>, C:\Users\<name>
 #   host    a name ending .local, .internal, .corp, .lan, .intranet or .home.arpa
 #   key     a private key header; a token in a well-known format (GitHub, AWS,
@@ -45,6 +47,8 @@
 # --history notes, without printing it, if a commit's author or committer
 # address is not a no-reply address: that is the committer's choice and cannot
 # be changed without rewriting history, so it is a notice, not a failure.
+#
+# History and range scans refuse a shallow clone, whose history is incomplete.
 #
 # Requires: python3 (3.8 or later), git.
 set -euo pipefail
@@ -75,15 +79,15 @@ PATTERNS = [
     ("ipv6", re.compile(r"(?<![\w:])(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}(?![\w:])"
                         r"|(?<![\w:])(?:fe80|f[cd][0-9a-f]{2}|2[0-9a-f]{3})(?::[0-9a-f]{1,4}){0,6}::(?:[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){0,6})?(?![\w:])", re.I)),
     ("mac", re.compile(r"(?<![\w:-])(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}(?![\w:-])"
-                       r"|(?<![\w.])[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}(?![\w.])")),
+                       r"|(?<![\w.])(?=[0-9.]*[A-Fa-f])[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}(?![\w.])")),
     ("key", re.compile(r"-----BEGIN (?:[A-Z]+ )*PRIVATE KEY(?: BLOCK)?-----"
                        r"|\b(?:AKIA|ASIA)[0-9A-Z]{16}\b"
                        r"|\bgh[pousr]_[A-Za-z0-9]{36,}\b|\bgithub_pat_[A-Za-z0-9_]{40,}\b"
                        r"|\bglpat-[A-Za-z0-9_-]{20,}\b|\bsk-ant-[A-Za-z0-9_-]{20,}\b"
                        r"|\bxox[abprs]-[A-Za-z0-9-]{10,}\b"
                        r"|\beyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}"
-                       r"|[a-z][a-z0-9+.-]*://[^\s/:@]+:[^\s/@]+@")),
-    ("email", re.compile(r"(?<![\w.+:/-])[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}(?![\w-])")),
+                       r"|[a-z][a-z0-9+.-]*://[^\s/:@]*:[^\s/@]+@")),
+    ("email", re.compile(r"(?<![\w.+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}(?![\w-])")),
     ("home", re.compile(r"(?:/Users/|/home/|[A-Za-z]:\\+Users\\+)[A-Za-z0-9._-]+")),
     ("host", re.compile(r"(?<![\w.-])[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.(?:local|internal|corp|lan|intranet|home\.arpa)(?![\w-])", re.I)),
 ]
@@ -92,9 +96,9 @@ KINDS = {kind for kind, _ in PATTERNS}
 # ---- the allow-list ---------------------------------------------------------
 # `kind  value  # reason`, or `path  glob  # reason` to leave files out. In a
 # value, * is the only wildcard and stands for any run of text; matching
-# ignores case. A path glob with no / is also tried against a file's own name,
-# so `sbom*.cdx.json` covers the copy inside a release package. No reason, an
-# unknown kind, or a value that is only *, is refused.
+# ignores case. A path glob is matched against the whole path: a file's path
+# in the repository, or its path inside a package or a zip. No reason, an
+# unknown kind, or a value made only of wildcards and punctuation, is refused.
 allow, paths, used = [], [], {}
 allow_file = ".sensitive-allow"
 if os.path.exists(allow_file):
@@ -109,8 +113,8 @@ if os.path.exists(allow_file):
         kind, value = parts[0], parts[1].strip()
         if kind != "path" and kind not in KINDS:
             fail(f"{where}: unknown kind {kind!r}; expected path or one of {', '.join(sorted(KINDS))}")
-        if value.strip("*") == "":
-            fail(f"{where}: a value of only * would allow everything")
+        if not re.search(r"[A-Za-z0-9]", value):
+            fail(f"{where}: a value of only wildcards and punctuation would allow almost everything")
         entry = (where, kind, value)
         used[entry] = 0
         if kind == "path":
@@ -125,11 +129,11 @@ def allowed(kind, text):
             return True
     return False
 
-def skipped_by(path):
+def skipped_by(path, count=True):
     for entry in paths:
-        glob = entry[2]
-        if fnmatch.fnmatchcase(path, glob) or ("/" not in glob and fnmatch.fnmatchcase(os.path.basename(path), glob)):
-            used[entry] += 1
+        if fnmatch.fnmatchcase(path, entry[2]):
+            if count:
+                used[entry] += 1
             return entry
     return None
 
@@ -137,10 +141,16 @@ def skipped_by(path):
 findings = {}      # (kind, text) -> [places]
 read = skipped = 0
 
+URL_USER = re.compile(r"[a-z][a-z0-9+.-]*://[^\s/@]*:\Z", re.I)
+
 def scan_text(text, where):
     for kind, pattern in PATTERNS:
         for match in pattern.finditer(text):
             found = match.group(0)
+            # The password half of a URL credential looks like an address;
+            # the whole credential is already reported, as a key.
+            if kind == "email" and URL_USER.search(text[max(0, match.start() - 200):match.start()]):
+                continue
             if not allowed(kind, found):
                 findings.setdefault((kind, found), []).append(where)
 
@@ -154,24 +164,39 @@ def strings_in(data):
     for run in re.findall(rb"(?:\x00[\x20-\x7e]){6,}", data):
         yield run.decode("utf-16-be")
 
+LIMIT = 512 * 1024 * 1024     # the most this will unpack from one archive member
+
 def scan_bytes(data, label, depth=0):
-    """Scans one file's bytes, opening zip and gzip files."""
-    if depth < 3 and data[:4] == b"PK\x03\x04":
+    """Scans one file's bytes, opening zip and gzip files. Anything it cannot
+    open completely is an error, not a pass."""
+    zipped, gzipped = data[:4] == b"PK\x03\x04", data[:2] == b"\x1f\x8b"
+    if (zipped or gzipped) and depth >= 3:
+        fail(f"{label}: archives nested more than three deep; unpack it and scan the result")
+    if zipped:
         try:
             with zipfile.ZipFile(io.BytesIO(data)) as archive:
                 for member in archive.infolist():
-                    if not member.is_dir():
-                        scan_text(member.filename, f"{label} (file name)")
-                        scan_bytes(archive.read(member), f"{label}:{member.filename}", depth + 1)
-            return
-        except zipfile.BadZipFile:
-            pass
-    if depth < 3 and data[:2] == b"\x1f\x8b":
+                    if member.is_dir():
+                        continue
+                    if skipped_by(member.filename):
+                        continue
+                    scan_text(member.filename, f"{label} (file name)")
+                    if member.file_size > LIMIT:
+                        fail(f"{label}:{member.filename}: larger than {LIMIT >> 20} MB unpacked; scan it by hand")
+                    scan_bytes(archive.read(member), f"{label}:{member.filename}", depth + 1)
+        except (zipfile.BadZipFile, zipfile.LargeZipFile, NotImplementedError, RuntimeError, OSError, EOFError) as error:
+            fail(f"{label}: cannot read the zip completely ({error})")
+        return
+    if gzipped:
         try:
-            scan_bytes(gzip.decompress(data), f"{label} (gunzipped)", depth + 1)
-            return
-        except OSError:
-            pass
+            with gzip.GzipFile(fileobj=io.BytesIO(data)) as stream:
+                inner = stream.read(LIMIT + 1)
+        except (OSError, EOFError) as error:
+            fail(f"{label}: cannot read the gzip completely ({error})")
+        if len(inner) > LIMIT:
+            fail(f"{label}: larger than {LIMIT >> 20} MB unpacked; scan it by hand")
+        scan_bytes(inner, f"{label} (gunzipped)", depth + 1)
+        return
     if b"\0" in data:
         for text in strings_in(data):
             scan_text(text, f"{label} (binary)")
@@ -217,8 +242,12 @@ def scan_objects(revisions, with_tags):
         sha, _, path = line.partition(" ")
         if path and sha not in first_path:
             first_path[sha] = path
-    for path in sorted(set(first_path.values())):
-        if not skipped_by(path):
+    # Every path any commit added or changed, each parent of a merge
+    # included, without rename detection, so a renamed or copied file's every
+    # name is read, not only the first path an object was seen under.
+    names = git("log", "-z", "-m", "--no-renames", "--name-only", "--format=", *revisions).decode("utf-8", "replace")
+    for path in sorted({n.strip("\n") for n in names.split("\0") if n.strip("\n")}):
+        if not skipped_by(path, count=False):
             scan_text(path, f"{path} (file name)")
     if first_path:
         batch = subprocess.run(["git", "cat-file", "--batch"], input="\n".join(first_path).encode() + b"\n",
@@ -249,12 +278,19 @@ def scan_objects(revisions, with_tags):
                 scan_text(message, f"tag {name} (message)")
     return len(commits)
 
+def unexpected(kind, value, tb):
+    print(f"scripts/sensitive.sh: internal error: {kind.__name__}: {value}", file=sys.stderr)
+    sys.exit(2)
+sys.excepthook = unexpected
+
 notice = None
+if args and args[0] in ("--history", "--range") and git("rev-parse", "--is-shallow-repository").strip() == b"true":
+    fail("this is a shallow clone, so its history is incomplete; fetch the full history first (git fetch --unshallow)")
 if args and args[0] == "--history":
     if len(args) != 1:
         fail(USAGE)
     count = scan_objects(["--all"], True)
-    scanned = f"every version of {read} file version(s) and {count} commit message(s) on every ref, and tag messages"
+    scanned = f"{read} file version(s), every file name and {count} commit message(s) on every ref, and the tag messages"
     addresses = set(git("log", "--all", "--format=%ae%n%ce").decode().split())
     personal = [a for a in addresses if not allowed("email", a)]
     if personal:
@@ -264,7 +300,7 @@ elif args and args[0] == "--range":
     if len(args) != 2 or args[1].startswith("-"):
         fail(USAGE)
     count = scan_objects([args[1]], False)
-    scanned = f"{read} file version(s) and {count} commit message(s) in {args[1]}"
+    scanned = f"{read} file version(s), their file names and {count} commit message(s) in {args[1]}"
     if count == 0:
         scanned += " (the range is empty)"
 elif args and args[0].startswith("-"):
@@ -276,9 +312,14 @@ elif args:
             fail(f"no such file or directory: {target}")
         if os.path.isdir(full) and not os.path.islink(full):
             base = os.path.dirname(os.path.abspath(full).rstrip("/"))
-            for folder, folders, names in os.walk(full):
+            def unreadable(error):
+                fail(f"cannot read {error.filename}: {error.strerror}")
+            for folder, folders, names in os.walk(full, onerror=unreadable):
                 if ".git" in folders:
                     folders.remove(".git")
+                for linked in [d for d in folders if os.path.islink(os.path.join(folder, d))]:
+                    here = os.path.join(folder, linked)
+                    scan_text(os.readlink(here), f"{os.path.relpath(here, base)} (link target)")
                 folders.sort()
                 for name in sorted(names):
                     here = os.path.join(folder, name)
@@ -290,21 +331,36 @@ elif args:
     scanned = f"{read} file(s) in " + ", ".join(args)
 else:
     listing = git("ls-files", "-s", "-z").decode("utf-8", "replace").split("\0")
+    missing = 0
     for record in filter(None, listing):
         meta, _, name = record.partition("\t")
         if meta.startswith("160000"):          # a submodule: not ours to read
             continue
         if os.path.lexists(name):
             scan_path(name, name)
+        else:
+            missing += 1
     scanned = f"{read} tracked file(s)"
+    if missing:
+        scanned += f"; {missing} tracked file(s) are missing from the working tree and were not read (scan the history to cover them)"
 
 # ---- the report -------------------------------------------------------------
 def masked(kind, text):
-    if kind == "key":
-        return text[:10] + "..." if show else f"{kind} ({len(text)} chars)"
-    return text if show else f"{text[:2]}... ({len(text)} chars)"
+    if show:
+        return text[:6] + "..." if kind == "key" else text
+    if kind in ("ipv4", "ipv6", "mac", "key"):
+        return f"{kind} ({len(text)} chars)"
+    return f"{text[:2]}... ({len(text)} chars)"
 
-print(f"Scanned {scanned}." + (f" Left out by .sensitive-allow: {skipped}." if skipped else ""))
+def cover(place):
+    """A place can contain a found value: a file name, a member path. Mask it there too."""
+    if show:
+        return place
+    for (kind, text) in findings:
+        place = place.replace(text, masked(kind, text))
+    return place
+
+print(cover(f"Scanned {scanned}.") + (f" Left out by .sensitive-allow: {skipped}." if skipped else ""))
 if notice:
     print(f"Notice: {notice}")
 uses = [(entry, n) for entry, n in used.items() if n]
@@ -318,7 +374,7 @@ print(f"Found {len(findings)} distinct item(s) in {places} place(s):\n")
 print("| Kind | Found | First place | Places |")
 print("|---|---|---|---|")
 for (kind, text), where in sorted(findings.items()):
-    print(f"| {kind} | `{masked(kind, text)}` | {where[0]} | {len(where)} |")
+    print(f"| {kind} | `{masked(kind, text)}` | {cover(where[0])} | {len(where)} |")
 print(f"\nRemove each, or add it to {allow_file} with the reason it is safe to publish."
       + ("" if show else " Run with --show, locally, to see the values."))
 sys.exit(1)

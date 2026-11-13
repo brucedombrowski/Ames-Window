@@ -4,12 +4,16 @@
 #
 # `kind` is one of ipv4, ipv6, mac, email, home, host, key; `value` is the
 # exact text found, where * is the only wildcard and stands for any run of
-# text; matching ignores case. `path` with a glob leaves files out; a glob
-# with no / is also tried against a file's own name, anywhere. Separate the
-# reason with two spaces and a #. An entry without a reason, with an unknown
-# kind, or whose value is only *, is refused.
+# text; matching ignores case. `path` with a glob leaves files out; it is
+# matched against the whole path, in the repository or inside a package or
+# zip. Separate the reason with two spaces and a #. An entry without a
+# reason, with an unknown kind, or made only of wildcards and punctuation,
+# is refused.
 
-path   sbom*.cdx.json    # third-party authors' addresses, as each crate publishes them on crates.io; also the copy inside the Windows package
+path   sbom.cdx.json                 # third-party authors' addresses, as each crate publishes them on crates.io
+path   sbom-web.cdx.json             # the same
+path   sbom-windows.cdx.json         # the same
+path   ames-window-windows-x64/sbom-windows.cdx.json  # the same file, inside the Windows package
 
 email  *@users.noreply.github.com   # GitHub's no-reply addresses, which identify an account and nothing else
 email  noreply@github.com           # GitHub's own committer address for merges made on the site
@@ -23,7 +27,6 @@ home   /home/builder                # the fixed placeholder scripts/web.sh subst
 
 # Example values once in scripts/sensitive.sh's own header comment (commit 5df2f76),
 # since replaced with placeholders the patterns cannot match. Kept only for --history.
-ipv4   192.0.2.10                   # RFC 5737 TEST-NET-1, reserved for documentation; routes nowhere
 mac    00:1b:63:84:45:e6            # the textbook example MAC from Wikipedia; tied to no device here
 home   /Users/name                  # the literal word "name", a placeholder
 home   /home/name                   # the same
@@ -36,7 +39,10 @@ ipv4   192.0.2.*                    # RFC 5737 TEST-NET-1, reserved for document
 ipv4   198.51.100.*                 # RFC 5737 TEST-NET-2, reserved for documentation
 ipv4   203.0.113.*                  # RFC 5737 TEST-NET-3, reserved for documentation
 ipv6   2001:db8:*                   # RFC 3849, reserved for documentation
+ipv6   2001:0db8:*                  # the same, written with its leading zero
 mac    00:00:5e:00:53:*             # RFC 7042, reserved for documentation
+mac    00-00-5e-00-53-*             # the same, written with dashes
+home   /Users/Shared                # macOS's folder shared by every account; names no person
 email  *@example.com                # RFC 2606, reserved for documentation
 email  *@example.org                # the same
 email  *@example.net                # the same

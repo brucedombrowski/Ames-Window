@@ -104,8 +104,8 @@ jobs:
         run: scripts/svd.sh "SVD-$TAG.md"
 
       # Everything about to be published is read for anything that should not
-      # be (REQ-3.8): the source at the tag, both packages including the text
-      # inside the Windows program, and the SVD. Values are masked in the
+      # be (REQ-3.8): the source at the tag, both zips exactly as they will
+      # ship, including the text inside the Windows program, and the SVD. Values are masked in the
       # report, which goes on the run's public summary page. A finding stops
       # the release: each scan's status is kept and the step fails on either.
       - name: Nothing published names an address, a machine or a credential
@@ -117,7 +117,7 @@ jobs:
             echo
             echo '```'
             scripts/sensitive.sh || status=$?
-            scripts/sensitive.sh web/dist ames-window-windows-x64 "SVD-$TAG.md" || status=$?
+            scripts/sensitive.sh ames-window-web.zip ames-window-windows-x64.zip "SVD-$TAG.md" || status=$?
             echo '```'
           } > scan.md
           cat scan.md | tee -a "$GITHUB_STEP_SUMMARY"
