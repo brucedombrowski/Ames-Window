@@ -39,6 +39,8 @@ jobs:
           sudo freshclam --quiet
       - name: The bundle holds no known malware
         run: scripts/malware.sh web/dist
+      - name: The bundle names no address, machine or credential
+        run: scripts/sensitive.sh web/dist
       - uses: actions/configure-pages@v5
         with:
           enablement: true

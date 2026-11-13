@@ -97,24 +97,31 @@ jobs:
         run: cmp sbom-windows.cdx.json ames-window-windows-x64/sbom-windows.cdx.json
       - name: The Windows package holds no known malware
         run: scripts/malware.sh ames-window-windows-x64
-      # What is about to be published is read for anything that should not be
-      # (REQ-3.8): the source at the tag, and both packages, including the text
-      # inside the Windows program. The report goes on the run's summary page.
-      - name: Nothing published names an address, a machine or a credential
-        run: |
-          {
-            echo "### Sensitive-content scan for $TAG"
-            echo
-            echo '```'
-            scripts/sensitive.sh
-            scripts/sensitive.sh web/dist ames-window-windows-x64
-            echo '```'
-          } | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Zip the Windows package
         run: zip -r -X ames-window-windows-x64.zip ames-window-windows-x64
 
       - name: Software Version Description
         run: scripts/svd.sh "SVD-$TAG.md"
+
+      # Everything about to be published is read for anything that should not
+      # be (REQ-3.8): the source at the tag, both zips exactly as they will
+      # ship, including the text inside the Windows program, and the SVD. Values are masked in the
+      # report, which goes on the run's public summary page. A finding stops
+      # the release: each scan's status is kept and the step fails on either.
+      - name: Nothing published names an address, a machine or a credential
+        shell: bash
+        run: |
+          status=0
+          {
+            echo "### Sensitive-content scan for $TAG"
+            echo
+            echo '```'
+            scripts/sensitive.sh || status=$?
+            scripts/sensitive.sh ames-window-web.zip ames-window-windows-x64.zip "SVD-$TAG.md" || status=$?
+            echo '```'
+          } > scan.md
+          cat scan.md | tee -a "$GITHUB_STEP_SUMMARY"
+          exit "$status"
 
       - name: Checksums
         run: sha256sum ames-window-web.zip ames-window-windows-x64.zip sbom-web.cdx.json sbom-windows.cdx.json sbom.cdx.json "SVD-$TAG.md" > SHA256SUMS

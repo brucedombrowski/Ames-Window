@@ -66,6 +66,28 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   accepts no advisory.
 
 ### Fixed
+- `scripts/sensitive.sh`, from its review: the release step could not fail,
+  because it ran without `pipefail` and took `tee`'s status; it now keeps
+  each scan's status and fails on either. A relative path given from outside
+  the repository was looked up inside it, so the wrong file was scanned and
+  reported clean. History and range scans read patches, which missed content
+  that exists only in a merge or in a binary later deleted; they now read
+  every version of every file, file names, and commit and tag messages. An
+  IPv4 address ending a sentence was missed. The count of files scanned
+  included files it skipped. Errors now exit 2 rather than 1, the report
+  masks values unless `--show` is given, zip and gzip files are opened, and
+  the allow-list refuses an unknown kind or a value that is only `*`. The
+  exception for `docs/releases/` is gone: nothing there needed it, and the
+  release's SVD is now scanned before it is published. The web deploy is
+  scanned too. Documentation addresses (RFC 5737, RFC 3849, RFC 7042,
+  `example.com`), loopback and the unspecified address are allowed by
+  default. A second review found more: an address in a
+  `mailto:` link was missed; a file's later names, after a rename or a copy,
+  were not read in history; a corrupt or deeply nested archive, a truncated
+  gzip or an unreadable folder could end in a clean report. Each is fixed,
+  and any failure of the scan itself now exits 2. The SBOM exception names
+  the four real files instead of a pattern, zip contents are scanned exactly
+  as they ship, and history scans refuse a shallow clone.
 - `scripts/release.sh` left a stale `[Unreleased]` link reference from the
   second release on; it now rebuilds the references. It prints how to
   recover if a step fails before the commit, and a dry run in which a step
