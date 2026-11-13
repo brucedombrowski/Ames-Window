@@ -372,9 +372,12 @@
           "text": "The project SHOULD maintain a record of which version is installed at each recipient, so that a Software Version Description can be cut against the correct baseline.",
           "priority": "recommended",
           "verification": "inspection",
-          "status": "open",
-          "tracking": "#10",
-          "note": "Proposed as a deployments record read by scripts/svd.sh --site."
+          "evidence": [
+            {"file": "deployments.toml", "pattern": "installed = "},
+            {"file": "scripts/deliver.sh", "pattern": "--installed) mode=\"installed\""},
+            {"file": "docs/configuration-management.md", "pattern": "`deployments.toml` | Updated after each delivery and installation"}
+          ],
+          "note": "deployments.toml holds delivered and installed version per site; scripts/deliver.sh reads the installed one as the SVD baseline and records both events."
         }
       ]
     }

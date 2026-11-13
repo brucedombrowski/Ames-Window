@@ -34,7 +34,7 @@ recipient's document system, generated from the same templates.
 | Verification | `docs/VER-2026-001.md` | Generated from REQ anchors; CI fails on drift |
 | Risks | `docs/RISK-2026-001.json`, rendered as `docs/RISK-2026-001.md` | `scripts/risk.sh`; CI fails if the rendering drifts, if a risk names a control that is not a requirement, or if a risk is accepted with no decision recorded |
 | Release | Git tag `vX.Y.Z` and its GitHub Release | Built by automation (issue #10) |
-| Installed instances | `deployments.toml` (planned, issue #10) | Updated after each installation as a Standard change |
+| Installed instances | `deployments.toml` | Updated after each delivery and installation by `scripts/deliver.sh`, as a Standard change |
 
 ## Change classes
 
@@ -149,8 +149,10 @@ First used for v0.0.1 on 2026-11-11.
    and publishes the GitHub Release with all of it.
 5. The SVD is filed under `docs/releases/` by a pull request from the branch
    the workflow pushes (Standard).
-6. After installation at a recipient, update `deployments.toml` (Standard;
-   planned, issue #10).
+6. To deliver, `scripts/deliver.sh --to <site> --version vX.Y.Z` packages the
+   release with an SVD from that site's installed version and records the
+   delivery. After the recipient installs, `scripts/deliver.sh --installed`
+   records it. Both update `deployments.toml` (Standard).
 
 ## Standards
 

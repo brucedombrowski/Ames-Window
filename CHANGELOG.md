@@ -37,6 +37,9 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   compromise of the registry is an accepted risk.
 
 ### Changed
+- REQ-4.6 (deployments record) carries evidence instead of an open status:
+  `deployments.toml` and `scripts/deliver.sh` are what it proposed. The CM
+  plan's delivery step is no longer "planned" (#10).
 - `scripts/web.sh` rewrites the source paths the compiler records in the
   browser module. A bundle built on a developer's machine carried that
   machine's home directory, and so an account name, dozens of times; the

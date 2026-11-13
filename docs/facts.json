@@ -16,10 +16,10 @@
     "document": "REQ-2026-001",
     "version": "1.0",
     "total": 27,
-    "with_evidence": 24,
+    "with_evidence": 25,
     "derived": 0,
-    "open": 3,
-    "evidence_anchors": 74
+    "open": 2,
+    "evidence_anchors": 77
   },
   "risks": {
     "document": "RISK-2026-001",
